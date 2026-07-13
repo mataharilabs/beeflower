@@ -1,0 +1,349 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  XENDIT
+  MANUAL_TRANSFER
+}
+
+enum ProofStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+// ─── AUTH (NextAuth.js) ───────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── USERS ────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  phone         String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  orders    Order[]
+  cartItems CartItem[]
+
+  @@map("users")
+}
+
+// ─── CATEGORIES ───────────────────────────────────────────
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  products Product[]
+
+  @@map("categories")
+}
+
+// ─── PRODUCTS ─────────────────────────────────────────────
+
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?  @db.Text
+  shortDesc    String?
+  price        Decimal  @db.Decimal(12, 0)
+  comparePrice Decimal? @db.Decimal(12, 0)
+  stock        Int      @default(0)
+  weight       Int?
+  images       String[]
+  isActive     Boolean  @default(true)
+  isFeatured   Boolean  @default(false)
+  isBestSeller Boolean  @default(false)
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id])
+
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@map("products")
+}
+
+// ─── CART ─────────────────────────────────────────────────
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
+
+// ─── ORDERS ───────────────────────────────────────────────
+
+model Order {
+  id          String        @id @default(cuid())
+  orderNumber String        @unique
+  userId      String?
+  user        User?         @relation(fields: [userId], references: [id])
+  status      OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod?
+  xenditInvoiceId String?   @unique
+  xenditPaymentUrl String?
+
+  customerName  String
+  customerEmail String
+  customerPhone String
+  address       String
+  city          String
+  province      String
+  postalCode    String
+
+  subtotal    Decimal  @db.Decimal(12, 0)
+  shippingCost Decimal @db.Decimal(12, 0) @default(0)
+  discount    Decimal  @db.Decimal(12, 0) @default(0)
+  total       Decimal  @db.Decimal(12, 0)
+
+  notes   String?  @db.Text
+  paidAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items        OrderItem[]
+  paymentProof PaymentProof?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  productId   String
+  productName String
+  price       Decimal @db.Decimal(12, 0)
+  quantity    Int
+  image       String?
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─── PAYMENT PROOF (Manual Transfer) ─────────────────────
+
+model PaymentProof {
+  id          String      @id @default(cuid())
+  orderId     String      @unique
+  imageUrl    String
+  bankAccountId String?
+  notes       String?
+  status      ProofStatus @default(PENDING)
+  reviewedAt  DateTime?
+  reviewNotes String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payment_proofs")
+}
+
+// ─── PAYMENT SETTINGS ─────────────────────────────────────
+
+model PaymentSettings {
+  id                     String  @id @default("singleton")
+  xenditEnabled          Boolean @default(false)
+  xenditSecretKey        String?
+  manualTransferEnabled  Boolean @default(true)
+  updatedAt              DateTime @updatedAt
+
+  @@map("payment_settings")
+}
+
+model BankAccount {
+  id            String  @id @default(cuid())
+  bankName      String
+  accountHolder String
+  accountNumber String
+  logoUrl       String?
+  isActive      Boolean @default(true)
+  order         Int     @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("bank_accounts")
+}
+
+// ─── BANNERS ──────────────────────────────────────────────
+
+model Banner {
+  id          String   @id @default(cuid())
+  image       String
+  headline    String?
+  subheadline String?
+  buttonText  String?
+  buttonLink  String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("banners")
+}
+
+// ─── PAGES (Craft.js CMS) ─────────────────────────────────
+
+model Page {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  craftJson   Json     @default("{}")
+  isPublished Boolean  @default(false)
+
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pages")
+}
+
+// ─── SITE SETTINGS ────────────────────────────────────────
+
+model SiteSettings {
+  id          String  @id @default("singleton")
+  siteName    String  @default("Bee & Flower Brand")
+  logoUrl     String?
+  faviconUrl  String?
+
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  whatsapp        String?
+  email           String?
+  address         String? @db.Text
+  businessHours   String? @db.Text
+  googleMapsEmbed String? @db.Text
+  instagram       String?
+  tiktok          String?
+
+  maintenanceMode Boolean @default(false)
+  updatedAt       DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ─── CONTACT MESSAGES ─────────────────────────────────────
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}
+
+// ─── RESELLER PACKAGES ────────────────────────────────────
+
+model ResellerPackage {
+  id          String   @id @default(cuid())
+  name        String
+  price       Decimal  @db.Decimal(12, 0)
+  originalPrice Decimal? @db.Decimal(12, 0)
+  description String?  @db.Text
+  items       String[]
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("reseller_packages")
+}
