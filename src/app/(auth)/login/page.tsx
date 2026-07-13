@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import type { Metadata } from "next";
 
@@ -15,7 +16,9 @@ export default function LoginPage() {
           </h1>
           <p className="text-sm text-brand-beige mt-1">Masuk ke akun Anda</p>
         </div>
-        <LoginForm />
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

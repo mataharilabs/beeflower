@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/shop/ProductCard";
@@ -52,7 +53,9 @@ export default async function TokoPage({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <ShopFilters categories={categories} />
+        <Suspense>
+          <ShopFilters categories={categories} />
+        </Suspense>
 
         {products.length === 0 ? (
           <div className="text-center py-20">
