@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { contactFormSchema } from "@/lib/validations";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -20,6 +18,7 @@ export async function POST(req: NextRequest) {
 
     // Send email notification to admin
     if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from: process.env.EMAIL_FROM ?? "noreply@beeflowerbrand.com",
         to: process.env.ADMIN_EMAIL,
