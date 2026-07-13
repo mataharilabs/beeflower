@@ -1,18 +1,18 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { neonConfig, Pool } from "@neondatabase/serverless";
+import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 
-// Use WebSocket (port 443) instead of TCP (port 5432) — works behind firewalls
-neonConfig.webSocketConstructor = ws;
+if (!globalThis.WebSocket) {
+  neonConfig.webSocketConstructor = ws;
+}
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createPrismaClient() {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const adapter = new PrismaNeon(pool);
+  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
