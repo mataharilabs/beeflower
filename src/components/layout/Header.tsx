@@ -49,8 +49,9 @@ export function Header({ logoUrl, siteName, navLinks, ctaButton }: HeaderProps) 
               <Image
                 src={logoUrl}
                 alt={siteName ?? "Bee & Flower Brand"}
-                width={120}
-                height={48}
+                width={240}
+                height={96}
+                quality={100}
                 className="h-12 w-auto object-contain"
               />
             ) : (

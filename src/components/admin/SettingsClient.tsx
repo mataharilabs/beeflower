@@ -8,6 +8,7 @@ interface SiteSettings {
   id: string;
   siteName: string;
   logoUrl: string | null;
+  logoLightUrl: string | null;
   faviconUrl: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -151,13 +152,20 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Logo Utama (Header)</label>
+                <p className="text-xs text-gray-400 mb-1.5">Untuk background terang</p>
                 <ImageUploader value={site.logoUrl ?? ""} onChange={(url) => setSite({ ...site, logoUrl: url })} folder="beeflower/settings" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Favicon</label>
-                <ImageUploader value={site.faviconUrl ?? ""} onChange={(url) => setSite({ ...site, faviconUrl: url })} folder="beeflower/settings" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Logo Terang (Footer)</label>
+                <p className="text-xs text-gray-400 mb-1.5">Untuk background gelap</p>
+                <ImageUploader value={site.logoLightUrl ?? ""} onChange={(url) => setSite({ ...site, logoLightUrl: url })} folder="beeflower/settings" />
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Favicon</label>
+              <p className="text-xs text-gray-400 mb-1.5">Ikon tab browser (.ico, .png, atau .svg)</p>
+              <ImageUploader value={site.faviconUrl ?? ""} onChange={(url) => setSite({ ...site, faviconUrl: url })} folder="beeflower/settings" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title (SEO)</label>

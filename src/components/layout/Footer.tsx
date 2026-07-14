@@ -44,12 +44,22 @@ export async function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="mb-4">
-              {settings?.logoUrl ? (
+              {settings?.logoLightUrl ? (
+                <Image
+                  src={settings.logoLightUrl}
+                  alt={siteName}
+                  width={240}
+                  height={96}
+                  quality={100}
+                  className="h-12 w-auto object-contain"
+                />
+              ) : settings?.logoUrl ? (
                 <Image
                   src={settings.logoUrl}
                   alt={siteName}
-                  width={120}
-                  height={48}
+                  width={240}
+                  height={96}
+                  quality={100}
                   className="h-12 w-auto object-contain brightness-0 invert"
                 />
               ) : (

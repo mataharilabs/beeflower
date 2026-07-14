@@ -295,8 +295,9 @@ model Page {
 model SiteSettings {
   id          String  @id @default("singleton")
   siteName    String  @default("Bee & Flower Brand")
-  logoUrl     String?
-  faviconUrl  String?
+  logoUrl      String?
+  logoLightUrl String?
+  faviconUrl   String?
 
   metaTitle       String?
   metaDescription String?

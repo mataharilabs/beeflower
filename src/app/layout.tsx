@@ -21,6 +21,8 @@ export async function generateMetadata(): Promise<Metadata> {
       "Sabun berkualitas dengan aroma khas yang telah dipercaya lintas generasi sejak tahun 1928",
     icons: {
       icon: settings?.faviconUrl || "/favicon.ico",
+      shortcut: settings?.faviconUrl || "/favicon.ico",
+      apple: settings?.faviconUrl || "/favicon.ico",
     },
   };
 }
