@@ -4,28 +4,22 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
 export async function GET() {
-  const settings = await prisma.siteSettings.findUnique({
-    where: { id: "singleton" },
+  const items = await prisma.navItem.findMany({
+    orderBy: { order: "asc" },
   });
-  return NextResponse.json(settings ?? {});
+  return NextResponse.json(items);
 }
 
-export async function PUT(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await req.json();
-  const settings = await prisma.siteSettings.upsert({
-    where: { id: "singleton" },
-    update: body,
-    create: { id: "singleton", ...body },
-  });
+  const item = await prisma.navItem.create({ data: body });
 
   revalidatePath("/", "layout");
-  revalidatePath("/contact");
-  revalidatePath("/reseller");
 
-  return NextResponse.json(settings);
+  return NextResponse.json(item, { status: 201 });
 }

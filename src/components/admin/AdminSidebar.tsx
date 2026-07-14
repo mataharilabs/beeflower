@@ -14,6 +14,7 @@ import {
   CreditCard,
   LogOut,
   ChevronRight,
+  LayoutList,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { href: "/admin/banners", icon: Image, label: "Banner" },
+  { href: "/admin/menus", icon: LayoutList, label: "Menus" },
   { href: "/admin/pages", icon: FileText, label: "Pages" },
   { href: "/admin/products", icon: Package, label: "Products" },
   { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },

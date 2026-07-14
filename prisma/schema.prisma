@@ -347,3 +347,26 @@ model ResellerPackage {
 
   @@map("reseller_packages")
 }
+
+// ─── NAVIGATION MENUS ─────────────────────────────────────
+
+enum NavLocation {
+  HEADER_NAV
+  HEADER_CTA
+  FOOTER_MAIN
+  FOOTER_INFO
+}
+
+model NavItem {
+  id        String      @id @default(cuid())
+  label     String
+  href      String
+  location  NavLocation
+  newTab    Boolean     @default(false)
+  order     Int         @default(0)
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("nav_items")
+}
