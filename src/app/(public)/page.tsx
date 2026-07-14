@@ -63,7 +63,8 @@ export default async function HomePage() {
   const bestSellersData = (Array.isArray(bestSellerProducts) ? bestSellerProducts : []) as any[];
 
   // Extract editable content from home page CMS blocks
-  const blocks: Block[] = ((homePage?.craftJson as { blocks?: Block[] })?.blocks) ?? [];
+  const homePageData = !Array.isArray(homePage) ? homePage : null;
+  const blocks: Block[] = ((homePageData?.craftJson as { blocks?: Block[] })?.blocks) ?? [];
   const ourStoryBlock = blocks.find((b) => b.type === "ImageText");
   const whyBFBlock = blocks.find((b) => b.type === "FeatureIcons");
   const faqBlock = blocks.find((b) => b.type === "FAQSection");
