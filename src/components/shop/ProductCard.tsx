@@ -19,7 +19,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
   const price = Number(product.price.toString());
   const comparePrice = product.comparePrice ? Number(product.comparePrice.toString()) : null;
-  const image = product.images[0];
+  const image = product.images[0] ?? "";
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();

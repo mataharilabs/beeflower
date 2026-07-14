@@ -62,12 +62,18 @@ export function CartDrawer() {
                     className="flex gap-3 pb-4 border-b border-brand-beige/20 last:border-0"
                   >
                     <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-brand-cream">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-sm font-bold text-brand-gold/30">B&F</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm text-brand-brown truncate">

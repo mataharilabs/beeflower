@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
@@ -49,5 +50,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const product = await prisma.product.create({ data: body });
+  revalidatePath("/");
+  revalidatePath("/toko", "page");
   return NextResponse.json(product, { status: 201 });
 }

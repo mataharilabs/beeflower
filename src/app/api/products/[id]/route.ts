@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
@@ -26,6 +27,9 @@ export async function PUT(
   const { id } = await params;
   const body = await req.json();
   const product = await prisma.product.update({ where: { id }, data: body });
+  revalidatePath("/");
+  revalidatePath("/toko", "page");
+  revalidatePath(`/toko/${product.slug}`, "page");
   return NextResponse.json(product);
 }
 

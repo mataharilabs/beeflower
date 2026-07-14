@@ -79,6 +79,14 @@ export function ProductForm({ product, categories }: Props) {
     }));
   };
 
+  const setMainImage = (index: number) => {
+    setForm((f) => {
+      const imgs = [...f.images];
+      const [main] = imgs.splice(index, 1);
+      return { ...f, images: [main, ...imgs] };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -234,9 +242,23 @@ export function ProductForm({ product, categories }: Props) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
           {form.images.map((img, i) => (
             <div key={i} className="relative group">
-              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+              <div className={`aspect-square rounded-lg overflow-hidden bg-gray-100 ${i === 0 ? "ring-2 ring-brand-gold" : ""}`}>
                 <img src={img} alt="" className="w-full h-full object-cover" />
               </div>
+              {i === 0 && (
+                <span className="absolute bottom-1 left-1 bg-brand-gold text-white text-[10px] px-1.5 py-0.5 rounded font-semibold pointer-events-none">
+                  Utama
+                </span>
+              )}
+              {i !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => setMainImage(i)}
+                  className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  Jadikan Utama
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => removeImage(i)}
