@@ -36,7 +36,7 @@ export async function PUT(
       ogImage: body.ogImage,
     },
   });
-  revalidatePath(`/${page.slug}`);
+  revalidatePath(page.slug === "home" ? "/" : `/${page.slug}`);
   return NextResponse.json(page);
 }
 

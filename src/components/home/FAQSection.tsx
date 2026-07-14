@@ -4,7 +4,12 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const faqs = [
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+const DEFAULT_FAQS: FAQItem[] = [
   {
     question: "Apakah produk Bee & Flower original?",
     answer:
@@ -22,8 +27,9 @@ const faqs = [
   },
 ];
 
-export function FAQSection() {
+export function FAQSection({ items }: { items?: FAQItem[] }) {
   const [open, setOpen] = useState<number | null>(null);
+  const faqs = items?.length ? items : DEFAULT_FAQS;
 
   return (
     <section className="py-16 lg:py-24 bg-white">

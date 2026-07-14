@@ -9,13 +9,20 @@ import { BestSellers } from "@/components/home/BestSellers";
 import { BusinessOpportunityCTA } from "@/components/home/BusinessOpportunityCTA";
 import { FAQSection } from "@/components/home/FAQSection";
 import { BottomCTA } from "@/components/home/BottomCTA";
+import type {
+  ImageTextProps,
+  FeatureIconsProps,
+  FAQSectionProps,
+  CTABannerProps,
+  Block,
+} from "@/types/pageBlocks";
 
-export const revalidate = 900; // 15 minutes ISR
+export const revalidate = 900;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await prisma.siteSettings.findUnique({
-    where: { id: "singleton" },
-  }).catch(() => null);
+  const settings = await prisma.siteSettings
+    .findUnique({ where: { id: "singleton" } })
+    .catch(() => null);
 
   return {
     title: settings?.metaTitle ?? settings?.siteName ?? "Bee & Flower Brand",
@@ -29,12 +36,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [banners, featuredProducts, bestSellerProducts, highlightProduct] =
+  const [banners, homePage, featuredProducts, bestSellerProducts, highlightProduct] =
     await Promise.all([
-      prisma.banner.findMany({
-        where: { isActive: true },
-        orderBy: { order: "asc" },
-      }),
+      prisma.banner.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
+      prisma.page.findUnique({ where: { slug: "home" } }),
       prisma.product.findMany({
         where: { isActive: true, isFeatured: true },
         orderBy: { createdAt: "desc" },
@@ -49,7 +54,7 @@ export default async function HomePage() {
         where: { isActive: true, isFeatured: true },
         orderBy: { createdAt: "desc" },
       }),
-    ]).catch(() => [[], [], [], null]);
+    ]).catch(() => [[], null, [], [], null]);
 
   const bannersData = Array.isArray(banners) ? banners : [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,19 +62,30 @@ export default async function HomePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bestSellersData = (Array.isArray(bestSellerProducts) ? bestSellerProducts : []) as any[];
 
+  // Extract editable content from home page CMS blocks
+  const blocks: Block[] = ((homePage?.craftJson as { blocks?: Block[] })?.blocks) ?? [];
+  const ourStoryBlock = blocks.find((b) => b.type === "ImageText");
+  const whyBFBlock = blocks.find((b) => b.type === "FeatureIcons");
+  const faqBlock = blocks.find((b) => b.type === "FAQSection");
+  const ctaBanners = blocks.filter((b) => b.type === "CTABanner");
+
   return (
     <>
       <HeroBannerSlider banners={bannersData} />
-      <OurStory />
+      <OurStory data={ourStoryBlock?.props as ImageTextProps | undefined} />
       <OurCollection products={featuredData} />
-      <WhyBeeFlower />
+      <WhyBeeFlower items={(whyBFBlock?.props as FeatureIconsProps | undefined)?.items} />
       {highlightProduct && !Array.isArray(highlightProduct) && (
-        <ProductHighlight product={highlightProduct as { name: string; slug: string; shortDesc: string | null; images: string[] }} />
+        <ProductHighlight
+          product={
+            highlightProduct as { name: string; slug: string; shortDesc: string | null; images: string[] }
+          }
+        />
       )}
       <BestSellers products={bestSellersData} />
-      <BusinessOpportunityCTA />
-      <FAQSection />
-      <BottomCTA />
+      <BusinessOpportunityCTA data={ctaBanners[0]?.props as CTABannerProps | undefined} />
+      <FAQSection items={(faqBlock?.props as FAQSectionProps | undefined)?.items} />
+      <BottomCTA data={ctaBanners[1]?.props as CTABannerProps | undefined} />
     </>
   );
 }

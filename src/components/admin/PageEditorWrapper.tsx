@@ -14,6 +14,8 @@ const CraftEditor = dynamic(() => import("./CraftEditor"), {
   ),
 });
 
+const SYSTEM_SLUGS = ["home", "reseller", "contact"];
+
 interface Props {
   pageId: string;
   initialTitle: string;
@@ -35,6 +37,7 @@ export function PageEditorWrapper({
   initialPublished,
   initialMeta,
 }: Props) {
+  const isSystem = SYSTEM_SLUGS.includes(initialSlug);
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [slug, setSlug] = useState(initialSlug);
@@ -72,10 +75,16 @@ export function PageEditorWrapper({
           ← Halaman
         </button>
         <div className="flex-1 flex items-center gap-3">
+          {isSystem && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 flex-shrink-0">
+              Halaman Sistem
+            </span>
+          )}
           <input
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none flex-1 min-w-0"
+            onChange={(e) => !isSystem && setTitle(e.target.value)}
+            readOnly={isSystem}
+            className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none flex-1 min-w-0 read-only:cursor-default"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -113,8 +122,15 @@ export function PageEditorWrapper({
           <div className="max-w-2xl grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Slug URL</label>
-              <input value={slug} onChange={(e) => setSlug(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm font-mono focus:outline-none focus:border-brand-gold" />
+              <input
+                value={slug}
+                onChange={(e) => !isSystem && setSlug(e.target.value)}
+                readOnly={isSystem}
+                className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm font-mono focus:outline-none focus:border-brand-gold read-only:bg-gray-50 read-only:text-gray-400"
+              />
+              {isSystem && (
+                <p className="text-xs text-amber-600 mt-1">Slug halaman sistem tidak dapat diubah.</p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Meta Title</label>
