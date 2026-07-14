@@ -28,20 +28,20 @@ export default async function ResellerPage() {
   const benefitsBlock = blocks.find((b) => b.type === "FeatureIcons");
   const faqBlock = blocks.find((b) => b.type === "FAQSection");
 
-  const hero = (heroBlock?.props as HeroProps | undefined) ?? {};
-  const benefits = (benefitsBlock?.props as FeatureIconsProps | undefined) ?? {};
+  const heroProps = heroBlock?.props as HeroProps | undefined;
+  const benefitsProps = benefitsBlock?.props as FeatureIconsProps | undefined;
   const faqItems = (faqBlock?.props as FAQSectionProps | undefined)?.items;
 
-  const heroHeadline = hero.headline || "Bangun Bisnis Bersama Bee & Flower";
+  const heroHeadline = heroProps?.headline || "Bangun Bisnis Bersama Bee & Flower";
   const heroSubheadline =
-    hero.subheadline ||
+    heroProps?.subheadline ||
     "Produk yang telah dipercaya pelanggan, didukung sistem pemesanan yang mudah dan materi promosi yang siap digunakan.";
-  const heroButton = hero.buttonText || "GABUNG MENJADI RESELLER";
+  const heroButton = heroProps?.buttonText || "GABUNG MENJADI RESELLER";
   const heroLink =
-    hero.buttonLink ||
+    heroProps?.buttonLink ||
     "https://wa.me/6285175273181?text=Halo,%20saya%20ingin%20menjadi%20reseller%20Bee%20%26%20Flower";
 
-  const benefitItems = benefits.items ?? [
+  const benefitItems = benefitsProps?.items ?? [
     { title: "Margin Kompetitif", description: "Dapatkan margin keuntungan yang menarik untuk setiap produk yang Anda jual." },
     { title: "Produk Original", description: "Semua produk terjamin original langsung dari distributor resmi." },
     { title: "Dukungan Katalog Produk", description: "Kami menyediakan katalog produk lengkap untuk memudahkan penjualan Anda." },
@@ -54,9 +54,9 @@ export default async function ResellerPage() {
     <>
       {/* Hero */}
       <section className="relative min-h-[420px] lg:min-h-[500px] overflow-hidden bg-brand-brown flex items-center">
-        {isExternalUrl(hero.bgImage) && (
+        {isExternalUrl(heroProps?.bgImage) && (
           <div className="absolute inset-0 opacity-40">
-            <Image src={hero.bgImage!} alt={heroHeadline} fill className="object-cover" />
+            <Image src={heroProps!.bgImage!} alt={heroHeadline} fill className="object-cover" />
           </div>
         )}
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -87,7 +87,7 @@ export default async function ResellerPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-bold text-xl lg:text-2xl text-brand-brown tracking-widest uppercase mb-3">
-              {benefits.headline || "Mengapa Menjadi Reseller"}
+              {benefitsProps?.headline || "Mengapa Menjadi Reseller"}
             </h2>
             <p className="text-brand-brown/60 max-w-2xl mx-auto text-sm leading-relaxed">
               Bee & Flower merupakan produk dengan karakter aroma yang telah dikenal luas

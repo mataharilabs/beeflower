@@ -20,11 +20,11 @@ export default async function ContactPage() {
 
   const blocks: Block[] = ((contactPage?.craftJson as { blocks?: Block[] })?.blocks) ?? [];
   const heroBlock = blocks.find((b) => b.type === "Hero");
-  const hero = (heroBlock?.props as HeroProps | undefined) ?? {};
+  const heroProps = heroBlock?.props as HeroProps | undefined;
 
-  const heroHeadline = hero.headline || "Hubungi Kami";
+  const heroHeadline = heroProps?.headline || "Hubungi Kami";
   const heroSubheadline =
-    hero.subheadline || "Kami siap membantu kebutuhan informasi produk maupun kerja sama reseller.";
+    heroProps?.subheadline || "Kami siap membantu kebutuhan informasi produk maupun kerja sama reseller.";
 
   return (
     <>
