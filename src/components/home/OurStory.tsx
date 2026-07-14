@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 export function OurStory() {
@@ -31,13 +30,11 @@ export function OurStory() {
 
           {/* Image */}
           <div className="relative">
-            <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-brand-cream">
-              <Image
-                src="/images/our-story.jpg"
-                alt="Bee & Flower - Our Story"
-                fill
-                className="object-cover"
-              />
+            <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-brand-cream flex items-center justify-center">
+              <div className="text-center select-none">
+                <p className="text-[80px] font-bold text-brand-gold/20 leading-none">.B&F</p>
+                <p className="text-brand-beige text-sm mt-2 tracking-widest uppercase">Bee &amp; Flower Brand</p>
+              </div>
             </div>
           </div>
         </div>

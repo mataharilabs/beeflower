@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { isExternalUrl } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -39,12 +40,18 @@ export function OurCollection({ products }: OurCollectionProps) {
               className="group block"
             >
               <div className="relative aspect-square rounded-xl overflow-hidden bg-brand-cream mb-3">
-                <Image
-                  src={product.images[0] || "/images/product-placeholder.jpg"}
-                  alt={product.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+                {isExternalUrl(product.images[0]) ? (
+                  <Image
+                    src={product.images[0]}
+                    alt={product.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-brand-cream to-brand-beige/30">
+                    <span className="text-3xl font-bold text-brand-gold/20 select-none">B&F</span>
+                  </div>
+                )}
               </div>
               <h3 className="font-bold text-brand-brown text-base mb-1">
                 {product.name}

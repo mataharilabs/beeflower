@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCartStore } from "@/store/cartStore";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, isExternalUrl } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -19,7 +19,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
   const price = Number(product.price.toString());
   const comparePrice = product.comparePrice ? Number(product.comparePrice.toString()) : null;
-  const image = product.images[0] || "/images/product-placeholder.jpg";
+  const image = product.images[0];
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -39,12 +39,18 @@ export function ProductCard({ product }: { product: Product }) {
       className="group block bg-white border border-brand-beige/30 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
     >
       <div className="relative aspect-square bg-brand-cream overflow-hidden">
-        <Image
-          src={image}
-          alt={product.name}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-        />
+        {isExternalUrl(image) ? (
+          <Image
+            src={image}
+            alt={product.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-brand-cream to-brand-beige/30">
+            <span className="text-3xl font-bold text-brand-gold/20 select-none">B&F</span>
+          </div>
+        )}
       </div>
       <div className="p-3 lg:p-4">
         <h3 className="font-semibold text-sm text-brand-brown line-clamp-2 mb-2 leading-snug">

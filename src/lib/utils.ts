@@ -35,3 +35,8 @@ export function generateOrderNumber(): string {
 export function truncate(str: string, length: number): string {
   return str.length > length ? str.slice(0, length) + "..." : str;
 }
+
+export function isExternalUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:");
+}

@@ -5,7 +5,7 @@ import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { cn, isExternalUrl } from "@/lib/utils";
 
 interface Banner {
   id: string;
@@ -40,13 +40,17 @@ export function HeroBannerSlider({ banners }: HeroBannerSliderProps) {
             <div key={banner.id} className="relative flex-none w-full min-h-[520px] lg:min-h-[620px]">
               {/* Background image */}
               <div className="absolute inset-0">
-                <Image
-                  src={banner.image || "/images/hero-placeholder.jpg"}
-                  alt={banner.headline || "Bee & Flower Brand"}
-                  fill
-                  className="object-cover"
-                  priority
-                />
+                {isExternalUrl(banner.image) ? (
+                  <Image
+                    src={banner.image}
+                    alt={banner.headline || "Bee & Flower Brand"}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-brand-cream via-brand-beige/40 to-brand-cream" />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/50 to-transparent" />
               </div>
 

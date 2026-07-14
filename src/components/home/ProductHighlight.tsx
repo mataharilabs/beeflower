@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { isExternalUrl } from "@/lib/utils";
 
 interface Product {
   name: string;
@@ -14,15 +15,17 @@ export function ProductHighlight({ product }: { product: Product | null }) {
   return (
     <section className="relative py-20 lg:py-28 bg-brand-brown overflow-hidden">
       {/* Background product image */}
-      <div className="absolute right-0 top-0 h-full w-1/2 opacity-30 lg:opacity-50">
-        <Image
-          src={product.images[0] || "/images/product-placeholder.jpg"}
-          alt={product.name}
-          fill
-          className="object-cover object-left"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-brown via-brand-brown/60 to-transparent" />
-      </div>
+      {isExternalUrl(product.images[0]) && (
+        <div className="absolute right-0 top-0 h-full w-1/2 opacity-30 lg:opacity-50">
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            fill
+            className="object-cover object-left"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-brown via-brand-brown/60 to-transparent" />
+        </div>
+      )}
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-lg">
