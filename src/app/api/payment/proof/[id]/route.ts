@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { paymentVerifiedEmail } from "@/lib/emails";
+import { Resend } from "resend";
 
 export async function PATCH(
   req: NextRequest,
@@ -26,11 +28,42 @@ export async function PATCH(
     data: { status, reviewNotes: reviewNotes || null, reviewedAt: new Date() },
   });
 
+  let customerEmail: string | null = null;
+  let customerName = "";
+  let orderNumber = "";
+
   if (action === "verify") {
-    await prisma.order.update({
+    const updated = await prisma.order.update({
       where: { id: orderId },
       data: { status: "PAID", paidAt: new Date() },
     });
+    customerEmail = updated.customerEmail;
+    customerName = updated.customerName;
+    orderNumber = updated.orderNumber;
+  } else {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (order) {
+      customerEmail = order.customerEmail;
+      customerName = order.customerName;
+      orderNumber = order.orderNumber;
+    }
+  }
+
+  // Notify customer via email
+  if (process.env.RESEND_API_KEY && customerEmail) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const email = paymentVerifiedEmail({
+      orderNumber,
+      customerName,
+      action: action as "verify" | "reject",
+      reviewNotes,
+    });
+    await resend.emails.send({
+      from: email.from,
+      to: customerEmail,
+      subject: email.subject,
+      html: email.html,
+    }).catch(console.error);
   }
 
   return NextResponse.json({ success: true });

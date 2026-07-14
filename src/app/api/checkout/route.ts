@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateOrderNumber } from "@/lib/utils";
+import { orderConfirmationEmail } from "@/lib/emails";
+import { Resend } from "resend";
 import { z } from "zod";
 
 const CheckoutSchema = z.object({
@@ -96,6 +98,24 @@ export async function POST(req: NextRequest) {
 
     return created;
   });
+
+  // Send order confirmation email to customer
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const email = orderConfirmationEmail({
+      orderNumber: order.orderNumber,
+      customerName: data.customerName,
+      items: orderItems,
+      total,
+      paymentMethod: data.paymentMethod,
+    });
+    await resend.emails.send({
+      from: email.from,
+      to: data.customerEmail,
+      subject: email.subject,
+      html: email.html,
+    }).catch(console.error);
+  }
 
   // If Xendit, create invoice
   if (data.paymentMethod === "XENDIT") {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { paymentReceivedEmail } from "@/lib/emails";
+import { Resend } from "resend";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -21,6 +23,22 @@ export async function POST(req: NextRequest) {
     update: { imageUrl, bankAccountId: bankAccountId || null, notes: notes || null, status: "PENDING" },
     create: { orderId, imageUrl, bankAccountId: bankAccountId || null, notes: notes || null },
   });
+
+  // Notify admin via email
+  if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const email = paymentReceivedEmail({
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      orderId: order.id,
+    });
+    await resend.emails.send({
+      from: email.from,
+      to: process.env.ADMIN_EMAIL,
+      subject: email.subject,
+      html: email.html,
+    }).catch(console.error);
+  }
 
   return NextResponse.json(proof, { status: 201 });
 }
