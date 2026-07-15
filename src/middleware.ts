@@ -56,6 +56,7 @@ export const config = {
     "/api/contact-messages/:path*",
     "/api/payment/settings/:path*",
     "/api/payment/bank-accounts/:path*",
+    "/member",
     "/member/:path*",
     "/login",
     "/register",

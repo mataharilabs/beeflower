@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
+import { ProofUploadSection } from "@/components/shop/ProofUploadSection";
 
 const STATUS_INFO: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   PENDING: { label: "Menunggu Pembayaran", icon: <Clock className="w-12 h-12" />, color: "text-yellow-500" },
@@ -32,6 +33,16 @@ export default async function OrderPage({
 
   const statusInfo = STATUS_INFO[order.status] ?? STATUS_INFO.PENDING;
 
+  const isManualTransfer = order.paymentMethod === "MANUAL_TRANSFER";
+  const showProofUpload = isManualTransfer && order.status === "PENDING";
+
+  const [bankAccounts, existingProof] = showProofUpload
+    ? await Promise.all([
+        prisma.bankAccount.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
+        prisma.paymentProof.findUnique({ where: { orderId: id } }),
+      ])
+    : [[], null];
+
   return (
     <div className="min-h-screen bg-brand-cream py-12 px-4">
       <div className="max-w-lg mx-auto">
@@ -49,6 +60,23 @@ export default async function OrderPage({
             </p>
           )}
         </div>
+
+        {isManualTransfer && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
+            <h2 className="font-semibold text-gray-900 mb-4">
+              {order.status === "PENDING" ? "Upload Bukti Transfer" : "Pembayaran Transfer Bank"}
+            </h2>
+            {order.status === "PENDING" ? (
+              <ProofUploadSection
+                orderId={id}
+                bankAccounts={bankAccounts as { id: string; bankName: string; accountHolder: string; accountNumber: string; logoUrl: string | null }[]}
+                hasExistingProof={!!existingProof}
+              />
+            ) : (
+              <p className="text-sm text-gray-500">Pembayaran sudah dikonfirmasi.</p>
+            )}
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-4">
           <div className="px-6 py-4 border-b border-gray-100">
@@ -87,8 +115,17 @@ export default async function OrderPage({
           </div>
         </div>
 
-        <div className="text-center">
-          <Link href="/toko" className="inline-block px-6 py-2.5 bg-brand-gold text-white rounded-xl font-semibold hover:bg-brand-brown transition-colors">
+        <div className="flex gap-3">
+          <Link
+            href="/member/orders"
+            className="flex-1 text-center px-4 py-2.5 border border-brand-beige text-brand-brown rounded-xl text-sm font-semibold hover:bg-brand-cream transition-colors"
+          >
+            Pesanan Saya
+          </Link>
+          <Link
+            href="/toko"
+            className="flex-1 text-center px-4 py-2.5 bg-brand-gold text-white rounded-xl text-sm font-semibold hover:bg-brand-brown transition-colors"
+          >
             Lanjut Belanja
           </Link>
         </div>

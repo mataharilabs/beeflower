@@ -5,38 +5,25 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
-import { Loader2, CheckCircle, Upload } from "lucide-react";
-import { ImageUploader } from "@/components/admin/ImageUploader";
-
-interface BankAccount {
-  id: string;
-  bankName: string;
-  accountHolder: string;
-  accountNumber: string;
-  logoUrl: string | null;
-}
+import { Loader2 } from "lucide-react";
 
 interface PaymentConfig {
   xenditEnabled: boolean;
   manualTransferEnabled: boolean;
 }
 
-type Step = "form" | "payment" | "proof" | "success";
+type Step = "form" | "payment";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, totalPrice, clearCart } = useCartStore();
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
-  const [orderId, setOrderId] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({ xenditEnabled: false, manualTransferEnabled: true });
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [selectedBank, setSelectedBank] = useState("");
-  const [proofUrl, setProofUrl] = useState("");
-  const [submittingProof, setSubmittingProof] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [newAccountInfo, setNewAccountInfo] = useState<{ email: string; password: string } | null>(null);
 
   const [form, setForm] = useState({
     customerName: "", customerEmail: "", customerPhone: "",
@@ -45,15 +32,13 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/payment/settings").then((r) => r.json()),
-      fetch("/api/payment/bank-accounts").then((r) => r.json()),
-    ]).then(([config, banks]) => {
-      setPaymentConfig(config);
-      setBankAccounts(banks);
-      if (config.xenditEnabled) setForm((f) => ({ ...f, paymentMethod: "XENDIT" }));
-      else if (config.manualTransferEnabled) setForm((f) => ({ ...f, paymentMethod: "MANUAL_TRANSFER" }));
-    });
+    fetch("/api/payment/settings")
+      .then((r) => r.json())
+      .then((config) => {
+        setPaymentConfig(config);
+        if (config.xenditEnabled) setForm((f) => ({ ...f, paymentMethod: "XENDIT" }));
+        else if (config.manualTransferEnabled) setForm((f) => ({ ...f, paymentMethod: "MANUAL_TRANSFER" }));
+      });
   }, []);
 
   useEffect(() => {
@@ -82,8 +67,11 @@ export default function CheckoutPage() {
         return;
       }
 
-      setIsNewUser(data.isNewUser ?? false);
-      if (data.isNewUser && data.autoLoginEmail && data.autoLoginPassword) {
+      const newUser = data.isNewUser ?? false;
+      setIsNewUser(newUser);
+
+      if (newUser && data.autoLoginEmail && data.autoLoginPassword) {
+        setNewAccountInfo({ email: data.autoLoginEmail, password: data.autoLoginPassword });
         await signIn("credentials", {
           email: data.autoLoginEmail,
           password: data.autoLoginPassword,
@@ -91,142 +79,66 @@ export default function CheckoutPage() {
         }).catch(() => {});
       }
 
-      setOrderId(data.orderId);
-      setOrderNumber(data.orderNumber);
       clearCart();
+      setOrderNumber(data.orderNumber);
 
       if (form.paymentMethod === "XENDIT" && data.paymentUrl) {
         setPaymentUrl(data.paymentUrl);
         setStep("payment");
-      } else if (form.paymentMethod === "MANUAL_TRANSFER") {
-        setStep("proof");
       } else {
-        setStep("success");
+        // MANUAL_TRANSFER: pass new account info via sessionStorage then redirect
+        if (newUser && data.autoLoginEmail && data.autoLoginPassword) {
+          try {
+            sessionStorage.setItem(
+              "newAccount",
+              JSON.stringify({ email: data.autoLoginEmail, password: data.autoLoginPassword })
+            );
+          } catch {}
+        }
+        router.push(
+          `/order-success?orderId=${data.orderId}&orderNumber=${encodeURIComponent(data.orderNumber)}&method=transfer`
+        );
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const submitProof = async () => {
-    if (!proofUrl) return;
-    setSubmittingProof(true);
-    try {
-      await fetch("/api/payment/proof", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, imageUrl: proofUrl, bankAccountId: selectedBank || null }),
-      });
-      setStep("success");
-    } finally {
-      setSubmittingProof(false);
-    }
-  };
-
   if (step === "payment") {
     return (
       <div className="min-h-screen bg-brand-cream flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Selesaikan Pembayaran</h2>
-          <p className="text-sm text-gray-500 mb-6">No. Pesanan: <strong>{orderNumber}</strong></p>
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-sm">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Pesanan Berhasil Dibuat</h2>
+            <p className="text-sm text-gray-500">
+              No. Pesanan: <strong className="font-mono">{orderNumber}</strong>
+            </p>
+          </div>
+
+          {isNewUser && newAccountInfo && (
+            <div className="mb-6 p-4 bg-brand-cream rounded-xl">
+              <p className="text-sm font-semibold text-brand-brown mb-2">Akun Anda Berhasil Dibuat</p>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between gap-2">
+                  <span className="text-gray-500">Email</span>
+                  <span className="text-brand-brown font-medium break-all">{newAccountInfo.email}</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-gray-500">Password</span>
+                  <span className="font-mono font-bold text-brand-brown tracking-widest">{newAccountInfo.password}</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">Informasi juga dikirim ke email Anda.</p>
+            </div>
+          )}
+
           <a
             href={paymentUrl}
-            className="inline-block w-full py-3 bg-brand-gold text-white rounded-xl font-semibold hover:bg-brand-brown transition-colors"
+            className="block w-full text-center py-3 bg-brand-gold text-white rounded-xl font-semibold hover:bg-brand-brown transition-colors mb-3"
           >
             Bayar Sekarang via Xendit
           </a>
-          <p className="text-xs text-gray-400 mt-4">Anda akan diarahkan ke halaman pembayaran Xendit</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === "proof") {
-    const selectedBankData = bankAccounts.find((b) => b.id === selectedBank);
-    return (
-      <div className="min-h-screen bg-brand-cream flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Upload Bukti Transfer</h2>
-          <p className="text-sm text-gray-500 mb-6">No. Pesanan: <strong>{orderNumber}</strong></p>
-
-          {bankAccounts.length > 0 && (
-            <div className="mb-6">
-              <p className="text-sm font-medium text-gray-700 mb-3">Pilih rekening tujuan transfer:</p>
-              <div className="space-y-2">
-                {bankAccounts.map((bank) => (
-                  <label key={bank.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedBank === bank.id ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
-                    <input type="radio" name="bank" value={bank.id} checked={selectedBank === bank.id}
-                      onChange={() => setSelectedBank(bank.id)} className="sr-only" />
-                    <div className="w-2 h-2 rounded-full border-2 border-brand-gold flex-shrink-0 flex items-center justify-center">
-                      {selectedBank === bank.id && <div className="w-1.5 h-1.5 bg-brand-gold rounded-full" />}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{bank.bankName}</p>
-                      <p className="text-xs text-gray-500">{bank.accountHolder}</p>
-                      <p className="text-sm font-mono text-gray-700">{bank.accountNumber}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="mb-6">
-            <p className="text-sm font-medium text-gray-700 mb-2">Upload foto bukti transfer:</p>
-            <ImageUploader value={proofUrl} onChange={setProofUrl} folder="beeflower/proofs" />
-          </div>
-
-          <button
-            onClick={submitProof}
-            disabled={!proofUrl || submittingProof}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-brand-gold text-white rounded-xl font-semibold hover:bg-brand-brown transition-colors disabled:opacity-50"
-          >
-            {submittingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            Kirim Bukti Transfer
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === "success") {
-    return (
-      <div className="min-h-screen bg-brand-cream flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-sm">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Pesanan Berhasil!</h2>
-          <p className="text-sm text-gray-500 mb-1">No. Pesanan: <strong>{orderNumber}</strong></p>
-          {isNewUser ? (
-            <div className="mt-4 mb-6 p-4 bg-brand-cream rounded-xl text-left">
-              <p className="text-sm font-semibold text-brand-brown mb-1">Akun Anda Telah Dibuat!</p>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Kami mengirimkan email berisi informasi login ke <strong>{form.customerEmail}</strong>.
-                Gunakan untuk melihat riwayat pesanan Anda.
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 mb-6">
-              {form.paymentMethod === "MANUAL_TRANSFER"
-                ? "Bukti transfer Anda sedang kami verifikasi. Kami akan menghubungi Anda segera."
-                : "Pesanan Anda sedang diproses."}
-            </p>
-          )}
-          <div className="flex flex-col gap-2">
-            {isNewUser && (
-              <button
-                onClick={() => router.push("/member/orders")}
-                className="w-full px-6 py-2.5 bg-brand-gold text-white rounded-xl font-semibold hover:bg-brand-brown transition-colors"
-              >
-                Lihat Pesanan Saya
-              </button>
-            )}
-            <button
-              onClick={() => router.push("/toko")}
-              className="w-full px-6 py-2.5 border border-brand-beige text-brand-brown rounded-xl font-semibold hover:bg-brand-cream transition-colors"
-            >
-              Kembali ke Toko
-            </button>
-          </div>
+          <p className="text-xs text-gray-400 text-center">Anda akan diarahkan ke halaman pembayaran Xendit</p>
         </div>
       </div>
     );

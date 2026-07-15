@@ -3,9 +3,10 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/shop/CartDrawer";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [settings, headerNav, ctaItems] = await Promise.all([
+  const [settings, headerNav, ctaItems, session] = await Promise.all([
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }).catch(() => null),
     prisma.navItem
       .findMany({ where: { location: "HEADER_NAV", isActive: true }, orderBy: { order: "asc" } })
@@ -13,6 +14,7 @@ export default async function PublicLayout({ children }: { children: React.React
     prisma.navItem
       .findMany({ where: { location: "HEADER_CTA", isActive: true }, orderBy: { order: "asc" }, take: 1 })
       .catch(() => []),
+    auth().catch(() => null),
   ]);
 
   if (settings?.maintenanceMode) {
@@ -26,6 +28,7 @@ export default async function PublicLayout({ children }: { children: React.React
         siteName={settings?.siteName}
         navLinks={headerNav.length > 0 ? headerNav : undefined}
         ctaButton={ctaItems[0] ?? null}
+        user={session?.user ?? null}
       />
       <main className="flex-1">{children}</main>
       <Footer />

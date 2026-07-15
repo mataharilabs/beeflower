@@ -34,7 +34,17 @@ export function LoginForm() {
     if (result?.error) {
       setError("Email atau password salah");
     } else {
-      router.push(callbackUrl);
+      try {
+        const res = await fetch("/api/auth/session");
+        const session = await res.json();
+        if (session?.user?.role === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push(callbackUrl);
+        }
+      } catch {
+        router.push(callbackUrl);
+      }
       router.refresh();
     }
   };
