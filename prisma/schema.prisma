@@ -363,6 +363,27 @@ model ResellerPackage {
 
 // ─── NAVIGATION MENUS ─────────────────────────────────────
 
+model ResellerStore {
+  id        String   @id @default(cuid())
+  name      String
+  logoUrl   String?
+  address   String?  @db.Text
+  phone     String?
+  whatsapp  String?
+  instagram String?
+  tiktok    String?
+  shopee    String?
+  tokopedia String?
+  province  String
+  city      String
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reseller_stores")
+}
+
 enum NavLocation {
   HEADER_NAV
   HEADER_CTA

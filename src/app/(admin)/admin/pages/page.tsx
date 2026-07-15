@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Globe } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { DeletePageButton } from "@/components/admin/DeletePageButton";
 
 const SYSTEM_SLUGS = ["home", "reseller", "contact"] as const;
 
@@ -231,6 +232,33 @@ export default async function PagesAdminPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
+            {/* Hardcoded Toko Reseller system entry */}
+            <tr className="bg-amber-50/30 hover:bg-amber-50/50 transition-colors">
+              <td className="px-4 py-3 font-medium text-gray-900">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                    <Globe className="w-2.5 h-2.5" /> Sistem
+                  </span>
+                  Halaman Toko Reseller
+                </div>
+              </td>
+              <td className="px-4 py-3 text-gray-500 font-mono text-xs">/toko-reseller</td>
+              <td className="px-4 py-3">
+                <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                  Published
+                </span>
+              </td>
+              <td className="px-4 py-3 text-gray-400 text-xs">—</td>
+              <td className="px-4 py-3">
+                <Link
+                  href="/admin/reseller-stores"
+                  className="text-brand-gold hover:text-brand-brown text-xs font-medium"
+                >
+                  Kelola Toko
+                </Link>
+              </td>
+            </tr>
+
             {orderedPages.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
@@ -269,12 +297,17 @@ export default async function PagesAdminPage() {
                     {new Date(page.updatedAt).toLocaleDateString("id-ID")}
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/pages/${page.id}`}
-                      className="text-brand-gold hover:text-brand-brown text-xs font-medium"
-                    >
-                      Edit
-                    </Link>
+                    <div className="flex items-center">
+                      <Link
+                        href={`/admin/pages/${page.id}`}
+                        className="text-brand-gold hover:text-brand-brown text-xs font-medium"
+                      >
+                        Edit
+                      </Link>
+                      {!isSystem && (
+                        <DeletePageButton id={page.id} title={page.title} />
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

@@ -17,7 +17,8 @@ export default auth((req) => {
     nextUrl.pathname.startsWith("/api/users") ||
     nextUrl.pathname.startsWith("/api/settings") ||
     nextUrl.pathname.startsWith("/api/contact-messages") ||
-    nextUrl.pathname.startsWith("/api/payment/bank-accounts");
+    nextUrl.pathname.startsWith("/api/payment/bank-accounts") ||
+    (nextUrl.pathname.startsWith("/api/reseller-stores") && req.method !== "GET");
 
   if (isMemberRoute && !isLoggedIn) {
     return NextResponse.redirect(new URL(`/login?callbackUrl=${nextUrl.pathname}`, nextUrl));
@@ -54,6 +55,8 @@ export const config = {
     "/api/settings/:path*",
     "/api/contact-messages/:path*",
     "/api/payment/bank-accounts/:path*",
+    "/api/reseller-stores",
+    "/api/reseller-stores/:path*",
     "/member",
     "/member/:path*",
     "/login",

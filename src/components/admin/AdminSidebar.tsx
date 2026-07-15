@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronRight,
   LayoutList,
+  Store,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/admin/banners", icon: Image, label: "Banner" },
   { href: "/admin/menus", icon: LayoutList, label: "Menus" },
   { href: "/admin/pages", icon: FileText, label: "Pages" },
+  { href: "/admin/reseller-stores", icon: Store, label: "Toko Reseller" },
   { href: "/admin/products", icon: Package, label: "Products" },
   { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
   { href: "/admin/payment-proof", icon: CreditCard, label: "Bukti Transfer" },
