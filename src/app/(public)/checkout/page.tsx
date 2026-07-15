@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
 import { Loader2, CheckCircle, Upload } from "lucide-react";
@@ -35,6 +36,7 @@ export default function CheckoutPage() {
   const [selectedBank, setSelectedBank] = useState("");
   const [proofUrl, setProofUrl] = useState("");
   const [submittingProof, setSubmittingProof] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   const [form, setForm] = useState({
     customerName: "", customerEmail: "", customerPhone: "",
@@ -78,6 +80,15 @@ export default function CheckoutPage() {
       if (!res.ok) {
         alert(data.error ?? "Gagal checkout");
         return;
+      }
+
+      setIsNewUser(data.isNewUser ?? false);
+      if (data.isNewUser && data.autoLoginEmail && data.autoLoginPassword) {
+        await signIn("credentials", {
+          email: data.autoLoginEmail,
+          password: data.autoLoginPassword,
+          redirect: false,
+        }).catch(() => {});
       }
 
       setOrderId(data.orderId);
@@ -185,15 +196,37 @@ export default function CheckoutPage() {
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">Pesanan Berhasil!</h2>
           <p className="text-sm text-gray-500 mb-1">No. Pesanan: <strong>{orderNumber}</strong></p>
-          <p className="text-sm text-gray-500 mb-6">
-            {form.paymentMethod === "MANUAL_TRANSFER"
-              ? "Bukti transfer Anda sedang kami verifikasi. Kami akan menghubungi Anda segera."
-              : "Pesanan Anda sedang diproses."}
-          </p>
-          <button onClick={() => router.push("/toko")}
-            className="inline-block px-6 py-2.5 bg-brand-gold text-white rounded-xl font-semibold hover:bg-brand-brown transition-colors">
-            Kembali ke Toko
-          </button>
+          {isNewUser ? (
+            <div className="mt-4 mb-6 p-4 bg-brand-cream rounded-xl text-left">
+              <p className="text-sm font-semibold text-brand-brown mb-1">Akun Anda Telah Dibuat!</p>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Kami mengirimkan email berisi informasi login ke <strong>{form.customerEmail}</strong>.
+                Gunakan untuk melihat riwayat pesanan Anda.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 mb-6">
+              {form.paymentMethod === "MANUAL_TRANSFER"
+                ? "Bukti transfer Anda sedang kami verifikasi. Kami akan menghubungi Anda segera."
+                : "Pesanan Anda sedang diproses."}
+            </p>
+          )}
+          <div className="flex flex-col gap-2">
+            {isNewUser && (
+              <button
+                onClick={() => router.push("/member/orders")}
+                className="w-full px-6 py-2.5 bg-brand-gold text-white rounded-xl font-semibold hover:bg-brand-brown transition-colors"
+              >
+                Lihat Pesanan Saya
+              </button>
+            )}
+            <button
+              onClick={() => router.push("/toko")}
+              className="w-full px-6 py-2.5 border border-brand-beige text-brand-brown rounded-xl font-semibold hover:bg-brand-cream transition-colors"
+            >
+              Kembali ke Toko
+            </button>
+          </div>
         </div>
       </div>
     );

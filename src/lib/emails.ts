@@ -166,3 +166,27 @@ export function paymentVerifiedEmail(data: {
     from: FROM,
   };
 }
+
+// --- Welcome Email (new user auto-created on checkout) ---
+
+export function welcomeEmail(data: {
+  name: string;
+  email: string;
+  password: string;
+}) {
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 4px;color:${BRAND_BROWN};font-size:20px">Selamat Bergabung!</h2>
+    <p style="margin:0 0 24px;color:#666;font-size:14px">Halo <strong>${data.name}</strong>, akun Anda di <strong>Bee &amp; Flower Brand</strong> telah berhasil dibuat.</p>
+    <div style="background:${BRAND_CREAM};padding:20px 24px;border-radius:8px;margin-bottom:24px">
+      <p style="margin:0 0 12px;font-weight:bold;color:${BRAND_BROWN};font-size:14px">Informasi Login Anda:</p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="padding:6px 0;color:#888;font-size:13px;width:100px">Email</td><td style="padding:6px 0;color:${BRAND_BROWN};font-size:13px;font-weight:bold">${data.email}</td></tr>
+        <tr><td style="padding:6px 0;color:#888;font-size:13px">Password</td><td style="padding:6px 0;color:${BRAND_BROWN};font-size:16px;font-weight:bold;font-family:monospace;letter-spacing:2px">${data.password}</td></tr>
+      </table>
+    </div>
+    <p style="color:#555;font-size:13px;line-height:1.7;margin:0 0 20px">Simpan password di atas dengan aman. Anda dapat login untuk melihat riwayat pesanan kapan saja.</p>
+    <a href="${APP_URL}/login" style="display:inline-block;padding:12px 28px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px;letter-spacing:1px">MASUK KE AKUN SAYA</a>
+    <p style="margin-top:28px;color:#aaa;font-size:12px">Butuh bantuan? Hubungi kami melalui halaman <a href="${APP_URL}/contact" style="color:${BRAND_GOLD}">Kontak</a>.</p>
+  `);
+  return { subject: "Selamat Bergabung di Bee & Flower Brand!", html, from: FROM };
+}

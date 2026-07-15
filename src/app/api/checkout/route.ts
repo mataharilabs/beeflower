@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateOrderNumber } from "@/lib/utils";
-import { orderConfirmationEmail } from "@/lib/emails";
+import { orderConfirmationEmail, welcomeEmail } from "@/lib/emails";
 import { Resend } from "resend";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
 const CheckoutSchema = z.object({
   customerName: z.string().min(1),
@@ -21,6 +22,11 @@ const CheckoutSchema = z.object({
     quantity: z.number().int().min(1),
   })),
 });
+
+function generatePassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -99,10 +105,55 @@ export async function POST(req: NextRequest) {
     return created;
   });
 
-  // Send order confirmation email to customer
+  // Auto-create user for guest checkouts
+  let isNewUser = false;
+  let autoLoginEmail: string | null = null;
+  let autoLoginPassword: string | null = null;
+
+  if (!session?.user) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.customerEmail },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { userId: existingUser.id },
+      });
+    } else {
+      const plainPassword = generatePassword();
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+      const newUser = await prisma.user.create({
+        data: {
+          name: data.customerName,
+          email: data.customerEmail,
+          phone: data.customerPhone,
+          address: data.address,
+          city: data.city,
+          province: data.province,
+          postalCode: data.postalCode,
+          password: hashedPassword,
+        },
+      });
+
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { userId: newUser.id },
+      });
+
+      isNewUser = true;
+      autoLoginEmail = data.customerEmail;
+      autoLoginPassword = plainPassword;
+    }
+  }
+
+  // Send emails
   if (process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const email = orderConfirmationEmail({
+
+    const confirmEmail = orderConfirmationEmail({
       orderNumber: order.orderNumber,
       customerName: data.customerName,
       items: orderItems,
@@ -110,11 +161,25 @@ export async function POST(req: NextRequest) {
       paymentMethod: data.paymentMethod,
     });
     await resend.emails.send({
-      from: email.from,
+      from: confirmEmail.from,
       to: data.customerEmail,
-      subject: email.subject,
-      html: email.html,
+      subject: confirmEmail.subject,
+      html: confirmEmail.html,
     }).catch(console.error);
+
+    if (isNewUser && autoLoginPassword) {
+      const welcome = welcomeEmail({
+        name: data.customerName,
+        email: data.customerEmail,
+        password: autoLoginPassword,
+      });
+      await resend.emails.send({
+        from: welcome.from,
+        to: data.customerEmail,
+        subject: welcome.subject,
+        html: welcome.html,
+      }).catch(console.error);
+    }
   }
 
   // If Xendit, create invoice
@@ -153,6 +218,9 @@ export async function POST(req: NextRequest) {
             orderId: order.id,
             orderNumber: order.orderNumber,
             paymentUrl: invoice.invoice_url,
+            isNewUser,
+            autoLoginEmail,
+            autoLoginPassword,
           }, { status: 201 });
         }
       }
@@ -165,5 +233,8 @@ export async function POST(req: NextRequest) {
     orderId: order.id,
     orderNumber: order.orderNumber,
     paymentUrl: null,
+    isNewUser,
+    autoLoginEmail,
+    autoLoginPassword,
   }, { status: 201 });
 }

@@ -86,6 +86,10 @@ model User {
   emailVerified DateTime?
   password      String?
   phone         String?
+  address       String?
+  city          String?
+  province      String?
+  postalCode    String?
   role          Role      @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

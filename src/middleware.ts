@@ -7,6 +7,7 @@ export default auth((req) => {
   const role = req.auth?.user?.role;
 
   const isAdminRoute = nextUrl.pathname.startsWith("/admin");
+  const isMemberRoute = nextUrl.pathname.startsWith("/member");
   const isAuthRoute =
     nextUrl.pathname.startsWith("/login") ||
     nextUrl.pathname.startsWith("/register");
@@ -18,6 +19,10 @@ export default auth((req) => {
     nextUrl.pathname.startsWith("/api/contact-messages") ||
     nextUrl.pathname.startsWith("/api/payment/settings") ||
     nextUrl.pathname.startsWith("/api/payment/bank-accounts");
+
+  if (isMemberRoute && !isLoggedIn) {
+    return NextResponse.redirect(new URL(`/login?callbackUrl=${nextUrl.pathname}`, nextUrl));
+  }
 
   if (isAdminRoute) {
     if (!isLoggedIn) {
@@ -51,6 +56,7 @@ export const config = {
     "/api/contact-messages/:path*",
     "/api/payment/settings/:path*",
     "/api/payment/bank-accounts/:path*",
+    "/member/:path*",
     "/login",
     "/register",
   ],
