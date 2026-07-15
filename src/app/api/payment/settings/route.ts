@@ -12,6 +12,8 @@ export async function GET() {
   return NextResponse.json({
     xenditEnabled: settings.xenditEnabled,
     manualTransferEnabled: settings.manualTransferEnabled,
+    qrisEnabled: settings.qrisEnabled,
+    qrisImageUrl: settings.qrisImageUrl,
   });
 }
 
@@ -26,12 +28,16 @@ export async function PUT(req: NextRequest) {
     update: {
       xenditEnabled: body.xenditEnabled,
       manualTransferEnabled: body.manualTransferEnabled,
+      qrisEnabled: body.qrisEnabled,
+      qrisImageUrl: body.qrisImageUrl ?? null,
       ...(body.xenditSecretKey ? { xenditSecretKey: body.xenditSecretKey } : {}),
     },
     create: {
       id: "singleton",
       xenditEnabled: body.xenditEnabled ?? false,
       manualTransferEnabled: body.manualTransferEnabled ?? true,
+      qrisEnabled: body.qrisEnabled ?? false,
+      qrisImageUrl: body.qrisImageUrl ?? null,
       xenditSecretKey: body.xenditSecretKey,
       updatedAt: new Date(),
     },

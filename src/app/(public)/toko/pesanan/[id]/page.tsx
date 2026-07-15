@@ -33,8 +33,9 @@ export default async function OrderPage({
 
   const statusInfo = STATUS_INFO[order.status] ?? STATUS_INFO.PENDING;
 
-  const isManualTransfer = order.paymentMethod === "MANUAL_TRANSFER";
-  const showProofUpload = isManualTransfer && order.status === "PENDING";
+  const needsProof =
+    order.paymentMethod === "MANUAL_TRANSFER" || order.paymentMethod === "QRIS";
+  const showProofUpload = needsProof && order.status === "PENDING";
 
   const [bankAccounts, existingProof] = showProofUpload
     ? await Promise.all([
@@ -61,15 +62,23 @@ export default async function OrderPage({
           )}
         </div>
 
-        {isManualTransfer && (
+        {needsProof && (
           <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
             <h2 className="font-semibold text-gray-900 mb-4">
-              {order.status === "PENDING" ? "Upload Bukti Transfer" : "Pembayaran Transfer Bank"}
+              {order.status === "PENDING"
+                ? order.paymentMethod === "QRIS"
+                  ? "Upload Bukti Pembayaran QRIS"
+                  : "Upload Bukti Transfer"
+                : "Bukti Pembayaran"}
             </h2>
             {order.status === "PENDING" ? (
               <ProofUploadSection
                 orderId={id}
-                bankAccounts={bankAccounts as { id: string; bankName: string; accountHolder: string; accountNumber: string; logoUrl: string | null }[]}
+                bankAccounts={
+                  order.paymentMethod === "QRIS"
+                    ? []
+                    : (bankAccounts as { id: string; bankName: string; accountHolder: string; accountNumber: string; logoUrl: string | null }[])
+                }
                 hasExistingProof={!!existingProof}
               />
             ) : (

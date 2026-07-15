@@ -10,6 +10,8 @@ import { Loader2 } from "lucide-react";
 interface PaymentConfig {
   xenditEnabled: boolean;
   manualTransferEnabled: boolean;
+  qrisEnabled: boolean;
+  qrisImageUrl: string | null;
 }
 
 interface LoggedInUser {
@@ -31,7 +33,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
-  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({ xenditEnabled: false, manualTransferEnabled: true });
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({ xenditEnabled: false, manualTransferEnabled: true, qrisEnabled: false, qrisImageUrl: null });
   const [isNewUser, setIsNewUser] = useState(false);
   const [newAccountInfo, setNewAccountInfo] = useState<{ email: string; password: string } | null>(null);
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
@@ -40,7 +42,7 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({
     customerName: "", customerEmail: "", customerPhone: "",
     address: "", city: "", province: "", postalCode: "",
-    notes: "", paymentMethod: "" as "XENDIT" | "MANUAL_TRANSFER" | "",
+    notes: "", paymentMethod: "" as "XENDIT" | "MANUAL_TRANSFER" | "QRIS" | "",
   });
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function CheckoutPage() {
       setPaymentConfig(config);
       if (config.xenditEnabled) setForm((f) => ({ ...f, paymentMethod: "XENDIT" }));
       else if (config.manualTransferEnabled) setForm((f) => ({ ...f, paymentMethod: "MANUAL_TRANSFER" }));
+      else if (config.qrisEnabled) setForm((f) => ({ ...f, paymentMethod: "QRIS" }));
 
       if (profile?.email) {
         setLoggedInUser(profile);
@@ -114,7 +117,6 @@ export default function CheckoutPage() {
         setPaymentUrl(data.paymentUrl);
         setStep("payment");
       } else {
-        // MANUAL_TRANSFER: pass new account info via sessionStorage then redirect
         if (newUser && data.autoLoginEmail && data.autoLoginPassword) {
           try {
             sessionStorage.setItem(
@@ -123,8 +125,9 @@ export default function CheckoutPage() {
             );
           } catch {}
         }
+        const method = form.paymentMethod === "QRIS" ? "qris" : "transfer";
         router.push(
-          `/order-success?orderId=${data.orderId}&orderNumber=${encodeURIComponent(data.orderNumber)}&method=transfer`
+          `/order-success?orderId=${data.orderId}&orderNumber=${encodeURIComponent(data.orderNumber)}&method=${method}`
         );
       }
     } finally {
@@ -243,7 +246,7 @@ export default function CheckoutPage() {
             {/* Payment Method */}
             <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
               <h2 className="font-semibold text-gray-900">Metode Pembayaran</h2>
-              {!paymentConfig.xenditEnabled && !paymentConfig.manualTransferEnabled && (
+              {!paymentConfig.xenditEnabled && !paymentConfig.manualTransferEnabled && !paymentConfig.qrisEnabled && (
                 <p className="text-sm text-red-500">Tidak ada metode pembayaran aktif. Hubungi admin.</p>
               )}
               {paymentConfig.xenditEnabled && (
@@ -270,6 +273,22 @@ export default function CheckoutPage() {
                     <p className="text-sm font-semibold text-gray-900">Transfer Bank Manual</p>
                     <p className="text-xs text-gray-400">Transfer ke rekening kami dan upload bukti</p>
                   </div>
+                </label>
+              )}
+              {paymentConfig.qrisEnabled && (
+                <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.paymentMethod === "QRIS" ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
+                  <input type="radio" name="payment" value="QRIS" checked={form.paymentMethod === "QRIS"}
+                    onChange={() => setForm({ ...form, paymentMethod: "QRIS" })} className="sr-only" />
+                  <div className={`w-4 h-4 rounded-full border-2 ${form.paymentMethod === "QRIS" ? "border-brand-gold" : "border-gray-300"} flex items-center justify-center`}>
+                    {form.paymentMethod === "QRIS" && <div className="w-2 h-2 bg-brand-gold rounded-full" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900">QRIS</p>
+                    <p className="text-xs text-gray-400">Scan QR code dengan e-wallet atau mobile banking</p>
+                  </div>
+                  {paymentConfig.qrisImageUrl && (
+                    <img src={paymentConfig.qrisImageUrl} alt="QRIS" className="w-12 h-12 object-contain rounded" />
+                  )}
                 </label>
               )}
             </div>

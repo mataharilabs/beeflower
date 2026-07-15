@@ -49,7 +49,7 @@ export function ProofUploadSection({ orderId, bankAccounts, hasExistingProof }: 
       <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-100 rounded-xl">
         <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
         <p className="text-sm text-green-700">
-          Bukti transfer sudah diterima. Kami sedang memverifikasi pembayaran Anda dan akan menghubungi Anda segera.
+          Bukti pembayaran sudah diterima. Kami sedang memverifikasi dan akan segera memproses pesanan Anda.
         </p>
       </div>
     );
@@ -91,7 +91,9 @@ export function ProofUploadSection({ orderId, bankAccounts, hasExistingProof }: 
       )}
 
       <div>
-        <p className="text-sm font-medium text-gray-700 mb-2">Upload foto bukti transfer:</p>
+        <p className="text-sm font-medium text-gray-700 mb-2">
+          {bankAccounts.length > 0 ? "Upload foto bukti transfer:" : "Upload foto bukti pembayaran:"}
+        </p>
         <ImageUploader value={proofUrl} onChange={setProofUrl} folder="beeflower/proofs" />
       </div>
 
@@ -101,7 +103,7 @@ export function ProofUploadSection({ orderId, bankAccounts, hasExistingProof }: 
         className="w-full flex items-center justify-center gap-2 py-3 bg-brand-gold text-white rounded-xl font-semibold hover:bg-brand-brown transition-colors disabled:opacity-50"
       >
         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-        Kirim Bukti Transfer
+        {bankAccounts.length > 0 ? "Kirim Bukti Transfer" : "Kirim Bukti Pembayaran"}
       </button>
     </div>
   );

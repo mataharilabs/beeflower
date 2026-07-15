@@ -16,7 +16,7 @@ const CheckoutSchema = z.object({
   province: z.string().min(1),
   postalCode: z.string().min(1),
   notes: z.string().optional(),
-  paymentMethod: z.enum(["XENDIT", "MANUAL_TRANSFER"]),
+  paymentMethod: z.enum(["XENDIT", "MANUAL_TRANSFER", "QRIS"]),
   items: z.array(z.object({
     productId: z.string(),
     quantity: z.number().int().min(1),

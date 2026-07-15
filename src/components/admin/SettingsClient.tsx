@@ -21,6 +21,9 @@ interface SiteSettings {
   instagram: string | null;
   tiktok: string | null;
   maintenanceMode: boolean;
+  facebookPixelId: string | null;
+  headerScripts: string | null;
+  footerScripts: string | null;
 }
 
 interface PaymentSettings {
@@ -28,6 +31,8 @@ interface PaymentSettings {
   xenditEnabled: boolean;
   xenditSecretKey: string | null;
   manualTransferEnabled: boolean;
+  qrisEnabled: boolean;
+  qrisImageUrl: string | null;
 }
 
 interface BankAccount {
@@ -47,7 +52,7 @@ interface Props {
 }
 
 export function SettingsClient({ settings, paymentSettings, bankAccounts: initialBanks }: Props) {
-  const [activeTab, setActiveTab] = useState<"general" | "payment" | "contact">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "payment" | "contact" | "marketing">("general");
   const [saving, setSaving] = useState(false);
 
   const [site, setSite] = useState(settings);
@@ -128,6 +133,7 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
           { key: "general", label: "Umum" },
           { key: "contact", label: "Kontak & Tampilan" },
           { key: "payment", label: "Pembayaran" },
+          { key: "marketing", label: "Marketing" },
         ] as const).map((tab) => (
           <button
             key={tab.key}
@@ -237,6 +243,64 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
         </div>
       )}
 
+      {activeTab === "marketing" && (
+        <div className="space-y-5 max-w-2xl">
+          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <h2 className="font-semibold text-gray-900">Facebook Pixel</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Facebook Pixel ID</label>
+              <p className="text-xs text-gray-400 mb-1.5">
+                Temukan Pixel ID di Facebook Business Manager → Events Manager
+              </p>
+              <input
+                value={site.facebookPixelId ?? ""}
+                onChange={(e) => setSite({ ...site, facebookPixelId: e.target.value })}
+                placeholder="Contoh: 1234567890123456"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <h2 className="font-semibold text-gray-900">Custom Scripts</h2>
+            <p className="text-xs text-gray-500">
+              Masukkan kode JavaScript tanpa tag &lt;script&gt;. Cocok untuk Google Tag Manager, analitik, atau script iklan lainnya.
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Header Script</label>
+              <p className="text-xs text-gray-400 mb-1.5">Dimuat di awal halaman</p>
+              <textarea
+                value={site.headerScripts ?? ""}
+                onChange={(e) => setSite({ ...site, headerScripts: e.target.value })}
+                rows={5}
+                placeholder={`// Contoh: Google Tag Manager\n(function(w,d,s,l,i){...})(...)`}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold resize-none font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Footer Script</label>
+              <p className="text-xs text-gray-400 mb-1.5">Dimuat setelah halaman selesai</p>
+              <textarea
+                value={site.footerScripts ?? ""}
+                onChange={(e) => setSite({ ...site, footerScripts: e.target.value })}
+                rows={5}
+                placeholder={`// Contoh: custom analytics\nconsole.log('loaded');`}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold resize-none font-mono"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={saveSiteSettings}
+            disabled={saving}
+            className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white rounded-lg text-sm font-medium hover:bg-brand-brown transition-colors disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Simpan Pengaturan Marketing
+          </button>
+        </div>
+      )}
+
       {activeTab === "payment" && (
         <div className="space-y-5 max-w-2xl">
           {/* Toggle Xendit */}
@@ -278,6 +342,29 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
                 <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${payment.manualTransferEnabled ? "translate-x-4" : ""}`} />
               </div>
             </label>
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <p className="text-sm font-medium text-gray-900">QRIS</p>
+                <p className="text-xs text-gray-400">Customer scan QR code untuk pembayaran</p>
+              </div>
+              <div
+                onClick={() => setPayment({ ...payment, qrisEnabled: !payment.qrisEnabled })}
+                className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${payment.qrisEnabled ? "bg-brand-gold" : "bg-gray-200"}`}
+              >
+                <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${payment.qrisEnabled ? "translate-x-4" : ""}`} />
+              </div>
+            </label>
+            {payment.qrisEnabled && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gambar QR Code QRIS</label>
+                <p className="text-xs text-gray-400 mb-2">Upload QR code QRIS yang akan ditampilkan ke pelanggan</p>
+                <ImageUploader
+                  value={payment.qrisImageUrl ?? ""}
+                  onChange={(url) => setPayment({ ...payment, qrisImageUrl: url })}
+                  folder="beeflower/qris"
+                />
+              </div>
+            )}
             <button onClick={savePaymentSettings} disabled={saving}
               className="flex items-center gap-2 px-6 py-2.5 bg-brand-gold text-white rounded-lg text-sm font-medium hover:bg-brand-brown transition-colors disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

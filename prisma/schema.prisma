@@ -27,6 +27,7 @@ enum OrderStatus {
 enum PaymentMethod {
   XENDIT
   MANUAL_TRANSFER
+  QRIS
 }
 
 enum ProofStatus {
@@ -239,6 +240,8 @@ model PaymentSettings {
   xenditEnabled          Boolean @default(false)
   xenditSecretKey        String?
   manualTransferEnabled  Boolean @default(true)
+  qrisEnabled            Boolean @default(false)
+  qrisImageUrl           String?
   updatedAt              DateTime @updatedAt
 
   @@map("payment_settings")
@@ -316,6 +319,9 @@ model SiteSettings {
   tiktok          String?
 
   maintenanceMode Boolean @default(false)
+  facebookPixelId String?
+  headerScripts   String? @db.Text
+  footerScripts   String? @db.Text
   updatedAt       DateTime @updatedAt
 
   @@map("site_settings")
