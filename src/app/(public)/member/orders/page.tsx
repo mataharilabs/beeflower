@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
+import { ShieldCheck } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   PENDING: { label: "Menunggu Pembayaran", color: "bg-yellow-100 text-yellow-700" },
@@ -45,6 +46,15 @@ export default async function MemberOrdersPage() {
                 <h1 className="font-bold text-xl text-brand-brown">{user?.name}</h1>
                 <p className="text-sm text-brand-beige">{user?.email}</p>
                 {user?.phone && <p className="text-sm text-brand-beige">{user.phone}</p>}
+                {session.user.role === "ADMIN" && (
+                  <Link
+                    href="/admin"
+                    className="inline-flex items-center gap-1.5 mt-2 text-xs text-brand-gold hover:text-brand-brown font-medium transition-colors"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Anda adalah Admin — Masuk ke Admin Panel
+                  </Link>
+                )}
               </div>
             </div>
             <form
@@ -143,7 +153,7 @@ export default async function MemberOrdersPage() {
 
                   <div className="flex justify-between items-center pt-3 border-t border-brand-beige/20">
                     <span className="text-xs text-brand-beige">
-                      {order.paymentMethod === "XENDIT" ? "Bayar Online" : "Transfer Bank"}
+                      {order.paymentMethod === "XENDIT" ? "Bayar Online" : order.paymentMethod === "QRIS" ? "QRIS" : "Transfer Bank"}
                     </span>
                     <span className="font-bold text-brand-gold">
                       {formatPrice(Number(order.total))}

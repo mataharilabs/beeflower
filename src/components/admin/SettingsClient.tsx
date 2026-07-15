@@ -20,6 +20,8 @@ interface SiteSettings {
   googleMapsEmbed: string | null;
   instagram: string | null;
   tiktok: string | null;
+  shopee: string | null;
+  tokopedia: string | null;
   maintenanceMode: boolean;
   facebookPixelId: string | null;
   headerScripts: string | null;
@@ -210,6 +212,8 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
               { key: "email", label: "Email" },
               { key: "instagram", label: "Instagram (tanpa @)" },
               { key: "tiktok", label: "TikTok (tanpa @)" },
+              { key: "shopee", label: "Shopee (username)" },
+              { key: "tokopedia", label: "Tokopedia (username)" },
             ] as const).map(({ key, label }) => (
               <div key={key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>

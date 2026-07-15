@@ -317,6 +317,8 @@ model SiteSettings {
   googleMapsEmbed String? @db.Text
   instagram       String?
   tiktok          String?
+  shopee          String?
+  tokopedia       String?
 
   maintenanceMode Boolean @default(false)
   facebookPixelId String?

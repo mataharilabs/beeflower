@@ -32,6 +32,8 @@ export async function Footer() {
   const whatsappDisplay = whatsapp.replace("62", "0").replace(/(\d{4})(\d{4})(\d+)/, "$1-$2-$3");
   const instagram = settings?.instagram ?? "beefloweroffical";
   const tiktok = settings?.tiktok ?? "beefloweroffical";
+  const shopee = settings?.shopee ?? null;
+  const tokopedia = settings?.tokopedia ?? null;
   const siteName = settings?.siteName ?? "Bee & Flower Brand";
 
   const menuLinks = footerMain.length > 0 ? footerMain : DEFAULT_MENU_LINKS;
@@ -147,17 +149,65 @@ export async function Footer() {
               <h4 className="font-semibold text-sm tracking-widest uppercase mb-4 text-brand-gold">
                 Official Store
               </h4>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-sm text-brand-beige">
-                  <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                  {instagram}
-                </li>
-                <li className="flex items-center gap-2 text-sm text-brand-beige">
-                  <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.79a4.85 4.85 0 01-1.01-.1z"/>
-                  </svg>
-                  {tiktok}
-                </li>
+              <ul className="space-y-2.5">
+                {instagram && (
+                  <li>
+                    <a
+                      href={`https://instagram.com/${instagram}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-brand-beige hover:text-white transition-colors"
+                    >
+                      <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                      {instagram}
+                    </a>
+                  </li>
+                )}
+                {tiktok && (
+                  <li>
+                    <a
+                      href={`https://tiktok.com/@${tiktok}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-brand-beige hover:text-white transition-colors"
+                    >
+                      <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.79a4.85 4.85 0 01-1.01-.1z"/>
+                      </svg>
+                      {tiktok}
+                    </a>
+                  </li>
+                )}
+                {shopee && (
+                  <li>
+                    <a
+                      href={`https://shopee.co.id/${shopee}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-brand-beige hover:text-white transition-colors"
+                    >
+                      <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+                      </svg>
+                      {shopee}
+                    </a>
+                  </li>
+                )}
+                {tokopedia && (
+                  <li>
+                    <a
+                      href={`https://tokopedia.com/${tokopedia}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-brand-beige hover:text-white transition-colors"
+                    >
+                      <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                      </svg>
+                      {tokopedia}
+                    </a>
+                  </li>
+                )}
               </ul>
             </div>
             <div>

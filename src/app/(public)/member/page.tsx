@@ -2,7 +2,7 @@ import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Package, Settings, ChevronRight } from "lucide-react";
+import { Package, Settings, ChevronRight, ShieldCheck } from "lucide-react";
 
 export default async function MemberPage() {
   const session = await auth();
@@ -27,6 +27,15 @@ export default async function MemberPage() {
                 <h1 className="font-bold text-xl text-brand-brown">{user?.name}</h1>
                 <p className="text-sm text-brand-beige">{user?.email}</p>
                 {user?.phone && <p className="text-sm text-brand-beige">{user.phone}</p>}
+                {session.user.role === "ADMIN" && (
+                  <Link
+                    href="/admin"
+                    className="inline-flex items-center gap-1.5 mt-2 text-xs text-brand-gold hover:text-brand-brown font-medium transition-colors"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Anda adalah Admin — Masuk ke Admin Panel
+                  </Link>
+                )}
               </div>
             </div>
             <form
