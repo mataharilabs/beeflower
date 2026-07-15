@@ -12,6 +12,16 @@ interface PaymentConfig {
   manualTransferEnabled: boolean;
 }
 
+interface LoggedInUser {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  province?: string | null;
+  postalCode?: string | null;
+}
+
 type Step = "form" | "payment";
 
 export default function CheckoutPage() {
@@ -24,6 +34,8 @@ export default function CheckoutPage() {
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({ xenditEnabled: false, manualTransferEnabled: true });
   const [isNewUser, setIsNewUser] = useState(false);
   const [newAccountInfo, setNewAccountInfo] = useState<{ email: string; password: string } | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const [form, setForm] = useState({
     customerName: "", customerEmail: "", customerPhone: "",
@@ -32,20 +44,35 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    fetch("/api/payment/settings")
-      .then((r) => r.json())
-      .then((config) => {
-        setPaymentConfig(config);
-        if (config.xenditEnabled) setForm((f) => ({ ...f, paymentMethod: "XENDIT" }));
-        else if (config.manualTransferEnabled) setForm((f) => ({ ...f, paymentMethod: "MANUAL_TRANSFER" }));
-      });
+    Promise.all([
+      fetch("/api/payment/settings").then((r) => r.json()).catch(() => ({ xenditEnabled: false, manualTransferEnabled: true })),
+      fetch("/api/member/profile").then((r) => r.json()).catch(() => null),
+    ]).then(([config, profile]) => {
+      setPaymentConfig(config);
+      if (config.xenditEnabled) setForm((f) => ({ ...f, paymentMethod: "XENDIT" }));
+      else if (config.manualTransferEnabled) setForm((f) => ({ ...f, paymentMethod: "MANUAL_TRANSFER" }));
+
+      if (profile?.email) {
+        setLoggedInUser(profile);
+        setForm((f) => ({
+          ...f,
+          customerName: profile.name ?? "",
+          customerEmail: profile.email ?? "",
+          customerPhone: profile.phone ?? "",
+          address: profile.address ?? "",
+          city: profile.city ?? "",
+          province: profile.province ?? "",
+          postalCode: profile.postalCode ?? "",
+        }));
+      }
+    });
   }, []);
 
   useEffect(() => {
-    if (items.length === 0 && step === "form") {
+    if (items.length === 0 && step === "form" && !submitted) {
       router.replace("/toko");
     }
-  }, [items, step, router]);
+  }, [items, step, router, submitted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +106,7 @@ export default function CheckoutPage() {
         }).catch(() => {});
       }
 
+      setSubmitted(true);
       clearCart();
       setOrderNumber(data.orderNumber);
 
@@ -154,7 +182,14 @@ export default function CheckoutPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="font-semibold text-gray-900">Informasi Pengiriman</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900">Informasi Pengiriman</h2>
+                {loggedInUser && (
+                  <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                    Data terisi otomatis
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
@@ -163,8 +198,14 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" value={form.customerEmail} onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
-                    required className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold" />
+                  <input
+                    type="email"
+                    value={form.customerEmail}
+                    onChange={(e) => !loggedInUser && setForm({ ...form, customerEmail: e.target.value })}
+                    readOnly={!!loggedInUser}
+                    required
+                    className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold ${loggedInUser ? "bg-gray-50 text-gray-500 cursor-default" : ""}`}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">No. HP</label>

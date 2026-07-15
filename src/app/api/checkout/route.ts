@@ -111,41 +111,46 @@ export async function POST(req: NextRequest) {
   let autoLoginPassword: string | null = null;
 
   if (!session?.user) {
-    const existingUser = await prisma.user.findUnique({
-      where: { email: data.customerEmail },
-      select: { id: true },
-    });
-
-    if (existingUser) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { userId: existingUser.id },
-      });
-    } else {
-      const plainPassword = generatePassword();
-      const hashedPassword = await bcrypt.hash(plainPassword, 10);
-
-      const newUser = await prisma.user.create({
-        data: {
-          name: data.customerName,
-          email: data.customerEmail,
-          phone: data.customerPhone,
-          address: data.address,
-          city: data.city,
-          province: data.province,
-          postalCode: data.postalCode,
-          password: hashedPassword,
-        },
+    try {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: data.customerEmail },
+        select: { id: true },
       });
 
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { userId: newUser.id },
-      });
+      if (existingUser) {
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { userId: existingUser.id },
+        });
+      } else {
+        const plainPassword = generatePassword();
+        const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-      isNewUser = true;
-      autoLoginEmail = data.customerEmail;
-      autoLoginPassword = plainPassword;
+        const newUser = await prisma.user.create({
+          data: {
+            name: data.customerName,
+            email: data.customerEmail,
+            phone: data.customerPhone,
+            address: data.address,
+            city: data.city,
+            province: data.province,
+            postalCode: data.postalCode,
+            password: hashedPassword,
+          },
+        });
+
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { userId: newUser.id },
+        });
+
+        isNewUser = true;
+        autoLoginEmail = data.customerEmail;
+        autoLoginPassword = plainPassword;
+      }
+    } catch (err) {
+      // User creation failure should not block the order from succeeding
+      console.error("[checkout] user auto-create failed:", err);
     }
   }
 

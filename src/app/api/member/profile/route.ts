@@ -11,6 +11,18 @@ const UpdateSchema = z.object({
   newPassword: z.string().min(6).optional(),
 });
 
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json(null);
+  }
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true, email: true, phone: true, address: true, city: true, province: true, postalCode: true },
+  });
+  return NextResponse.json(user);
+}
+
 export async function PATCH(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {

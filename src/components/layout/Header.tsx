@@ -178,7 +178,7 @@ export function Header({ logoUrl, siteName, navLinks, ctaButton, user }: HeaderP
                           Pesanan Saya
                         </Link>
                         <button
-                          onClick={() => signOut({ callbackUrl: "/" })}
+                          onClick={() => signOut({ callbackUrl: `${window.location.origin}/` })}
                           className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           Keluar

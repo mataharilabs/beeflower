@@ -17,7 +17,6 @@ export default auth((req) => {
     nextUrl.pathname.startsWith("/api/users") ||
     nextUrl.pathname.startsWith("/api/settings") ||
     nextUrl.pathname.startsWith("/api/contact-messages") ||
-    nextUrl.pathname.startsWith("/api/payment/settings") ||
     nextUrl.pathname.startsWith("/api/payment/bank-accounts");
 
   if (isMemberRoute && !isLoggedIn) {
@@ -54,7 +53,6 @@ export const config = {
     "/api/users/:path*",
     "/api/settings/:path*",
     "/api/contact-messages/:path*",
-    "/api/payment/settings/:path*",
     "/api/payment/bank-accounts/:path*",
     "/member",
     "/member/:path*",
