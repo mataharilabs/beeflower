@@ -195,6 +195,103 @@ function SortableBlock({
   );
 }
 
+function BackgroundSection({ props, onUpdate }: { props: any; onUpdate: (p: object) => void }) {
+  const bgType = props.bgType ?? "color";
+  const overlayEnabled = props.overlayEnabled ?? false;
+
+  return (
+    <div className="space-y-3 border-t border-gray-100 pt-3">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Background</p>
+
+      <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+        <button
+          onClick={() => onUpdate({ bgType: "color" })}
+          className={`flex-1 py-1.5 text-xs font-medium transition-colors ${bgType === "color" ? "bg-brand-gold text-white" : "text-gray-600 hover:bg-gray-50"}`}
+        >
+          Warna
+        </button>
+        <button
+          onClick={() => onUpdate({ bgType: "image" })}
+          className={`flex-1 py-1.5 text-xs font-medium transition-colors ${bgType === "image" ? "bg-brand-gold text-white" : "text-gray-600 hover:bg-gray-50"}`}
+        >
+          Gambar
+        </button>
+      </div>
+
+      {bgType === "color" ? (
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Warna Background</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={props.bgColor || "#ffffff"}
+              onChange={(e) => onUpdate({ bgColor: e.target.value })}
+              className="w-8 h-8 rounded border border-gray-200 cursor-pointer"
+            />
+            <input
+              value={props.bgColor ?? ""}
+              placeholder="#ffffff"
+              onChange={(e) => onUpdate({ bgColor: e.target.value })}
+              className="flex-1 px-2 py-1.5 border border-gray-200 rounded text-sm font-mono focus:outline-none focus:border-brand-gold"
+            />
+          </div>
+        </div>
+      ) : (
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Gambar Background</label>
+          <ImageUploader value={props.bgImage ?? ""} onChange={(url) => onUpdate({ bgImage: url })} folder="beeflower/pages" />
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={overlayEnabled}
+            onChange={(e) => onUpdate({ overlayEnabled: e.target.checked })}
+            className="rounded border-gray-300"
+          />
+          <span className="text-xs text-gray-600">Aktifkan Overlay</span>
+        </label>
+
+        {overlayEnabled && (
+          <div className="space-y-2 pl-4 border-l-2 border-brand-gold/20">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Warna Overlay</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={props.overlayColor ?? "#000000"}
+                  onChange={(e) => onUpdate({ overlayColor: e.target.value })}
+                  className="w-8 h-8 rounded border border-gray-200 cursor-pointer"
+                />
+                <input
+                  value={props.overlayColor ?? "#000000"}
+                  onChange={(e) => onUpdate({ overlayColor: e.target.value })}
+                  className="flex-1 px-2 py-1.5 border border-gray-200 rounded text-sm font-mono focus:outline-none focus:border-brand-gold"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Transparansi Overlay: {props.overlayOpacity ?? 40}%
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={props.overlayOpacity ?? 40}
+                onChange={(e) => onUpdate({ overlayOpacity: parseInt(e.target.value) })}
+                className="w-full accent-brand-gold"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props: object) => void }) {
   const p = block.props as any;
 
@@ -236,12 +333,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           {field("subheadline", "Sub Judul", "textarea")}
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
-          {imageField("bgImage", "Gambar Background")}
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={p.overlay ?? true} onChange={(e) => onUpdate({ overlay: e.target.checked })}
-              className="rounded border-gray-300" />
-            <span className="text-xs text-gray-600">Overlay gelap</span>
-          </label>
+          <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
 
@@ -257,6 +349,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
               <option value="right">Kanan</option>
             </select>
           </div>
+          <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
 
@@ -275,6 +368,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           </div>
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
+          <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
 
@@ -284,15 +378,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           {field("subheadline", "Sub Judul")}
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Warna Background</label>
-            <div className="flex items-center gap-2">
-              <input type="color" value={p.bgColor ?? "#AF8442"} onChange={(e) => onUpdate({ bgColor: e.target.value })}
-                className="w-8 h-8 rounded border border-gray-200 cursor-pointer" />
-              <input value={p.bgColor ?? "#AF8442"} onChange={(e) => onUpdate({ bgColor: e.target.value })}
-                className="flex-1 px-2 py-1.5 border border-gray-200 rounded text-sm font-mono focus:outline-none focus:border-brand-gold" />
-            </div>
-          </div>
+          <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
 
@@ -305,6 +391,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
             <input type="number" min={1} max={12} value={p.count ?? 4} onChange={(e) => onUpdate({ count: parseInt(e.target.value) })}
               className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-brand-gold" />
           </div>
+          <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
 
@@ -342,6 +429,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
               <Plus className="w-3 h-3" /> Tambah FAQ
             </button>
           </div>
+          <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
 
@@ -379,6 +467,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
               <Plus className="w-3 h-3" /> Tambah Item
             </button>
           </div>
+          <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
 

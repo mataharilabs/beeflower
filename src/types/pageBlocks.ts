@@ -8,21 +8,29 @@ export type BlockType =
   | "FeatureIcons"
   | "Spacer";
 
-export interface HeroProps {
+export interface BackgroundProps {
+  bgType: "image" | "color";
+  bgImage: string;
+  bgColor: string;
+  overlayEnabled: boolean;
+  overlayColor: string;
+  overlayOpacity: number; // 0–100
+}
+
+export interface HeroProps extends BackgroundProps {
   headline: string;
   subheadline: string;
   buttonText: string;
   buttonLink: string;
-  bgImage: string;
-  overlay: boolean;
+  overlay?: boolean; // backward compat
 }
 
-export interface TextBlockProps {
+export interface TextBlockProps extends BackgroundProps {
   content: string;
   align: "left" | "center" | "right";
 }
 
-export interface ImageTextProps {
+export interface ImageTextProps extends BackgroundProps {
   headline: string;
   content: string;
   imageUrl: string;
@@ -31,15 +39,14 @@ export interface ImageTextProps {
   buttonLink: string;
 }
 
-export interface CTABannerProps {
+export interface CTABannerProps extends BackgroundProps {
   headline: string;
   subheadline: string;
   buttonText: string;
   buttonLink: string;
-  bgColor: string;
 }
 
-export interface ProductGridProps {
+export interface ProductGridProps extends BackgroundProps {
   headline: string;
   categorySlug: string;
   count: number;
@@ -50,7 +57,7 @@ export interface FAQItem {
   answer: string;
 }
 
-export interface FAQSectionProps {
+export interface FAQSectionProps extends BackgroundProps {
   headline: string;
   items: FAQItem[];
 }
@@ -61,7 +68,7 @@ export interface FeatureIconItem {
   description: string;
 }
 
-export interface FeatureIconsProps {
+export interface FeatureIconsProps extends BackgroundProps {
   headline: string;
   items: FeatureIconItem[];
 }
@@ -90,18 +97,32 @@ export interface PageDocument {
   blocks: Block[];
 }
 
+const defaultBg: BackgroundProps = {
+  bgType: "color",
+  bgImage: "",
+  bgColor: "",
+  overlayEnabled: false,
+  overlayColor: "#000000",
+  overlayOpacity: 40,
+};
+
 export const defaultProps: Record<BlockType, BlockProps> = {
   Hero: {
     headline: "Judul Hero",
     subheadline: "Deskripsi singkat",
     buttonText: "Belanja Sekarang",
     buttonLink: "/toko",
+    bgType: "image",
     bgImage: "",
-    overlay: true,
+    bgColor: "#1a1a2e",
+    overlayEnabled: true,
+    overlayColor: "#000000",
+    overlayOpacity: 40,
   } as HeroProps,
   TextBlock: {
     content: "Tulis teks di sini...",
     align: "left",
+    ...defaultBg,
   } as TextBlockProps,
   ImageText: {
     headline: "Judul Section",
@@ -110,26 +131,40 @@ export const defaultProps: Record<BlockType, BlockProps> = {
     imagePosition: "left",
     buttonText: "",
     buttonLink: "",
+    ...defaultBg,
   } as ImageTextProps,
   CTABanner: {
     headline: "Dapatkan Penawaran Terbaik",
     subheadline: "Bergabunglah bersama ribuan pelanggan kami",
     buttonText: "Hubungi Kami",
     buttonLink: "/contact",
+    bgType: "color",
+    bgImage: "",
     bgColor: "#AF8442",
+    overlayEnabled: false,
+    overlayColor: "#000000",
+    overlayOpacity: 40,
   } as CTABannerProps,
   ProductGrid: {
     headline: "Produk Kami",
     categorySlug: "",
     count: 4,
+    ...defaultBg,
   } as ProductGridProps,
   FAQSection: {
     headline: "Pertanyaan Umum",
     items: [{ question: "Pertanyaan?", answer: "Jawaban." }],
+    bgType: "color",
+    bgImage: "",
+    bgColor: "",
+    overlayEnabled: false,
+    overlayColor: "#000000",
+    overlayOpacity: 40,
   } as FAQSectionProps,
   FeatureIcons: {
     headline: "Kenapa Memilih Kami",
     items: [{ icon: "Shield", title: "Kualitas Terjamin", description: "Produk berkualitas tinggi." }],
+    ...defaultBg,
   } as FeatureIconsProps,
   Spacer: {
     height: 40,
