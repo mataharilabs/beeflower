@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { PROVINCES, getCitiesForProvince } from "@/lib/indonesia-regions";
 
 interface PaymentConfig {
   xenditEnabled: boolean;
@@ -57,14 +58,16 @@ export default function CheckoutPage() {
 
       if (profile?.email) {
         setLoggedInUser(profile);
+        const savedProvince = PROVINCES.includes(profile.province ?? "") ? (profile.province ?? "") : "";
+        const savedCity = savedProvince && getCitiesForProvince(savedProvince).includes(profile.city ?? "") ? (profile.city ?? "") : "";
         setForm((f) => ({
           ...f,
           customerName: profile.name ?? "",
           customerEmail: profile.email ?? "",
           customerPhone: profile.phone ?? "",
           address: profile.address ?? "",
-          city: profile.city ?? "",
-          province: profile.province ?? "",
+          city: savedCity,
+          province: savedProvince,
           postalCode: profile.postalCode ?? "",
         }));
       }
@@ -221,14 +224,33 @@ export default function CheckoutPage() {
                     required rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold resize-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kota</label>
-                  <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}
-                    required className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Provinsi</label>
+                  <select
+                    value={form.province}
+                    onChange={(e) => setForm({ ...form, province: e.target.value, city: "" })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white"
+                  >
+                    <option value="">-- Pilih Provinsi --</option>
+                    {PROVINCES.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Provinsi</label>
-                  <input value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })}
-                    required className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Kota / Kabupaten</label>
+                  <select
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    required
+                    disabled={!form.province}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    <option value="">{form.province ? "-- Pilih Kota --" : "Pilih provinsi dahulu"}</option>
+                    {getCitiesForProvince(form.province).map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kode Pos</label>

@@ -3,17 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Search, Pencil, Trash2, Store, MapPin, Phone } from "lucide-react";
 import { ImageUploader } from "@/components/admin/ImageUploader";
-
-const PROVINCES = [
-  "Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Kepulauan Riau",
-  "Jambi", "Sumatera Selatan", "Kepulauan Bangka Belitung", "Bengkulu", "Lampung",
-  "DKI Jakarta", "Jawa Barat", "Banten", "Jawa Tengah", "DI Yogyakarta", "Jawa Timur",
-  "Bali", "Nusa Tenggara Barat", "Nusa Tenggara Timur",
-  "Kalimantan Barat", "Kalimantan Tengah", "Kalimantan Selatan", "Kalimantan Timur", "Kalimantan Utara",
-  "Sulawesi Utara", "Gorontalo", "Sulawesi Tengah", "Sulawesi Barat", "Sulawesi Selatan", "Sulawesi Tenggara",
-  "Maluku", "Maluku Utara",
-  "Papua", "Papua Barat", "Papua Selatan", "Papua Tengah", "Papua Pegunungan", "Papua Barat Daya",
-];
+import { PROVINCES, getCitiesForProvince } from "@/lib/indonesia-regions";
 
 type ResellerStore = {
   id: string;
@@ -42,7 +32,7 @@ const EMPTY_FORM: Omit<ResellerStore, "id"> = {
   tiktok: "",
   shopee: "",
   tokopedia: "",
-  province: "Jawa Timur",
+  province: PROVINCES[0],
   city: "",
   isActive: true,
   order: 0,
@@ -322,7 +312,7 @@ export function ResellerStoresClient() {
                   </label>
                   <select
                     value={form.province}
-                    onChange={(e) => setForm((f) => ({ ...f, province: e.target.value }))}
+                    onChange={(e) => setForm((f) => ({ ...f, province: e.target.value, city: "" }))}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30"
                   >
                     {PROVINCES.map((p) => (
@@ -334,13 +324,16 @@ export function ResellerStoresClient() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Kota / Kabupaten <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={form.city}
                     onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30"
-                    placeholder="Nama kota"
-                  />
+                  >
+                    <option value="">-- Pilih Kota --</option>
+                    {getCitiesForProvince(form.province).map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
