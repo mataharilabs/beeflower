@@ -300,10 +300,12 @@ model Page {
 // ─── SITE SETTINGS ────────────────────────────────────────
 
 model SiteSettings {
-  id          String  @id @default("singleton")
-  siteName    String  @default("Bee & Flower Brand")
+  id           String  @id @default("singleton")
+  siteName     String  @default("Bee & Flower Brand")
   logoUrl      String?
+  logoWidth    Int?
   logoLightUrl String?
+  logoLightWidth Int?
   faviconUrl   String?
 
   metaTitle       String?

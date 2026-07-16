@@ -10,7 +10,12 @@ function formatRupiah(amount: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
 }
 
-function emailWrapper(content: string) {
+function emailWrapper(content: string, logoUrl?: string | null, logoWidth?: number | null) {
+  const emailLogoWidth = Math.min(logoWidth ?? 160, 200);
+  const logoHtml = logoUrl
+    ? `<img src="${logoUrl}" alt="Bee &amp; Flower Brand" style="display:block;margin:0 auto;height:auto;max-height:52px;max-width:${emailLogoWidth}px;width:auto" />`
+    : `<p style="margin:0;color:${BRAND_GOLD};font-size:22px;font-weight:bold;letter-spacing:3px">BEE &amp; FLOWER</p><p style="margin:4px 0 0;color:${BRAND_BEIGE};font-size:11px;letter-spacing:2px;text-transform:uppercase">Brand</p>`;
+
   return `<!DOCTYPE html>
 <html lang="id">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -19,12 +24,11 @@ function emailWrapper(content: string) {
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;width:100%">
         <tr><td style="background:${BRAND_BROWN};padding:24px 32px;text-align:center">
-          <p style="margin:0;color:${BRAND_GOLD};font-size:22px;font-weight:bold;letter-spacing:3px">BEE & FLOWER</p>
-          <p style="margin:4px 0 0;color:${BRAND_BEIGE};font-size:11px;letter-spacing:2px;text-transform:uppercase">Brand</p>
+          ${logoHtml}
         </td></tr>
         <tr><td style="padding:32px">${content}</td></tr>
         <tr><td style="background:${BRAND_CREAM};padding:20px 32px;text-align:center;border-top:1px solid #e0d5c8">
-          <p style="margin:0;color:${BRAND_BEIGE};font-size:12px">Bee & Flower Brand &mdash; beeflowerbrand.co.id</p>
+          <p style="margin:0;color:${BRAND_BEIGE};font-size:12px">Bee &amp; Flower Brand &mdash; beeflowerbrand.co.id</p>
           <p style="margin:4px 0 0;color:#aaa;font-size:11px">Email ini dikirim otomatis, mohon tidak membalas.</p>
         </td></tr>
       </table>
@@ -48,6 +52,8 @@ export function orderConfirmationEmail(data: {
   items: OrderItem[];
   total: number;
   paymentMethod: string;
+  logoUrl?: string | null;
+  logoWidth?: number | null;
 }) {
   const itemRows = data.items.map((item) => `
     <tr>
@@ -90,7 +96,7 @@ export function orderConfirmationEmail(data: {
       </tfoot>
     </table>
     ${paymentNote}
-  `);
+  `, data.logoUrl, data.logoWidth);
 
   return {
     subject: `Pesanan #${data.orderNumber} Dikonfirmasi - Bee & Flower Brand`,
@@ -173,6 +179,8 @@ export function welcomeEmail(data: {
   name: string;
   email: string;
   password: string;
+  logoUrl?: string | null;
+  logoWidth?: number | null;
 }) {
   const html = emailWrapper(`
     <h2 style="margin:0 0 4px;color:${BRAND_BROWN};font-size:20px">Selamat Bergabung!</h2>
@@ -187,6 +195,6 @@ export function welcomeEmail(data: {
     <p style="color:#555;font-size:13px;line-height:1.7;margin:0 0 20px">Simpan password di atas dengan aman. Anda dapat login untuk melihat riwayat pesanan kapan saja.</p>
     <a href="${APP_URL}/login" style="display:inline-block;padding:12px 28px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px;letter-spacing:1px">MASUK KE AKUN SAYA</a>
     <p style="margin-top:28px;color:#aaa;font-size:12px">Butuh bantuan? Hubungi kami melalui halaman <a href="${APP_URL}/contact" style="color:${BRAND_GOLD}">Kontak</a>.</p>
-  `);
+  `, data.logoUrl, data.logoWidth);
   return { subject: "Selamat Bergabung di Bee & Flower Brand!", html, from: FROM };
 }

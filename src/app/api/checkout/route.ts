@@ -157,6 +157,12 @@ export async function POST(req: NextRequest) {
   // Send emails
   if (process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
+    const brandSettings = await prisma.siteSettings.findUnique({
+      where: { id: "singleton" },
+      select: { logoUrl: true, logoWidth: true },
+    }).catch(() => null);
+    const logoUrl = brandSettings?.logoUrl ?? null;
+    const logoWidth = brandSettings?.logoWidth ?? null;
 
     const confirmEmail = orderConfirmationEmail({
       orderNumber: order.orderNumber,
@@ -164,6 +170,8 @@ export async function POST(req: NextRequest) {
       items: orderItems,
       total,
       paymentMethod: data.paymentMethod,
+      logoUrl,
+      logoWidth,
     });
     await resend.emails.send({
       from: confirmEmail.from,
@@ -177,6 +185,8 @@ export async function POST(req: NextRequest) {
         name: data.customerName,
         email: data.customerEmail,
         password: autoLoginPassword,
+        logoUrl,
+        logoWidth,
       });
       await resend.emails.send({
         from: welcome.from,

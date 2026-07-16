@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { prisma } from "@/lib/prisma";
+import { AdminShell } from "@/components/admin/AdminShell";
 
 export default async function AdminLayout({
   children,
@@ -12,12 +13,17 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
+  const settings = await prisma.siteSettings
+    .findUnique({ where: { id: "singleton" }, select: { logoUrl: true, logoWidth: true, siteName: true } })
+    .catch(() => null);
+
   return (
-    <div className="flex h-screen bg-gray-50">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 lg:p-8">{children}</div>
-      </main>
-    </div>
+    <AdminShell
+      logoUrl={settings?.logoUrl}
+      logoWidth={settings?.logoWidth}
+      siteName={settings?.siteName}
+    >
+      {children}
+    </AdminShell>
   );
 }

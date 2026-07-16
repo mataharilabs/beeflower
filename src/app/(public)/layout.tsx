@@ -25,6 +25,7 @@ export default async function PublicLayout({ children }: { children: React.React
     <>
       <Header
         logoUrl={settings?.logoUrl}
+        logoWidth={settings?.logoWidth}
         siteName={settings?.siteName}
         navLinks={headerNav.length > 0 ? headerNav : undefined}
         ctaButton={ctaItems[0] ?? null}

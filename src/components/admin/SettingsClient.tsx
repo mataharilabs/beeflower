@@ -8,7 +8,9 @@ interface SiteSettings {
   id: string;
   siteName: string;
   logoUrl: string | null;
+  logoWidth: number | null;
   logoLightUrl: string | null;
+  logoLightWidth: number | null;
   faviconUrl: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -159,15 +161,67 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Logo Utama (Header)</label>
-                <p className="text-xs text-gray-400 mb-1.5">Untuk background terang</p>
-                <ImageUploader value={site.logoUrl ?? ""} onChange={(url) => setSite({ ...site, logoUrl: url })} folder="beeflower/settings" />
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Logo Utama (Header)</label>
+                  <p className="text-xs text-gray-400 mb-1.5">Untuk background terang — header, login, email, admin</p>
+                  <ImageUploader value={site.logoUrl ?? ""} onChange={(url) => setSite({ ...site, logoUrl: url })} folder="beeflower/settings" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Lebar Logo Utama (px)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={40}
+                      max={600}
+                      value={site.logoWidth ?? 240}
+                      onChange={(e) => setSite({ ...site, logoWidth: Number(e.target.value) || null })}
+                      className="w-28 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                    />
+                    <span className="text-xs text-gray-400">px (desktop). Mobile menyesuaikan.</span>
+                  </div>
+                  {site.logoUrl && (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <p className="text-xs text-gray-400 mb-1.5">Preview ukuran:</p>
+                      <img
+                        src={site.logoUrl}
+                        alt="Logo preview"
+                        style={{ maxWidth: `${site.logoWidth ?? 240}px`, height: "40px", objectFit: "contain" }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Logo Terang (Footer)</label>
-                <p className="text-xs text-gray-400 mb-1.5">Untuk background gelap</p>
-                <ImageUploader value={site.logoLightUrl ?? ""} onChange={(url) => setSite({ ...site, logoLightUrl: url })} folder="beeflower/settings" />
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Logo Terang (Footer)</label>
+                  <p className="text-xs text-gray-400 mb-1.5">Untuk background gelap — footer</p>
+                  <ImageUploader value={site.logoLightUrl ?? ""} onChange={(url) => setSite({ ...site, logoLightUrl: url })} folder="beeflower/settings" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Lebar Logo Terang (px)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={40}
+                      max={600}
+                      value={site.logoLightWidth ?? 240}
+                      onChange={(e) => setSite({ ...site, logoLightWidth: Number(e.target.value) || null })}
+                      className="w-28 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                    />
+                    <span className="text-xs text-gray-400">px (desktop)</span>
+                  </div>
+                  {site.logoLightUrl && (
+                    <div className="mt-2 p-3 bg-brand-brown rounded-lg">
+                      <p className="text-xs text-brand-beige mb-1.5">Preview (background gelap):</p>
+                      <img
+                        src={site.logoLightUrl}
+                        alt="Logo terang preview"
+                        style={{ maxWidth: `${site.logoLightWidth ?? 240}px`, height: "40px", objectFit: "contain" }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div>

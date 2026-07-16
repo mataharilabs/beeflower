@@ -35,6 +35,8 @@ export async function Footer() {
   const shopee = settings?.shopee ?? null;
   const tokopedia = settings?.tokopedia ?? null;
   const siteName = settings?.siteName ?? "Bee & Flower Brand";
+  const logoLightWidth = settings?.logoLightWidth ?? settings?.logoWidth ?? 240;
+  const logoWidth = settings?.logoWidth ?? 240;
 
   const menuLinks = footerMain.length > 0 ? footerMain : DEFAULT_MENU_LINKS;
   const infoLinks = footerInfo.length > 0 ? footerInfo : DEFAULT_INFO_LINKS;
@@ -50,19 +52,21 @@ export async function Footer() {
                 <Image
                   src={settings.logoLightUrl}
                   alt={siteName}
-                  width={240}
+                  width={logoLightWidth}
                   height={96}
                   quality={100}
                   className="h-12 w-auto object-contain"
+                  style={{ maxWidth: `${logoLightWidth}px` }}
                 />
               ) : settings?.logoUrl ? (
                 <Image
                   src={settings.logoUrl}
                   alt={siteName}
-                  width={240}
+                  width={logoWidth}
                   height={96}
                   quality={100}
                   className="h-12 w-auto object-contain brightness-0 invert"
+                  style={{ maxWidth: `${logoWidth}px` }}
                 />
               ) : (
                 <span className="font-bold text-xl tracking-wide leading-tight">

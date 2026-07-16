@@ -33,13 +33,14 @@ interface UserInfo {
 
 interface HeaderProps {
   logoUrl?: string | null;
+  logoWidth?: number | null;
   siteName?: string | null;
   navLinks?: NavLink[];
   ctaButton?: NavLink | null;
   user?: UserInfo | null;
 }
 
-export function Header({ logoUrl, siteName, navLinks, ctaButton, user }: HeaderProps) {
+export function Header({ logoUrl, logoWidth, siteName, navLinks, ctaButton, user }: HeaderProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -83,10 +84,11 @@ export function Header({ logoUrl, siteName, navLinks, ctaButton, user }: HeaderP
               <Image
                 src={logoUrl}
                 alt={siteName ?? "Bee & Flower Brand"}
-                width={240}
+                width={logoWidth ?? 240}
                 height={96}
                 quality={100}
-                className="h-12 w-auto object-contain"
+                className="h-10 lg:h-12 w-auto object-contain"
+                style={{ maxWidth: `${logoWidth ?? 240}px` }}
               />
             ) : (
               <span className="font-bold text-xl text-brand-brown tracking-wide leading-tight">
