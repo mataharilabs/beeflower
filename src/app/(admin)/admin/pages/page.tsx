@@ -268,7 +268,7 @@ export default async function PagesAdminPage() {
             )}
             {orderedPages.map((page) => {
               const isSystem = (SYSTEM_SLUGS as readonly string[]).includes(page.slug);
-              const publicUrl = page.slug === "home" ? "/" : `/${page.slug}`;
+              const publicUrl = page.slug === "home" ? "/" : isSystem ? `/${page.slug}` : `/p/${page.slug}`;
               return (
                 <tr key={page.id} className={`hover:bg-gray-50/50 transition-colors ${isSystem ? "bg-amber-50/30" : ""}`}>
                   <td className="px-4 py-3 font-medium text-gray-900">
