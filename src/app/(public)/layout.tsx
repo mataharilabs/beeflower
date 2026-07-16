@@ -9,7 +9,11 @@ export default async function PublicLayout({ children }: { children: React.React
   const [settings, headerNav, ctaItems, session] = await Promise.all([
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }).catch(() => null),
     prisma.navItem
-      .findMany({ where: { location: "HEADER_NAV", isActive: true }, orderBy: { order: "asc" } })
+      .findMany({
+        where: { location: "HEADER_NAV", isActive: true, parentId: null },
+        orderBy: { order: "asc" },
+        include: { children: { where: { isActive: true }, orderBy: { order: "asc" } } },
+      })
       .catch(() => []),
     prisma.navItem
       .findMany({ where: { location: "HEADER_CTA", isActive: true }, orderBy: { order: "asc" }, take: 1 })

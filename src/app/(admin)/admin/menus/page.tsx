@@ -38,6 +38,7 @@ export default async function MenusPage() {
 
   const items = await prisma.navItem.findMany({
     orderBy: { order: "asc" },
+    include: { children: { orderBy: { order: "asc" } } },
   });
 
   return (

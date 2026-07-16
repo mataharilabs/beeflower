@@ -407,8 +407,12 @@ model NavItem {
   newTab    Boolean     @default(false)
   order     Int         @default(0)
   isActive  Boolean     @default(true)
+  parentId  String?
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+
+  parent   NavItem?  @relation("NavItemChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children NavItem[] @relation("NavItemChildren")
 
   @@map("nav_items")
 }
