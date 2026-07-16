@@ -9,7 +9,7 @@ import { signIn, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
 
-const DEFAULT_NAV = [
+const DEFAULT_NAV: NavLink[] = [
   { href: "/", label: "Home", newTab: false },
   { href: "/reseller", label: "Reseller", newTab: false },
   { href: "/toko", label: "Toko Reseller", newTab: false },
