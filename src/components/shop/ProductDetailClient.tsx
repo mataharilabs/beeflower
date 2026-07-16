@@ -18,6 +18,11 @@ interface Product {
   images: string[];
   stock: number;
   category: { name: string } | null;
+  cartEnabled: boolean;
+  cartButtonText: string | null;
+  manualButtonEnabled: boolean;
+  manualButtonText: string | null;
+  manualButtonUrl: string | null;
 }
 
 interface Props {
@@ -136,14 +141,30 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
             </div>
 
             {/* CTA */}
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              className="flex items-center justify-center gap-2 px-8 py-4 bg-brand-gold text-white font-semibold rounded-lg tracking-wide hover:bg-brand-brown transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {product.stock === 0 ? "STOK HABIS" : "TAMBAH KE KERANJANG"}
-            </button>
+            <div className="space-y-3">
+              {product.cartEnabled && (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0}
+                  className="flex items-center justify-center gap-2 w-full px-8 py-4 bg-brand-gold text-white font-semibold rounded-lg tracking-wide hover:bg-brand-brown transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  {product.stock === 0
+                    ? "STOK HABIS"
+                    : (product.cartButtonText?.trim() || "TAMBAH KE KERANJANG").toUpperCase()}
+                </button>
+              )}
+              {product.manualButtonEnabled && product.manualButtonUrl && (
+                <a
+                  href={product.manualButtonUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full px-8 py-4 bg-brand-brown text-white font-semibold rounded-lg tracking-wide hover:bg-black/80 transition-colors"
+                >
+                  {(product.manualButtonText?.trim() || "HUBUNGI KAMI").toUpperCase()}
+                </a>
+              )}
+            </div>
 
             {/* Description */}
             {product.description && (

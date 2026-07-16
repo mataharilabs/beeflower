@@ -137,6 +137,12 @@ model Product {
   metaDescription String?
   ogImage         String?
 
+  cartEnabled         Boolean @default(true)
+  cartButtonText      String?
+  manualButtonEnabled Boolean @default(false)
+  manualButtonText    String?
+  manualButtonUrl     String?
+
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   orderItems OrderItem[]

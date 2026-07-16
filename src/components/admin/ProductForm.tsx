@@ -29,6 +29,11 @@ interface Product {
   metaTitle: string | null;
   metaDescription: string | null;
   ogImage: string | null;
+  cartEnabled: boolean;
+  cartButtonText: string | null;
+  manualButtonEnabled: boolean;
+  manualButtonText: string | null;
+  manualButtonUrl: string | null;
 }
 
 interface Props {
@@ -58,6 +63,11 @@ export function ProductForm({ product, categories }: Props) {
     metaTitle: product?.metaTitle ?? "",
     metaDescription: product?.metaDescription ?? "",
     ogImage: product?.ogImage ?? "",
+    cartEnabled: product?.cartEnabled ?? true,
+    cartButtonText: product?.cartButtonText ?? "",
+    manualButtonEnabled: product?.manualButtonEnabled ?? false,
+    manualButtonText: product?.manualButtonText ?? "",
+    manualButtonUrl: product?.manualButtonUrl ?? "",
   });
 
   const handleNameChange = (name: string) => {
@@ -275,6 +285,81 @@ export function ProductForm({ product, categories }: Props) {
                 onChange={addImage}
                 folder="beeflower/products"
               />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
+        <div>
+          <h2 className="font-semibold text-gray-900">Tombol Aksi Produk</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Pilih tombol yang tampil di halaman detail produk. Bisa pilih satu atau keduanya.</p>
+        </div>
+
+        {/* Cart button toggle */}
+        <div className={`border rounded-xl p-4 transition-colors ${form.cartEnabled ? "border-brand-gold bg-brand-gold/5" : "border-gray-200"}`}>
+          <label className="flex items-center justify-between gap-3 cursor-pointer">
+            <div>
+              <p className="font-medium text-sm text-gray-900">Keranjang (Add to Cart)</p>
+              <p className="text-xs text-gray-400 mt-0.5">Tombol untuk menambahkan produk ke keranjang belanja</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, cartEnabled: !f.cartEnabled }))}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${form.cartEnabled ? "bg-brand-gold" : "bg-gray-200"}`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${form.cartEnabled ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </label>
+          {form.cartEnabled && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Teks Tombol <span className="text-gray-400 font-normal">(kosongkan untuk pakai default)</span></label>
+              <input
+                value={form.cartButtonText}
+                onChange={(e) => setForm({ ...form, cartButtonText: e.target.value })}
+                placeholder="Tambah ke Keranjang"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Manual button toggle */}
+        <div className={`border rounded-xl p-4 transition-colors ${form.manualButtonEnabled ? "border-brand-gold bg-brand-gold/5" : "border-gray-200"}`}>
+          <label className="flex items-center justify-between gap-3 cursor-pointer">
+            <div>
+              <p className="font-medium text-sm text-gray-900">Tombol Custom (Link ke URL)</p>
+              <p className="text-xs text-gray-400 mt-0.5">Tombol tambahan dengan teks & URL yang bisa diatur sendiri</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, manualButtonEnabled: !f.manualButtonEnabled }))}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${form.manualButtonEnabled ? "bg-brand-gold" : "bg-gray-200"}`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${form.manualButtonEnabled ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </label>
+          {form.manualButtonEnabled && (
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Teks Tombol</label>
+                <input
+                  value={form.manualButtonText}
+                  onChange={(e) => setForm({ ...form, manualButtonText: e.target.value })}
+                  placeholder="Contoh: Beli via WhatsApp"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">URL Tujuan</label>
+                <input
+                  value={form.manualButtonUrl}
+                  onChange={(e) => setForm({ ...form, manualButtonUrl: e.target.value })}
+                  placeholder="https://wa.me/628xxx atau URL lain"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                />
+              </div>
             </div>
           )}
         </div>
