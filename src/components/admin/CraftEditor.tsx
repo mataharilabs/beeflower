@@ -237,9 +237,29 @@ function BackgroundSection({ props, onUpdate }: { props: any; onUpdate: (p: obje
           </div>
         </div>
       ) : (
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Gambar Background</label>
-          <ImageUploader value={props.bgImage ?? ""} onChange={(url) => onUpdate({ bgImage: url })} folder="beeflower/pages" />
+        <div className="space-y-2">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Gambar Background</label>
+            <ImageUploader value={props.bgImage ?? ""} onChange={(url) => onUpdate({ bgImage: url })} folder="beeflower/pages" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Ukuran Gambar</label>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+              {([
+                { value: "cover", label: "Penuh" },
+                { value: "contain", label: "Fit" },
+                { value: "original", label: "Original" },
+              ] as const).map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => onUpdate({ bgImageFit: value })}
+                  className={`flex-1 py-1.5 text-xs font-medium transition-colors ${(props.bgImageFit ?? "cover") === value ? "bg-brand-gold text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -292,6 +312,56 @@ function BackgroundSection({ props, onUpdate }: { props: any; onUpdate: (p: obje
   );
 }
 
+function ColorPickerRow({ label, propKey, props, onUpdate, defaultColor = "#000000" }: {
+  label: string; propKey: string; props: any; onUpdate: (p: object) => void; defaultColor?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={props[propKey] || defaultColor}
+          onChange={(e) => onUpdate({ [propKey]: e.target.value })}
+          className="w-8 h-8 rounded border border-gray-200 cursor-pointer flex-shrink-0"
+        />
+        <input
+          value={props[propKey] ?? ""}
+          placeholder="Default"
+          onChange={(e) => onUpdate({ [propKey]: e.target.value })}
+          className="flex-1 px-2 py-1.5 border border-gray-200 rounded text-xs font-mono focus:outline-none focus:border-brand-gold min-w-0"
+        />
+        {props[propKey] && (
+          <button onClick={() => onUpdate({ [propKey]: "" })} className="text-gray-300 hover:text-red-500 flex-shrink-0 text-xs">✕</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TextColorSection({ props, onUpdate, fields }: {
+  props: any; onUpdate: (p: object) => void; fields: { key: string; label: string }[];
+}) {
+  return (
+    <div className="space-y-3 border-t border-gray-100 pt-3">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Warna Teks</p>
+      {fields.map(({ key, label }) => (
+        <ColorPickerRow key={key} label={label} propKey={key} props={props} onUpdate={onUpdate} />
+      ))}
+    </div>
+  );
+}
+
+function ButtonColorSection({ props, onUpdate }: { props: any; onUpdate: (p: object) => void }) {
+  return (
+    <div className="space-y-3 border-t border-gray-100 pt-3">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Warna Tombol</p>
+      <ColorPickerRow label="Background Tombol" propKey="buttonBgColor" props={props} onUpdate={onUpdate} defaultColor="#AF8442" />
+      <ColorPickerRow label="Warna Teks Tombol" propKey="buttonTextColor" props={props} onUpdate={onUpdate} defaultColor="#ffffff" />
+    </div>
+  );
+}
+
 function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props: object) => void }) {
   const p = block.props as any;
 
@@ -333,6 +403,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           {field("subheadline", "Sub Judul", "textarea")}
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
+          <ButtonColorSection props={p} onUpdate={onUpdate} />
           <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
@@ -349,6 +420,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
               <option value="right">Kanan</option>
             </select>
           </div>
+          <TextColorSection props={p} onUpdate={onUpdate} fields={[{ key: "contentColor", label: "Warna Konten" }]} />
           <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
@@ -368,6 +440,11 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           </div>
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
+          <TextColorSection props={p} onUpdate={onUpdate} fields={[
+            { key: "headlineColor", label: "Warna Judul" },
+            { key: "contentColor", label: "Warna Konten" },
+          ]} />
+          <ButtonColorSection props={p} onUpdate={onUpdate} />
           <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
@@ -378,6 +455,11 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           {field("subheadline", "Sub Judul")}
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
+          <TextColorSection props={p} onUpdate={onUpdate} fields={[
+            { key: "headlineColor", label: "Warna Judul" },
+            { key: "subheadlineColor", label: "Warna Sub Judul" },
+          ]} />
+          <ButtonColorSection props={p} onUpdate={onUpdate} />
           <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
@@ -436,6 +518,11 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
       {block.type === "FeatureIcons" && (
         <>
           {field("headline", "Judul Section")}
+          <TextColorSection props={p} onUpdate={onUpdate} fields={[
+            { key: "headlineColor", label: "Warna Judul Section" },
+            { key: "itemTitleColor", label: "Warna Judul Item" },
+            { key: "itemDescColor", label: "Warna Deskripsi Item" },
+          ]} />
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-2">Item</label>
             <div className="space-y-3">

@@ -2,11 +2,14 @@ import type { CSSProperties } from "react";
 
 export function getBlockBgStyle(props: any): CSSProperties {
   if (props?.bgType === "image" && props?.bgImage) {
-    return {
+    const fit: string = props?.bgImageFit ?? "cover";
+    const style: CSSProperties = {
       backgroundImage: `url(${props.bgImage})`,
-      backgroundSize: "cover",
+      backgroundSize: fit === "original" ? "auto" : fit,
       backgroundPosition: "center",
     };
+    if (fit === "original") style.backgroundRepeat = "no-repeat";
+    return style;
   }
   if (props?.bgType === "color" && props?.bgColor) {
     return { backgroundColor: props.bgColor };

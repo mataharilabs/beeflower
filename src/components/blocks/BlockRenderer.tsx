@@ -53,6 +53,10 @@ function BlockOverlay({ props }: { props: any }) {
 }
 
 function HeroBlock({ props }: { props: HeroProps }) {
+  const btnStyle = {
+    ...(props.buttonBgColor ? { backgroundColor: props.buttonBgColor } : {}),
+    ...(props.buttonTextColor ? { color: props.buttonTextColor } : {}),
+  };
   return (
     <section
       className="relative min-h-[500px] flex items-center justify-center bg-brand-brown text-white"
@@ -63,7 +67,7 @@ function HeroBlock({ props }: { props: HeroProps }) {
         <h1 className="text-4xl md:text-5xl font-bold mb-4">{props.headline}</h1>
         {props.subheadline && <p className="text-lg text-white/90 mb-8">{props.subheadline}</p>}
         {props.buttonText && (
-          <Link href={props.buttonLink || "/"} className="inline-block px-8 py-3 bg-brand-gold text-white rounded-full font-semibold hover:bg-white hover:text-brand-brown transition-colors">
+          <Link href={props.buttonLink || "/"} style={btnStyle} className="inline-block px-8 py-3 bg-brand-gold text-white rounded-full font-semibold hover:opacity-90 transition-opacity">
             {props.buttonText}
           </Link>
         )}
@@ -77,7 +81,10 @@ function TextBlock({ props }: { props: TextBlockProps }) {
   return (
     <section className="relative py-12 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
-      <div className={`relative z-10 max-w-3xl mx-auto text-gray-700 leading-relaxed whitespace-pre-wrap text-${props.align ?? "left"}`}>
+      <div
+        className={`relative z-10 max-w-3xl mx-auto text-gray-700 leading-relaxed whitespace-pre-wrap text-${props.align ?? "left"}`}
+        style={props.contentColor ? { color: props.contentColor } : {}}
+      >
         {props.content}
       </div>
     </section>
@@ -87,6 +94,10 @@ function TextBlock({ props }: { props: TextBlockProps }) {
 function ImageTextBlock({ props }: { props: ImageTextProps }) {
   const isLeft = props.imagePosition !== "right";
   const hasBg = props.bgType !== undefined;
+  const btnStyle = {
+    ...(props.buttonBgColor ? { backgroundColor: props.buttonBgColor } : {}),
+    ...(props.buttonTextColor ? { color: props.buttonTextColor } : {}),
+  };
   return (
     <section className="relative py-16 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
@@ -97,10 +108,10 @@ function ImageTextBlock({ props }: { props: ImageTextProps }) {
           </div>
         )}
         <div className="w-full md:w-1/2">
-          <h2 className="text-3xl font-bold text-brand-brown mb-4">{props.headline}</h2>
-          <p className="text-gray-600 leading-relaxed mb-6">{props.content}</p>
+          <h2 className="text-3xl font-bold text-brand-brown mb-4" style={props.headlineColor ? { color: props.headlineColor } : {}}>{props.headline}</h2>
+          <p className="text-gray-600 leading-relaxed mb-6" style={props.contentColor ? { color: props.contentColor } : {}}>{props.content}</p>
           {props.buttonText && (
-            <Link href={props.buttonLink || "/"} className="inline-block px-6 py-2.5 bg-brand-gold text-white rounded-full font-semibold hover:bg-brand-brown transition-colors">
+            <Link href={props.buttonLink || "/"} style={btnStyle} className="inline-block px-6 py-2.5 bg-brand-gold text-white rounded-full font-semibold hover:opacity-90 transition-opacity">
               {props.buttonText}
             </Link>
           )}
@@ -111,14 +122,20 @@ function ImageTextBlock({ props }: { props: ImageTextProps }) {
 }
 
 function CTABannerBlock({ props }: { props: CTABannerProps }) {
+  const btnStyle = {
+    ...(props.buttonBgColor ? { backgroundColor: props.buttonBgColor } : {}),
+    ...(props.buttonTextColor ? { color: props.buttonTextColor } : {}),
+  };
   return (
     <section className="relative py-16 px-4 text-white text-center" style={getBlockBgStyle(props)}>
       <BlockOverlay props={props} />
       <div className="relative z-10 max-w-2xl mx-auto">
-        <h2 className="text-3xl font-bold mb-3">{props.headline}</h2>
-        {props.subheadline && <p className="text-lg text-white/90 mb-8">{props.subheadline}</p>}
+        <h2 className="text-3xl font-bold mb-3" style={props.headlineColor ? { color: props.headlineColor } : {}}>{props.headline}</h2>
+        {props.subheadline && (
+          <p className="text-lg text-white/90 mb-8" style={props.subheadlineColor ? { color: props.subheadlineColor } : {}}>{props.subheadline}</p>
+        )}
         {props.buttonText && (
-          <Link href={props.buttonLink || "/"} className="inline-block px-8 py-3 bg-white text-brand-brown rounded-full font-bold hover:bg-brand-cream transition-colors">
+          <Link href={props.buttonLink || "/"} style={btnStyle} className="inline-block px-8 py-3 bg-white text-brand-brown rounded-full font-bold hover:opacity-90 transition-opacity">
             {props.buttonText}
           </Link>
         )}
@@ -204,7 +221,7 @@ function FeatureIconsBlock({ props }: { props: FeatureIconsProps }) {
       {hasBg && <BlockOverlay props={props} />}
       <div className="relative z-10 max-w-5xl mx-auto">
         {props.headline && (
-          <h2 className="text-3xl font-bold text-brand-brown text-center mb-10">{props.headline}</h2>
+          <h2 className="text-3xl font-bold text-brand-brown text-center mb-10" style={props.headlineColor ? { color: props.headlineColor } : {}}>{props.headline}</h2>
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {(props.items ?? []).map((item, i) => (
@@ -212,8 +229,8 @@ function FeatureIconsBlock({ props }: { props: FeatureIconsProps }) {
               <div className="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-brand-gold text-xl">✦</span>
               </div>
-              <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
-              <p className="text-gray-600 text-sm">{item.description}</p>
+              <h3 className="font-bold text-gray-900 mb-2" style={props.itemTitleColor ? { color: props.itemTitleColor } : {}}>{item.title}</h3>
+              <p className="text-gray-600 text-sm" style={props.itemDescColor ? { color: props.itemDescColor } : {}}>{item.description}</p>
             </div>
           ))}
         </div>

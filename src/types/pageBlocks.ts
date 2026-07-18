@@ -12,6 +12,7 @@ export interface BackgroundProps {
   bgType: "image" | "color";
   bgImage: string;
   bgColor: string;
+  bgImageFit?: "cover" | "contain" | "original";
   overlayEnabled: boolean;
   overlayColor: string;
   overlayOpacity: number; // 0–100
@@ -23,11 +24,14 @@ export interface HeroProps extends BackgroundProps {
   buttonText: string;
   buttonLink: string;
   overlay?: boolean; // backward compat
+  buttonBgColor?: string;
+  buttonTextColor?: string;
 }
 
 export interface TextBlockProps extends BackgroundProps {
   content: string;
   align: "left" | "center" | "right";
+  contentColor?: string;
 }
 
 export interface ImageTextProps extends BackgroundProps {
@@ -37,6 +41,10 @@ export interface ImageTextProps extends BackgroundProps {
   imagePosition: "left" | "right";
   buttonText: string;
   buttonLink: string;
+  headlineColor?: string;
+  contentColor?: string;
+  buttonBgColor?: string;
+  buttonTextColor?: string;
 }
 
 export interface CTABannerProps extends BackgroundProps {
@@ -44,6 +52,10 @@ export interface CTABannerProps extends BackgroundProps {
   subheadline: string;
   buttonText: string;
   buttonLink: string;
+  headlineColor?: string;
+  subheadlineColor?: string;
+  buttonBgColor?: string;
+  buttonTextColor?: string;
 }
 
 export interface ProductGridProps extends BackgroundProps {
@@ -71,6 +83,9 @@ export interface FeatureIconItem {
 export interface FeatureIconsProps extends BackgroundProps {
   headline: string;
   items: FeatureIconItem[];
+  headlineColor?: string;
+  itemTitleColor?: string;
+  itemDescColor?: string;
 }
 
 export interface SpacerProps {
