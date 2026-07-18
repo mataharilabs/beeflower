@@ -7,6 +7,7 @@ import { isExternalUrl } from "@/lib/utils";
 import Image from "next/image";
 import type { HeroProps, FeatureIconsProps, FAQSectionProps, Block } from "@/types/pageBlocks";
 import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
+import { BlockRenderer } from "@/components/blocks/BlockRenderer";
 
 export const revalidate = 3600;
 
@@ -28,6 +29,7 @@ export default async function ResellerPage() {
   const heroBlock = blocks.find((b) => b.type === "Hero");
   const benefitsBlock = blocks.find((b) => b.type === "FeatureIcons");
   const faqBlock = blocks.find((b) => b.type === "FAQSection");
+  const middleBlocks = blocks.filter((b) => !["Hero", "FeatureIcons", "FAQSection"].includes(b.type));
 
   const heroProps = heroBlock?.props as HeroProps | undefined;
   const benefitsProps = benefitsBlock?.props as FeatureIconsProps | undefined;
@@ -115,8 +117,13 @@ export default async function ResellerPage() {
         </div>
       </section>
 
-      {/* Packages */}
-      {packages.length > 0 && (
+      {/* CMS middle blocks (ProductGrid, CTABanner, etc.) — set via /admin/pages */}
+      {middleBlocks.length > 0 && (
+        <BlockRenderer document={{ blocks: middleBlocks }} />
+      )}
+
+      {/* Fallback: Reseller Packages (shown only when no CMS blocks configured) */}
+      {middleBlocks.length === 0 && packages.length > 0 && (
         <section className="py-16 lg:py-24 bg-brand-cream">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">

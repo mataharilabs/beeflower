@@ -3,6 +3,8 @@ import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { BlockRenderer } from "@/components/blocks/BlockRenderer";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {

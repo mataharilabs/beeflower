@@ -36,7 +36,9 @@ export async function PUT(
       ogImage: body.ogImage,
     },
   });
-  revalidatePath(page.slug === "home" ? "/" : `/${page.slug}`);
+  const SYSTEM_SLUGS = ["home", "reseller", "contact", "toko"];
+  const publicPath = page.slug === "home" ? "/" : SYSTEM_SLUGS.includes(page.slug) ? `/${page.slug}` : `/p/${page.slug}`;
+  revalidatePath(publicPath);
   return NextResponse.json(page);
 }
 

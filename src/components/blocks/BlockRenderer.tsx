@@ -173,9 +173,16 @@ async function ProductGridBlock({ props }: { props: ProductGridProps }) {
                 </div>
                 <div className="p-3">
                   <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
-                  <p className="text-brand-gold font-bold text-sm mt-1">
-                    {formatPrice(Number(product.price.toString()))}
-                  </p>
+                  <div className="flex items-baseline gap-1.5 mt-1 flex-wrap">
+                    <p className="text-brand-gold font-bold text-sm">
+                      {formatPrice(Number(product.price.toString()))}
+                    </p>
+                    {product.comparePrice && Number(product.comparePrice.toString()) > Number(product.price.toString()) && (
+                      <p className="text-xs text-gray-400 line-through">
+                        {formatPrice(Number(product.comparePrice.toString()))}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </Link>
