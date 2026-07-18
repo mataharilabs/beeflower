@@ -13,6 +13,7 @@ export interface BackgroundProps {
   bgImage: string;
   bgColor: string;
   bgImageFit?: "cover" | "contain" | "original";
+  bgImagePosition?: string;
   overlayEnabled: boolean;
   overlayColor: string;
   overlayOpacity: number; // 0–100

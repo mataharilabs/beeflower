@@ -6,7 +6,7 @@ export function getBlockBgStyle(props: any): CSSProperties {
     const style: CSSProperties = {
       backgroundImage: `url(${props.bgImage})`,
       backgroundSize: fit === "original" ? "auto" : fit,
-      backgroundPosition: "center",
+      backgroundPosition: props?.bgImagePosition ?? "center",
     };
     if (fit === "original") style.backgroundRepeat = "no-repeat";
     return style;

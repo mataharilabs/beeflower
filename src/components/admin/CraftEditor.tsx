@@ -260,6 +260,34 @@ function BackgroundSection({ props, onUpdate }: { props: any; onUpdate: (p: obje
               ))}
             </div>
           </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Posisi Gambar</label>
+            <div className="grid grid-cols-3 gap-1 w-24">
+              {([
+                { value: "top left",     dot: "rounded-tl-lg" },
+                { value: "top center",   dot: "" },
+                { value: "top right",    dot: "rounded-tr-lg" },
+                { value: "center left",  dot: "" },
+                { value: "center",       dot: "" },
+                { value: "center right", dot: "" },
+                { value: "bottom left",  dot: "rounded-bl-lg" },
+                { value: "bottom center",dot: "" },
+                { value: "bottom right", dot: "rounded-br-lg" },
+              ] as const).map(({ value }) => {
+                const active = (props.bgImagePosition ?? "center") === value;
+                return (
+                  <button
+                    key={value}
+                    title={value}
+                    onClick={() => onUpdate({ bgImagePosition: value })}
+                    className={`w-7 h-7 flex items-center justify-center border rounded transition-colors ${active ? "bg-brand-gold border-brand-gold" : "border-gray-200 hover:border-brand-gold/50"}`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${active ? "bg-white" : "bg-gray-300"}`} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
