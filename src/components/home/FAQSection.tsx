@@ -3,10 +3,16 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
 
 interface FAQItem {
   question: string;
   answer: string;
+}
+
+interface Props {
+  items?: FAQItem[];
+  bgProps?: any;
 }
 
 const DEFAULT_FAQS: FAQItem[] = [
@@ -27,13 +33,24 @@ const DEFAULT_FAQS: FAQItem[] = [
   },
 ];
 
-export function FAQSection({ items }: { items?: FAQItem[] }) {
+export function FAQSection({ items, bgProps }: Props) {
   const [open, setOpen] = useState<number | null>(null);
   const faqs = items?.length ? items : DEFAULT_FAQS;
 
+  const hasCustomBg = !!bgProps?.bgType;
+  const bgStyle = hasCustomBg ? getBlockBgStyle(bgProps) : {};
+  const showOverlay = hasCustomBg && shouldShowOverlay(bgProps);
+  const overlayStyle = getOverlayStyle(bgProps);
+
   return (
-    <section className="py-16 lg:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      className={`relative py-16 lg:py-24 ${!hasCustomBg ? "bg-white" : ""}`}
+      style={bgStyle}
+    >
+      {showOverlay && (
+        <div className="absolute inset-0 pointer-events-none" style={overlayStyle} />
+      )}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-6">
             F A Q

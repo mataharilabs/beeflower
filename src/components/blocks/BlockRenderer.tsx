@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Block, PageDocument, HeroProps, TextBlockProps, ImageTextProps, CTABannerProps, ProductGridProps, FAQSectionProps, FeatureIconsProps, SpacerProps } from "@/types/pageBlocks";
 import { formatPrice } from "@/lib/utils";
+import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
 
 export function BlockRenderer({ document }: { document: object }) {
   const doc = document as PageDocument;
@@ -41,50 +42,21 @@ function BlockItem({ block }: { block: Block }) {
   }
 }
 
-function getBgStyle(props: any): React.CSSProperties {
-  if (props.bgType === "image" && props.bgImage) {
-    return { backgroundImage: `url(${props.bgImage})`, backgroundSize: "cover", backgroundPosition: "center" };
-  }
-  if (props.bgType === "color" && props.bgColor) {
-    return { backgroundColor: props.bgColor };
-  }
-  // backward compat: Hero had bgImage without bgType
-  if (!props.bgType && props.bgImage) {
-    return { backgroundImage: `url(${props.bgImage})`, backgroundSize: "cover", backgroundPosition: "center" };
-  }
-  // backward compat: CTABanner had bgColor without bgType
-  if (!props.bgType && props.bgColor) {
-    return { backgroundColor: props.bgColor };
-  }
-  return {};
-}
-
 function BlockOverlay({ props }: { props: any }) {
-  // New system
-  if (props.bgType !== undefined) {
-    if (!props.overlayEnabled) return null;
-    return (
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundColor: props.overlayColor ?? "#000000",
-          opacity: (props.overlayOpacity ?? 40) / 100,
-        }}
-      />
-    );
-  }
-  // backward compat: Hero's old `overlay` boolean
-  if (props.overlay && props.bgImage) {
-    return <div className="absolute inset-0 bg-black/40 pointer-events-none" />;
-  }
-  return null;
+  if (!shouldShowOverlay(props)) return null;
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={getOverlayStyle(props)}
+    />
+  );
 }
 
 function HeroBlock({ props }: { props: HeroProps }) {
   return (
     <section
       className="relative min-h-[500px] flex items-center justify-center bg-brand-brown text-white"
-      style={getBgStyle(props)}
+      style={getBlockBgStyle(props)}
     >
       <BlockOverlay props={props} />
       <div className="relative z-10 text-center px-4 max-w-2xl mx-auto">
@@ -103,7 +75,7 @@ function HeroBlock({ props }: { props: HeroProps }) {
 function TextBlock({ props }: { props: TextBlockProps }) {
   const hasBg = props.bgType !== undefined;
   return (
-    <section className="relative py-12 px-4" style={hasBg ? getBgStyle(props) : {}}>
+    <section className="relative py-12 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
       <div className={`relative z-10 max-w-3xl mx-auto text-gray-700 leading-relaxed whitespace-pre-wrap text-${props.align ?? "left"}`}>
         {props.content}
@@ -116,7 +88,7 @@ function ImageTextBlock({ props }: { props: ImageTextProps }) {
   const isLeft = props.imagePosition !== "right";
   const hasBg = props.bgType !== undefined;
   return (
-    <section className="relative py-16 px-4" style={hasBg ? getBgStyle(props) : {}}>
+    <section className="relative py-16 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
       <div className={`relative z-10 max-w-5xl mx-auto flex flex-col ${isLeft ? "md:flex-row" : "md:flex-row-reverse"} gap-10 items-center`}>
         {props.imageUrl && (
@@ -140,7 +112,7 @@ function ImageTextBlock({ props }: { props: ImageTextProps }) {
 
 function CTABannerBlock({ props }: { props: CTABannerProps }) {
   return (
-    <section className="relative py-16 px-4 text-white text-center" style={getBgStyle(props)}>
+    <section className="relative py-16 px-4 text-white text-center" style={getBlockBgStyle(props)}>
       <BlockOverlay props={props} />
       <div className="relative z-10 max-w-2xl mx-auto">
         <h2 className="text-3xl font-bold mb-3">{props.headline}</h2>
@@ -167,7 +139,7 @@ async function ProductGridBlock({ props }: { props: ProductGridProps }) {
 
   const hasBg = props.bgType !== undefined;
   return (
-    <section className="relative py-16 px-4" style={hasBg ? getBgStyle(props) : {}}>
+    <section className="relative py-16 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
       <div className="relative z-10 max-w-6xl mx-auto">
         {props.headline && (
@@ -199,7 +171,7 @@ async function ProductGridBlock({ props }: { props: ProductGridProps }) {
 
 function FAQSectionBlock({ props }: { props: FAQSectionProps }) {
   const hasBg = props.bgType !== undefined;
-  const bgStyle = hasBg ? getBgStyle(props) : {};
+  const bgStyle = hasBg ? getBlockBgStyle(props) : {};
   // Fall back to brand-cream when no background is explicitly configured
   const fallbackClass = !hasBg || (!props.bgImage && !props.bgColor) ? "bg-brand-cream" : "";
   return (
@@ -228,7 +200,7 @@ function FAQSectionBlock({ props }: { props: FAQSectionProps }) {
 function FeatureIconsBlock({ props }: { props: FeatureIconsProps }) {
   const hasBg = props.bgType !== undefined;
   return (
-    <section className="relative py-16 px-4" style={hasBg ? getBgStyle(props) : {}}>
+    <section className="relative py-16 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
       <div className="relative z-10 max-w-5xl mx-auto">
         {props.headline && (

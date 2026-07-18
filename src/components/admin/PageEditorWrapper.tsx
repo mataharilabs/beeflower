@@ -14,7 +14,7 @@ const CraftEditor = dynamic(() => import("./CraftEditor"), {
   ),
 });
 
-const SYSTEM_SLUGS = ["home", "reseller", "contact"];
+const SYSTEM_SLUGS = ["home", "reseller", "contact", "toko"];
 
 interface Props {
   pageId: string;

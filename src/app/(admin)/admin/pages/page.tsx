@@ -3,7 +3,7 @@ import { Plus, Globe } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DeletePageButton } from "@/components/admin/DeletePageButton";
 
-const SYSTEM_SLUGS = ["home", "reseller", "contact"] as const;
+const SYSTEM_SLUGS = ["home", "reseller", "contact", "toko"] as const;
 
 const SYSTEM_PAGE_DEFAULTS: Record<
   (typeof SYSTEM_SLUGS)[number],
@@ -170,8 +170,35 @@ const SYSTEM_PAGE_DEFAULTS: Record<
               "Kami siap membantu kebutuhan informasi produk maupun kerja sama reseller.",
             buttonText: "",
             buttonLink: "",
+            bgType: "color",
             bgImage: "",
-            overlay: false,
+            bgColor: "",
+            overlayEnabled: false,
+            overlayColor: "#000000",
+            overlayOpacity: 40,
+          },
+        },
+      ],
+    },
+  },
+  toko: {
+    title: "Halaman Toko / Produk",
+    craftJson: {
+      blocks: [
+        {
+          id: "toko-hero",
+          type: "Hero",
+          props: {
+            headline: "Produk Kami",
+            subheadline: "Temukan produk Bee & Flower pilihan terbaik Anda",
+            buttonText: "",
+            buttonLink: "",
+            bgType: "color",
+            bgImage: "",
+            bgColor: "#3A2D1D",
+            overlayEnabled: false,
+            overlayColor: "#000000",
+            overlayOpacity: 40,
           },
         },
       ],

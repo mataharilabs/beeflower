@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import type { HeroProps, Block } from "@/types/pageBlocks";
+import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
 
 export const revalidate = 3600;
 
@@ -26,11 +27,18 @@ export default async function ContactPage() {
   const heroSubheadline =
     heroProps?.subheadline || "Kami siap membantu kebutuhan informasi produk maupun kerja sama reseller.";
 
+  const heroBgStyle = getBlockBgStyle(heroProps ?? {});
+  const heroShowOverlay = shouldShowOverlay(heroProps ?? {});
+  const heroOverlayStyle = getOverlayStyle(heroProps ?? {});
+
   return (
     <>
       {/* Hero */}
-      <section className="relative min-h-[300px] lg:min-h-[380px] overflow-hidden bg-brand-cream flex items-center">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20 w-full">
+      <section className="relative min-h-[300px] lg:min-h-[380px] overflow-hidden bg-brand-cream flex items-center" style={heroBgStyle}>
+        {heroShowOverlay && (
+          <div className="absolute inset-0 pointer-events-none" style={heroOverlayStyle} />
+        )}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20 w-full">
           <div className="max-w-xl">
             <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-3">
               Contact Us

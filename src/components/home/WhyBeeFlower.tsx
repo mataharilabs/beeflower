@@ -1,6 +1,13 @@
+import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
+
 interface FeatureItem {
   title: string;
   description: string;
+}
+
+interface Props {
+  items?: FeatureItem[];
+  bgProps?: any;
 }
 
 const DEFAULT_FEATURES: FeatureItem[] = [
@@ -21,12 +28,22 @@ const DEFAULT_FEATURES: FeatureItem[] = [
   },
 ];
 
-export function WhyBeeFlower({ items }: { items?: FeatureItem[] }) {
+export function WhyBeeFlower({ items, bgProps }: Props) {
   const features = items?.length ? items : DEFAULT_FEATURES;
+  const hasCustomBg = !!bgProps?.bgType;
+  const bgStyle = hasCustomBg ? getBlockBgStyle(bgProps) : {};
+  const showOverlay = hasCustomBg && shouldShowOverlay(bgProps);
+  const overlayStyle = getOverlayStyle(bgProps);
 
   return (
-    <section className="py-16 lg:py-20 bg-brand-cream">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      className={`relative py-16 lg:py-20 ${!hasCustomBg ? "bg-brand-cream" : ""}`}
+      style={bgStyle}
+    >
+      {showOverlay && (
+        <div className="absolute inset-0 pointer-events-none" style={overlayStyle} />
+      )}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
           {features.map((feature, i) => (
             <div key={i} className="flex gap-4 items-start">

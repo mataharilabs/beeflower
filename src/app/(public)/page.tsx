@@ -75,7 +75,7 @@ export default async function HomePage() {
       <HeroBannerSlider banners={bannersData} />
       <OurStory data={ourStoryBlock?.props as ImageTextProps | undefined} />
       <OurCollection products={featuredData} />
-      <WhyBeeFlower items={(whyBFBlock?.props as FeatureIconsProps | undefined)?.items} />
+      <WhyBeeFlower items={(whyBFBlock?.props as FeatureIconsProps | undefined)?.items} bgProps={whyBFBlock?.props} />
       {highlightProduct && !Array.isArray(highlightProduct) && (
         <ProductHighlight
           product={
@@ -85,7 +85,7 @@ export default async function HomePage() {
       )}
       <BestSellers products={bestSellersData} />
       <BusinessOpportunityCTA data={ctaBanners[0]?.props as CTABannerProps | undefined} />
-      <FAQSection items={(faqBlock?.props as FAQSectionProps | undefined)?.items} />
+      <FAQSection items={(faqBlock?.props as FAQSectionProps | undefined)?.items} bgProps={faqBlock?.props} />
       <BottomCTA data={ctaBanners[1]?.props as CTABannerProps | undefined} />
     </>
   );

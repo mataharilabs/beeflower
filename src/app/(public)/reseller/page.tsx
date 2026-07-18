@@ -6,6 +6,7 @@ import { FAQSection } from "@/components/home/FAQSection";
 import { isExternalUrl } from "@/lib/utils";
 import Image from "next/image";
 import type { HeroProps, FeatureIconsProps, FAQSectionProps, Block } from "@/types/pageBlocks";
+import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
 
 export const revalidate = 3600;
 
@@ -50,16 +51,18 @@ export default async function ResellerPage() {
     { title: "Peluang Repeat Order", description: "Produk berkualitas yang dipercaya pelanggan mendorong pembelian berulang." },
   ];
 
+  const heroBgStyle = getBlockBgStyle(heroProps ?? {});
+  const heroShowOverlay = shouldShowOverlay(heroProps ?? {});
+  const heroOverlayStyle = getOverlayStyle(heroProps ?? {});
+
   return (
     <>
       {/* Hero */}
-      <section className="relative min-h-[420px] lg:min-h-[500px] overflow-hidden bg-brand-brown flex items-center">
-        {isExternalUrl(heroProps?.bgImage) && (
-          <div className="absolute inset-0 opacity-40">
-            <Image src={heroProps!.bgImage!} alt={heroHeadline} fill className="object-cover" />
-          </div>
+      <section className="relative min-h-[420px] lg:min-h-[500px] overflow-hidden bg-brand-brown flex items-center" style={heroBgStyle}>
+        {heroShowOverlay && (
+          <div className="absolute inset-0 pointer-events-none" style={heroOverlayStyle} />
         )}
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="max-w-2xl">
             <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-4">
               Bergabunglah Bersama Kami
@@ -168,7 +171,7 @@ export default async function ResellerPage() {
       )}
 
       {/* FAQ */}
-      <FAQSection items={faqItems} />
+      <FAQSection items={faqItems} bgProps={faqBlock?.props} />
     </>
   );
 }

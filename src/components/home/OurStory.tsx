@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { isExternalUrl } from "@/lib/utils";
+import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
 
 interface OurStoryData {
   headline?: string;
@@ -8,6 +9,12 @@ interface OurStoryData {
   imageUrl?: string;
   buttonText?: string;
   buttonLink?: string;
+  bgType?: string;
+  bgColor?: string;
+  bgImage?: string;
+  overlayEnabled?: boolean;
+  overlayColor?: string;
+  overlayOpacity?: number;
 }
 
 export function OurStory({ data }: { data?: OurStoryData }) {
@@ -19,9 +26,20 @@ export function OurStory({ data }: { data?: OurStoryData }) {
   const buttonLink = data?.buttonLink || "/reseller";
   const imageUrl = data?.imageUrl;
 
+  const hasCustomBg = !!data?.bgType;
+  const bgStyle = hasCustomBg ? getBlockBgStyle(data) : {};
+  const showOverlay = hasCustomBg && shouldShowOverlay(data);
+  const overlayStyle = getOverlayStyle(data);
+
   return (
-    <section className="py-16 lg:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      className={`relative py-16 lg:py-24 ${!hasCustomBg ? "bg-white" : ""}`}
+      style={bgStyle}
+    >
+      {showOverlay && (
+        <div className="absolute inset-0 pointer-events-none" style={overlayStyle} />
+      )}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Text */}
           <div>
