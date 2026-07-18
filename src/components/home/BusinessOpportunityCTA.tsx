@@ -12,6 +12,10 @@ interface CTAData {
   overlayEnabled?: boolean;
   overlayColor?: string;
   overlayOpacity?: number;
+  headlineColor?: string;
+  subheadlineColor?: string;
+  buttonBgColor?: string;
+  buttonTextColor?: string;
 }
 
 export function BusinessOpportunityCTA({ data }: { data?: CTAData }) {
@@ -26,6 +30,10 @@ export function BusinessOpportunityCTA({ data }: { data?: CTAData }) {
   const bgStyle = hasCustomBg ? getBlockBgStyle(data) : {};
   const showOverlay = hasCustomBg && shouldShowOverlay(data);
   const overlayStyle = getOverlayStyle(data);
+  const btnStyle = {
+    ...(data?.buttonBgColor ? { backgroundColor: data.buttonBgColor } : {}),
+    ...(data?.buttonTextColor ? { color: data.buttonTextColor } : {}),
+  };
 
   return (
     <section
@@ -48,15 +56,22 @@ export function BusinessOpportunityCTA({ data }: { data?: CTAData }) {
           <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-4">
             Business Opportunity
           </p>
-          <h2 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 leading-tight">
+          <h2
+            className="text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 leading-tight"
+            style={data?.headlineColor ? { color: data.headlineColor } : {}}
+          >
             {headline}
           </h2>
-          <p className="text-brand-beige text-base leading-relaxed mb-8 max-w-lg">
+          <p
+            className="text-brand-beige text-base leading-relaxed mb-8 max-w-lg"
+            style={data?.subheadlineColor ? { color: data.subheadlineColor } : {}}
+          >
             {subheadline}
           </p>
           <Link
             href={buttonLink}
-            className="inline-flex items-center px-7 py-3.5 bg-brand-gold text-white font-semibold text-sm rounded tracking-wide hover:bg-white hover:text-brand-brown transition-colors"
+            style={btnStyle}
+            className="inline-flex items-center px-7 py-3.5 bg-brand-gold text-white font-semibold text-sm rounded tracking-wide hover:opacity-90 transition-opacity"
           >
             {buttonText}
           </Link>

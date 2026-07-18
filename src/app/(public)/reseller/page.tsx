@@ -67,17 +67,18 @@ export default async function ResellerPage() {
             <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-4">
               Bergabunglah Bersama Kami
             </p>
-            <h1 className="text-3xl lg:text-5xl font-bold text-white leading-tight mb-4">
+            <h1 className="text-3xl lg:text-5xl font-bold text-white leading-tight mb-4" style={heroProps?.headlineColor ? { color: heroProps.headlineColor } : {}}>
               {heroHeadline}
             </h1>
-            <p className="text-brand-beige text-base lg:text-lg leading-relaxed mb-8 max-w-lg">
+            <p className="text-brand-beige text-base lg:text-lg leading-relaxed mb-8 max-w-lg" style={heroProps?.subheadlineColor ? { color: heroProps.subheadlineColor } : {}}>
               {heroSubheadline}
             </p>
             <a
               href={heroLink}
               target={heroLink.startsWith("http") ? "_blank" : undefined}
               rel={heroLink.startsWith("http") ? "noopener noreferrer" : undefined}
-              className="inline-flex items-center px-7 py-3.5 bg-brand-gold text-white font-semibold text-sm rounded tracking-wide hover:bg-white hover:text-brand-brown transition-colors"
+              style={{ ...(heroProps?.buttonBgColor ? { backgroundColor: heroProps.buttonBgColor } : {}), ...(heroProps?.buttonTextColor ? { color: heroProps.buttonTextColor } : {}) }}
+              className="inline-flex items-center px-7 py-3.5 bg-brand-gold text-white font-semibold text-sm rounded tracking-wide hover:opacity-90 transition-opacity"
             >
               {heroButton}
             </a>

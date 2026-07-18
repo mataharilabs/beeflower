@@ -25,6 +25,8 @@ export interface HeroProps extends BackgroundProps {
   buttonText: string;
   buttonLink: string;
   overlay?: boolean; // backward compat
+  headlineColor?: string;
+  subheadlineColor?: string;
   buttonBgColor?: string;
   buttonTextColor?: string;
 }

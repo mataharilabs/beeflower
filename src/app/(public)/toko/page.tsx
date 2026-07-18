@@ -65,9 +65,9 @@ export default async function TokoPage({
           <div className="absolute inset-0 pointer-events-none" style={overlayStyle} />
         )}
         <div className="relative z-10">
-          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">{headline}</h1>
+          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2" style={heroProps?.headlineColor ? { color: heroProps.headlineColor } : {}}>{headline}</h1>
           {subheadline && (
-            <p className="text-brand-beige text-sm">{subheadline}</p>
+            <p className="text-brand-beige text-sm" style={heroProps?.subheadlineColor ? { color: heroProps.subheadlineColor } : {}}>{subheadline}</p>
           )}
         </div>
       </div>

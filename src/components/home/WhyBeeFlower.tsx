@@ -51,8 +51,8 @@ export function WhyBeeFlower({ items, bgProps }: Props) {
                 <span className="text-brand-gold font-bold text-lg select-none">✦</span>
               </div>
               <div>
-                <h3 className="font-bold text-brand-brown mb-2 text-lg">{feature.title}</h3>
-                <p className="text-sm text-brand-brown/70 leading-relaxed">{feature.description}</p>
+                <h3 className="font-bold text-brand-brown mb-2 text-lg" style={bgProps?.itemTitleColor ? { color: bgProps.itemTitleColor } : {}}>{feature.title}</h3>
+                <p className="text-sm text-brand-brown/70 leading-relaxed" style={bgProps?.itemDescColor ? { color: bgProps.itemDescColor } : {}}>{feature.description}</p>
               </div>
             </div>
           ))}

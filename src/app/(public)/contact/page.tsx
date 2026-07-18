@@ -43,10 +43,10 @@ export default async function ContactPage() {
             <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-3">
               Contact Us
             </p>
-            <h1 className="text-4xl lg:text-5xl font-bold text-brand-brown leading-tight mb-4">
+            <h1 className="text-4xl lg:text-5xl font-bold text-brand-brown leading-tight mb-4" style={heroProps?.headlineColor ? { color: heroProps.headlineColor } : {}}>
               {heroHeadline}
             </h1>
-            <p className="text-brand-brown/60 text-base leading-relaxed max-w-sm">
+            <p className="text-brand-brown/60 text-base leading-relaxed max-w-sm" style={heroProps?.subheadlineColor ? { color: heroProps.subheadlineColor } : {}}>
               {heroSubheadline}
             </p>
           </div>

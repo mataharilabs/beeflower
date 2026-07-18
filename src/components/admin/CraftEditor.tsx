@@ -431,6 +431,10 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           {field("subheadline", "Sub Judul", "textarea")}
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
+          <TextColorSection props={p} onUpdate={onUpdate} fields={[
+            { key: "headlineColor", label: "Warna Judul" },
+            { key: "subheadlineColor", label: "Warna Sub Judul" },
+          ]} />
           <ButtonColorSection props={p} onUpdate={onUpdate} />
           <BackgroundSection props={p} onUpdate={onUpdate} />
         </>

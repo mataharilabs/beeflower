@@ -12,6 +12,10 @@ interface CTAData {
   overlayEnabled?: boolean;
   overlayColor?: string;
   overlayOpacity?: number;
+  headlineColor?: string;
+  subheadlineColor?: string;
+  buttonBgColor?: string;
+  buttonTextColor?: string;
 }
 
 export function BottomCTA({ data }: { data?: CTAData }) {
@@ -26,6 +30,10 @@ export function BottomCTA({ data }: { data?: CTAData }) {
   const bgStyle = hasCustomBg ? getBlockBgStyle(data) : {};
   const showOverlay = hasCustomBg && shouldShowOverlay(data);
   const overlayStyle = getOverlayStyle(data);
+  const btnStyle = {
+    ...(data?.buttonBgColor ? { backgroundColor: data.buttonBgColor } : {}),
+    ...(data?.buttonTextColor ? { color: data.buttonTextColor } : {}),
+  };
 
   return (
     <section
@@ -36,15 +44,22 @@ export function BottomCTA({ data }: { data?: CTAData }) {
         <div className="absolute inset-0 pointer-events-none" style={overlayStyle} />
       )}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-2xl lg:text-3xl font-bold text-white mb-3 leading-tight">
+        <h2
+          className="text-2xl lg:text-3xl font-bold text-white mb-3 leading-tight"
+          style={data?.headlineColor ? { color: data.headlineColor } : {}}
+        >
           {headline}
         </h2>
-        <p className="text-white/80 text-sm leading-relaxed mb-6 max-w-sm mx-auto">
+        <p
+          className="text-white/80 text-sm leading-relaxed mb-6 max-w-sm mx-auto"
+          style={data?.subheadlineColor ? { color: data.subheadlineColor } : {}}
+        >
           {subheadline}
         </p>
         <Link
           href={buttonLink}
-          className="inline-flex items-center px-7 py-3 bg-white text-brand-brown font-semibold text-sm rounded tracking-wide hover:bg-brand-cream transition-colors"
+          style={btnStyle}
+          className="inline-flex items-center px-7 py-3 bg-white text-brand-brown font-semibold text-sm rounded tracking-wide hover:opacity-90 transition-opacity"
         >
           {buttonText}
         </Link>

@@ -64,8 +64,8 @@ function HeroBlock({ props }: { props: HeroProps }) {
     >
       <BlockOverlay props={props} />
       <div className="relative z-10 text-center px-4 max-w-2xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">{props.headline}</h1>
-        {props.subheadline && <p className="text-lg text-white/90 mb-8">{props.subheadline}</p>}
+        <h1 className="text-4xl md:text-5xl font-bold mb-4" style={props.headlineColor ? { color: props.headlineColor } : {}}>{props.headline}</h1>
+        {props.subheadline && <p className="text-lg text-white/90 mb-8" style={props.subheadlineColor ? { color: props.subheadlineColor } : {}}>{props.subheadline}</p>}
         {props.buttonText && (
           <Link href={props.buttonLink || "/"} style={btnStyle} className="inline-block px-8 py-3 bg-brand-gold text-white rounded-full font-semibold hover:opacity-90 transition-opacity">
             {props.buttonText}

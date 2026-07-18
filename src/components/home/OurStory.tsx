@@ -15,6 +15,10 @@ interface OurStoryData {
   overlayEnabled?: boolean;
   overlayColor?: string;
   overlayOpacity?: number;
+  headlineColor?: string;
+  contentColor?: string;
+  buttonBgColor?: string;
+  buttonTextColor?: string;
 }
 
 export function OurStory({ data }: { data?: OurStoryData }) {
@@ -31,6 +35,11 @@ export function OurStory({ data }: { data?: OurStoryData }) {
   const showOverlay = hasCustomBg && shouldShowOverlay(data);
   const overlayStyle = getOverlayStyle(data);
 
+  const btnStyle = {
+    ...(data?.buttonBgColor ? { backgroundColor: data.buttonBgColor } : {}),
+    ...(data?.buttonTextColor ? { color: data.buttonTextColor } : {}),
+  };
+
   return (
     <section
       className={`relative py-16 lg:py-24 ${!hasCustomBg ? "bg-white" : ""}`}
@@ -46,12 +55,21 @@ export function OurStory({ data }: { data?: OurStoryData }) {
             <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-3">
               Our Story
             </p>
-            <h2 className="text-3xl lg:text-4xl font-bold text-brand-brown leading-tight mb-6">
+            <h2
+              className="text-3xl lg:text-4xl font-bold text-brand-brown leading-tight mb-6"
+              style={data?.headlineColor ? { color: data.headlineColor } : {}}
+            >
               {headline}
             </h2>
-            <p className="text-brand-brown/70 leading-relaxed mb-4">{content}</p>
+            <p
+              className="text-brand-brown/70 leading-relaxed mb-4"
+              style={data?.contentColor ? { color: data.contentColor } : {}}
+            >
+              {content}
+            </p>
             <Link
               href={buttonLink}
+              style={Object.keys(btnStyle).length ? btnStyle : {}}
               className="inline-flex items-center mt-4 px-6 py-3 border-2 border-brand-brown text-brand-brown font-semibold text-sm rounded tracking-wide hover:bg-brand-brown hover:text-white transition-colors"
             >
               {buttonText}
