@@ -56,6 +56,9 @@ export function orderConfirmationEmail(data: {
   logoWidth?: number | null;
   shippingCost?: number;
   shippingService?: string | null;
+  orderId?: string;
+  bankAccounts?: { bankName: string; accountHolder: string; accountNumber: string; logoUrl?: string | null }[];
+  qrisImageUrl?: string | null;
 }) {
   const subtotal = data.items.reduce((s, i) => s + i.price * i.quantity, 0);
   const itemRows = data.items.map((item) => `
@@ -65,15 +68,39 @@ export function orderConfirmationEmail(data: {
       <td style="padding:10px 0;border-bottom:1px solid #f0e8df;color:${BRAND_BROWN};text-align:right">${formatRupiah(item.price * item.quantity)}</td>
     </tr>`).join("");
 
-  const paymentNote = data.paymentMethod === "MANUAL_TRANSFER"
-    ? `<div style="background:${BRAND_CREAM};border-left:4px solid ${BRAND_GOLD};padding:16px;margin:24px 0;border-radius:0 4px 4px 0">
-        <p style="margin:0 0 6px;font-weight:bold;color:${BRAND_BROWN}">Langkah Selanjutnya</p>
-        <p style="margin:0;color:#555;font-size:14px">Lakukan transfer bank sesuai jumlah di atas, lalu upload bukti transfer di halaman pesanan Anda.</p>
-        <a href="${APP_URL}/toko/pesanan" style="display:inline-block;margin-top:12px;padding:10px 20px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-size:13px">Upload Bukti Transfer</a>
-      </div>`
-    : `<div style="background:${BRAND_CREAM};border-left:4px solid ${BRAND_GOLD};padding:16px;margin:24px 0;border-radius:0 4px 4px 0">
-        <p style="margin:0;color:#555;font-size:14px">Kami telah mengirimkan link pembayaran ke email Anda. Selesaikan pembayaran melalui link tersebut.</p>
-      </div>`;
+  const orderDetailUrl = data.orderId ? `${APP_URL}/toko/pesanan/${data.orderId}` : `${APP_URL}/member/orders`;
+
+  let paymentNote: string;
+  if (data.paymentMethod === "MANUAL_TRANSFER") {
+    const bankCards = (data.bankAccounts ?? []).map((b) => `
+      <div style="background:#fff;border:1px solid #e0d5c8;border-radius:6px;padding:12px 16px;margin:8px 0">
+        <p style="margin:0 0 2px;font-weight:bold;color:${BRAND_BROWN};font-size:14px">${b.bankName}</p>
+        <p style="margin:0 0 4px;color:#888;font-size:12px">${b.accountHolder}</p>
+        <p style="margin:0;font-family:monospace;font-size:17px;font-weight:bold;color:${BRAND_BROWN};letter-spacing:1px">${b.accountNumber}</p>
+      </div>`).join("");
+    paymentNote = `<div style="background:${BRAND_CREAM};border-left:4px solid ${BRAND_GOLD};padding:16px;margin:24px 0;border-radius:0 4px 4px 0">
+      <p style="margin:0 0 10px;font-weight:bold;color:${BRAND_BROWN}">Langkah Selanjutnya</p>
+      <p style="margin:0 0 10px;color:#555;font-size:14px">Silakan transfer sejumlah total di atas ke salah satu rekening berikut:</p>
+      ${bankCards || `<p style="color:#888;font-size:13px">Hubungi kami untuk informasi rekening.</p>`}
+      <a href="${orderDetailUrl}" style="display:inline-block;margin-top:14px;padding:10px 20px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-size:13px">Upload Bukti Transfer</a>
+    </div>`;
+  } else if (data.paymentMethod === "QRIS") {
+    const qrImg = data.qrisImageUrl
+      ? `<div style="text-align:center;margin:14px 0"><img src="${data.qrisImageUrl}" alt="QRIS QR Code" style="max-width:220px;width:100%;border-radius:8px;border:1px solid #e0d5c8" /></div>`
+      : "";
+    paymentNote = `<div style="background:${BRAND_CREAM};border-left:4px solid ${BRAND_GOLD};padding:16px;margin:24px 0;border-radius:0 4px 4px 0">
+      <p style="margin:0 0 10px;font-weight:bold;color:${BRAND_BROWN}">Pembayaran QRIS</p>
+      <p style="margin:0 0 8px;color:#555;font-size:14px">Scan QR code berikut dengan e-wallet atau mobile banking Anda:</p>
+      ${qrImg}
+      <a href="${orderDetailUrl}" style="display:inline-block;margin-top:10px;padding:10px 20px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-size:13px">Upload Bukti Pembayaran</a>
+    </div>`;
+  } else {
+    paymentNote = `<div style="background:${BRAND_CREAM};border-left:4px solid ${BRAND_GOLD};padding:16px;margin:24px 0;border-radius:0 4px 4px 0">
+      <p style="margin:0 0 10px;font-weight:bold;color:${BRAND_BROWN}">Selesaikan Pembayaran</p>
+      <p style="margin:0 0 12px;color:#555;font-size:14px">Klik tombol di bawah untuk melanjutkan pembayaran online Anda.</p>
+      <a href="${orderDetailUrl}" style="display:inline-block;padding:10px 20px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:bold">Lanjutkan Pembayaran</a>
+    </div>`;
+  }
 
   const html = emailWrapper(`
     <h2 style="margin:0 0 4px;color:${BRAND_BROWN};font-size:20px">Pesanan Dikonfirmasi!</h2>

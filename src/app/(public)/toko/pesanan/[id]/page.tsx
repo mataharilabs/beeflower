@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 import { ProofUploadSection } from "@/components/shop/ProofUploadSection";
+import { XenditPaymentModal } from "@/components/shop/XenditPaymentModal";
 import { auth } from "@/lib/auth";
 import { MemberSidebar } from "@/components/member/MemberSidebar";
 
@@ -49,6 +50,14 @@ export default async function OrderPage({
       ])
     : [[], null];
 
+  const qrisImageUrl =
+    order.paymentMethod === "QRIS" && order.status === "PENDING"
+      ? await prisma.paymentSettings
+          .findUnique({ where: { id: "singleton" }, select: { qrisImageUrl: true } })
+          .then((s) => s?.qrisImageUrl ?? null)
+          .catch(() => null)
+      : null;
+
   return (
     <div className="min-h-screen bg-brand-cream py-12 px-4">
       <div className={session ? "max-w-5xl mx-auto flex gap-6 items-start" : "max-w-lg mx-auto"}>
@@ -70,6 +79,34 @@ export default async function OrderPage({
             </p>
           )}
         </div>
+
+        {order.paymentMethod === "XENDIT" && order.status === "PENDING" && order.xenditPaymentUrl && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
+            <h2 className="font-semibold text-gray-900 mb-2">Selesaikan Pembayaran</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Pesanan ini menunggu pembayaran. Klik tombol di bawah untuk melanjutkan.
+            </p>
+            <XenditPaymentModal
+              paymentUrl={order.xenditPaymentUrl}
+              orderId={order.id}
+              autoOpen={false}
+            />
+          </div>
+        )}
+
+        {order.paymentMethod === "QRIS" && order.status === "PENDING" && qrisImageUrl && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm mb-4 text-center">
+            <h2 className="font-semibold text-gray-900 mb-2">Scan QR untuk Bayar</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Scan dengan e-wallet atau mobile banking, lalu upload bukti pembayaran di bawah.
+            </p>
+            <img
+              src={qrisImageUrl}
+              alt="QRIS"
+              className="max-w-[220px] w-full mx-auto rounded-xl border border-gray-200"
+            />
+          </div>
+        )}
 
         {needsProof && (
           <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">

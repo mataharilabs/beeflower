@@ -176,6 +176,23 @@ export async function POST(req: NextRequest) {
     const logoUrl = brandSettings?.logoUrl ?? null;
     const logoWidth = brandSettings?.logoWidth ?? null;
 
+    let bankAccounts: { bankName: string; accountHolder: string; accountNumber: string; logoUrl: string | null }[] = [];
+    let qrisImageUrl: string | null = null;
+
+    if (data.paymentMethod === "MANUAL_TRANSFER") {
+      bankAccounts = await prisma.bankAccount.findMany({
+        where: { isActive: true },
+        orderBy: { order: "asc" },
+        select: { bankName: true, accountHolder: true, accountNumber: true, logoUrl: true },
+      });
+    } else if (data.paymentMethod === "QRIS") {
+      const paySettings = await prisma.paymentSettings.findUnique({
+        where: { id: "singleton" },
+        select: { qrisImageUrl: true },
+      }).catch(() => null);
+      qrisImageUrl = paySettings?.qrisImageUrl ?? null;
+    }
+
     const confirmEmail = orderConfirmationEmail({
       orderNumber: order.orderNumber,
       customerName: data.customerName,
@@ -186,6 +203,9 @@ export async function POST(req: NextRequest) {
       logoWidth,
       shippingCost,
       shippingService: data.shippingService,
+      orderId: order.id,
+      bankAccounts,
+      qrisImageUrl,
     });
     await resend.emails.send({
       from: confirmEmail.from,

@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { XenditPaymentModal } from "@/components/shop/XenditPaymentModal";
 
 interface PaymentConfig {
   xenditEnabled: boolean;
@@ -45,6 +46,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
+  const [createdOrderId, setCreatedOrderId] = useState("");
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({ xenditEnabled: false, manualTransferEnabled: true, qrisEnabled: false, qrisImageUrl: null });
   const [isNewUser, setIsNewUser] = useState(false);
   const [newAccountInfo, setNewAccountInfo] = useState<{ email: string; password: string } | null>(null);
@@ -254,6 +256,7 @@ export default function CheckoutPage() {
       setSubmitted(true);
       clearCart();
       setOrderNumber(data.orderNumber);
+      setCreatedOrderId(data.orderId ?? "");
 
       if (form.paymentMethod === "XENDIT" && data.paymentUrl) {
         setPaymentUrl(data.paymentUrl);
@@ -305,13 +308,16 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          <a
-            href={paymentUrl}
-            className="block w-full text-center py-3 bg-brand-gold text-white rounded-xl font-semibold hover:bg-brand-brown transition-colors mb-3"
-          >
-            Bayar Sekarang via Xendit
-          </a>
-          <p className="text-xs text-gray-400 text-center">Anda akan diarahkan ke halaman pembayaran Xendit</p>
+          <div className="flex flex-col items-center gap-2">
+            <XenditPaymentModal
+              paymentUrl={paymentUrl}
+              orderId={createdOrderId}
+              autoOpen={true}
+            />
+            <p className="text-xs text-gray-400 text-center mt-1">
+              Pembayaran diproses langsung di halaman ini
+            </p>
+          </div>
         </div>
       </div>
     );
