@@ -184,6 +184,70 @@ export function paymentVerifiedEmail(data: {
   };
 }
 
+// --- Order Status Update (to customer) ---
+
+const STATUS_CONFIG: Record<string, { label: string; badgeBg: string; badgeColor: string; message: string }> = {
+  PAID:       { label: "Pembayaran Diterima", badgeBg: "#d4edda", badgeColor: "#155724", message: "Pembayaran Anda telah kami terima. Pesanan segera kami proses." },
+  PROCESSING: { label: "Sedang Diproses",     badgeBg: "#cce5ff", badgeColor: "#004085", message: "Pesanan Anda sedang kami persiapkan untuk pengiriman." },
+  SHIPPED:    { label: "Sedang Dikirim",      badgeBg: "#d1ecf1", badgeColor: "#0c5460", message: "Pesanan Anda sudah dalam perjalanan menuju alamat Anda." },
+  DELIVERED:  { label: "Pesanan Diterima",    badgeBg: "#c3e6cb", badgeColor: "#1b5e20", message: "Pesanan Anda telah tiba. Terima kasih telah berbelanja di Bee & Flower Brand!" },
+  CANCELLED:  { label: "Pesanan Dibatalkan",  badgeBg: "#f8d7da", badgeColor: "#721c24", message: "Pesanan Anda telah dibatalkan. Hubungi kami jika ada pertanyaan." },
+};
+
+export function orderStatusEmail(data: {
+  orderNumber: string;
+  customerName: string;
+  status: string;
+  logoUrl?: string | null;
+  logoWidth?: number | null;
+}) {
+  const cfg = STATUS_CONFIG[data.status] ?? { label: data.status, badgeBg: BRAND_CREAM, badgeColor: BRAND_BROWN, message: "Status pesanan Anda telah diperbarui." };
+
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 4px;color:${BRAND_BROWN};font-size:20px">Update Pesanan</h2>
+    <p style="margin:0 0 24px;color:#666;font-size:14px">Halo <strong>${data.customerName}</strong>,</p>
+    <div style="background:${BRAND_CREAM};padding:14px 20px;border-radius:6px;margin-bottom:20px">
+      <p style="margin:0;font-size:13px;color:#888">Nomor Pesanan</p>
+      <p style="margin:4px 0 0;font-size:18px;font-weight:bold;color:${BRAND_BROWN};letter-spacing:1px">#${data.orderNumber}</p>
+    </div>
+    <div style="margin-bottom:20px">
+      <span style="display:inline-block;background:${cfg.badgeBg};color:${cfg.badgeColor};padding:8px 20px;border-radius:20px;font-size:14px;font-weight:bold">${cfg.label}</span>
+    </div>
+    <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 24px">${cfg.message}</p>
+    <a href="${APP_URL}/toko/pesanan" style="display:inline-block;padding:12px 24px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-weight:bold">Lihat Detail Pesanan</a>
+  `, data.logoUrl, data.logoWidth);
+
+  return {
+    subject: `Pesanan #${data.orderNumber} — ${cfg.label}`,
+    html,
+    from: FROM,
+  };
+}
+
+// --- Password Reset (to customer) ---
+
+export function passwordResetEmail(data: {
+  name: string;
+  resetUrl: string;
+  logoUrl?: string | null;
+  logoWidth?: number | null;
+}) {
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 4px;color:${BRAND_BROWN};font-size:20px">Reset Password</h2>
+    <p style="margin:0 0 24px;color:#666;font-size:14px">Halo <strong>${data.name}</strong>,</p>
+    <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 24px">Kami menerima permintaan untuk mengatur ulang password akun Anda di Bee &amp; Flower Brand. Klik tombol di bawah untuk membuat password baru.</p>
+    <a href="${data.resetUrl}" style="display:inline-block;padding:12px 28px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px">Atur Password Baru</a>
+    <p style="margin-top:24px;color:#aaa;font-size:12px">Link ini berlaku selama <strong style="color:#666">1 jam</strong>. Jika Anda tidak meminta reset password, abaikan email ini &mdash; akun Anda aman.</p>
+    <p style="margin-top:8px;color:#bbb;font-size:11px;word-break:break-all">Atau salin: ${data.resetUrl}</p>
+  `, data.logoUrl, data.logoWidth);
+
+  return {
+    subject: "Reset Password - Bee & Flower Brand",
+    html,
+    from: FROM,
+  };
+}
+
 // --- Welcome Email (new user auto-created on checkout) ---
 
 export function welcomeEmail(data: {

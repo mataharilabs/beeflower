@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { Resend } from "resend";
+import { orderStatusEmail } from "@/lib/emails";
+
+const NOTIFY_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
 
 export async function GET(
   _req: NextRequest,
@@ -39,5 +43,27 @@ export async function PATCH(
       ...(body.status === "PAID" ? { paidAt: new Date() } : {}),
     },
   });
+
+  if (process.env.RESEND_API_KEY && NOTIFY_STATUSES.includes(body.status)) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const brandSettings = await prisma.siteSettings.findUnique({
+      where: { id: "singleton" },
+      select: { logoUrl: true, logoWidth: true },
+    }).catch(() => null);
+    const email = orderStatusEmail({
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      status: body.status,
+      logoUrl: brandSettings?.logoUrl,
+      logoWidth: brandSettings?.logoWidth,
+    });
+    resend.emails.send({
+      from: email.from,
+      to: order.customerEmail,
+      subject: email.subject,
+      html: email.html,
+    }).catch(console.error);
+  }
+
   return NextResponse.json(order);
 }
