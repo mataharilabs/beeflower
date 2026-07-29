@@ -109,9 +109,21 @@ export default async function OrderPage({
               </div>
             ))}
           </div>
-          <div className="px-6 py-3 bg-gray-50 flex justify-between items-center font-bold text-gray-900">
-            <span>Total</span>
-            <span>{formatPrice(Number(order.total))}</span>
+          <div className="px-6 py-4 bg-gray-50 space-y-2 text-sm">
+            <div className="flex justify-between text-gray-600">
+              <span>Subtotal</span>
+              <span>{formatPrice(order.items.reduce((s, i) => s + Number(i.price) * i.quantity, 0))}</span>
+            </div>
+            {Number(order.shippingCost) > 0 && (
+              <div className="flex justify-between text-gray-600">
+                <span>Ongkos Kirim{order.shippingService ? ` (${order.shippingService})` : ""}</span>
+                <span>{formatPrice(Number(order.shippingCost))}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200">
+              <span>Total</span>
+              <span>{formatPrice(Number(order.total))}</span>
+            </div>
           </div>
         </div>
 

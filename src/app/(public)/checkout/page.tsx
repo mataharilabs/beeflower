@@ -115,6 +115,8 @@ export default function CheckoutPage() {
         const url = provider === "kiriminaja" ? "/api/kiriminaja/provinces" : "/api/rajaongkir/provinces";
         const provincesData = await fetch(url).then((r) => r.json()).catch(() => ({ data: [] }));
         setProvinces(provincesData.data ?? []);
+      } else {
+        fetchRates({});
       }
     };
     init();
@@ -362,55 +364,84 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Provinsi</label>
-                  <select
-                    value={provinsiId ?? ""}
-                    onChange={(e) => {
-                      const id = Number(e.target.value);
-                      const name = provinces.find((p) => p.id === id)?.name ?? "";
-                      handleProvinceChange(id, name);
-                    }}
-                    required
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white"
-                  >
-                    <option value="">-- Pilih Provinsi --</option>
-                    {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  {activeProvider ? (
+                    <select
+                      value={provinsiId ?? ""}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const name = provinces.find((p) => p.id === id)?.name ?? "";
+                        handleProvinceChange(id, name);
+                      }}
+                      required
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white"
+                    >
+                      <option value="">-- Pilih Provinsi --</option>
+                      {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      value={form.province}
+                      onChange={(e) => setForm({ ...form, province: e.target.value })}
+                      required
+                      placeholder="Nama provinsi"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kota / Kabupaten</label>
-                  <select
-                    value={kabupatenId ?? ""}
-                    onChange={(e) => {
-                      const id = Number(e.target.value);
-                      const name = cities.find((c) => c.id === id)?.name ?? "";
-                      handleCityChange(id, name);
-                    }}
-                    required
-                    disabled={!provinsiId || loadingCities}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50 disabled:text-gray-400"
-                  >
-                    <option value="">{loadingCities ? "Memuat..." : provinsiId ? "-- Pilih Kota/Kabupaten --" : "Pilih provinsi dahulu"}</option>
-                    {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  {activeProvider ? (
+                    <select
+                      value={kabupatenId ?? ""}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const name = cities.find((c) => c.id === id)?.name ?? "";
+                        handleCityChange(id, name);
+                      }}
+                      required
+                      disabled={!provinsiId || loadingCities}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                    >
+                      <option value="">{loadingCities ? "Memuat..." : provinsiId ? "-- Pilih Kota/Kabupaten --" : "Pilih provinsi dahulu"}</option>
+                      {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      value={form.city}
+                      onChange={(e) => setForm({ ...form, city: e.target.value })}
+                      required
+                      placeholder="Nama kota/kabupaten"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kecamatan</label>
-                  <select
-                    value={kecamatanId ?? ""}
-                    onChange={(e) => {
-                      const id = Number(e.target.value);
-                      const name = districts.find((d) => d.id === id)?.name ?? "";
-                      handleDistrictChange(id, name);
-                    }}
-                    required
-                    disabled={!kabupatenId || loadingDistricts}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50 disabled:text-gray-400"
-                  >
-                    <option value="">{loadingDistricts ? "Memuat..." : kabupatenId ? "-- Pilih Kecamatan --" : "Pilih kota dahulu"}</option>
-                    {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
+                  {activeProvider ? (
+                    <select
+                      value={kecamatanId ?? ""}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const name = districts.find((d) => d.id === id)?.name ?? "";
+                        handleDistrictChange(id, name);
+                      }}
+                      required
+                      disabled={!kabupatenId || loadingDistricts}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                    >
+                      <option value="">{loadingDistricts ? "Memuat..." : kabupatenId ? "-- Pilih Kecamatan --" : "Pilih kota dahulu"}</option>
+                      {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      value={kecamatanName}
+                      onChange={(e) => setKecamatanName(e.target.value)}
+                      placeholder="Nama kecamatan (opsional)"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                    />
+                  )}
                 </div>
-                {activeProvider !== "rajaongkir" && (
+                {activeProvider === "kiriminaja" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kelurahan</label>
                   <select
@@ -443,7 +474,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Shipping Options */}
-            {(activeProvider === "rajaongkir" ? kecamatanId : kelurahanId) && (
+            {(shippingOptions.length > 0 || loadingRates) && (
               <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
                 <h2 className="font-semibold text-gray-900">Ongkos Kirim</h2>
                 {loadingRates && (

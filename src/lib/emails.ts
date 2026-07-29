@@ -54,7 +54,10 @@ export function orderConfirmationEmail(data: {
   paymentMethod: string;
   logoUrl?: string | null;
   logoWidth?: number | null;
+  shippingCost?: number;
+  shippingService?: string | null;
 }) {
+  const subtotal = data.items.reduce((s, i) => s + i.price * i.quantity, 0);
   const itemRows = data.items.map((item) => `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #f0e8df;color:${BRAND_BROWN}">${item.productName}</td>
@@ -90,8 +93,16 @@ export function orderConfirmationEmail(data: {
       <tbody>${itemRows}</tbody>
       <tfoot>
         <tr>
-          <td colspan="2" style="padding:12px 0 0;font-weight:bold;color:${BRAND_BROWN}">Total</td>
-          <td style="padding:12px 0 0;font-weight:bold;color:${BRAND_GOLD};text-align:right;font-size:18px">${formatRupiah(data.total)}</td>
+          <td colspan="2" style="padding:10px 0 0;color:#888;font-size:13px">Subtotal</td>
+          <td style="padding:10px 0 0;color:${BRAND_BROWN};text-align:right">${formatRupiah(subtotal)}</td>
+        </tr>
+        ${data.shippingCost && data.shippingCost > 0 ? `<tr>
+          <td colspan="2" style="padding:4px 0 0;color:#888;font-size:13px">Ongkos Kirim${data.shippingService ? ` (${data.shippingService})` : ""}</td>
+          <td style="padding:4px 0 0;color:${BRAND_BROWN};text-align:right">${formatRupiah(data.shippingCost)}</td>
+        </tr>` : ""}
+        <tr>
+          <td colspan="2" style="padding:10px 0 0;font-weight:bold;color:${BRAND_BROWN};border-top:1px solid ${BRAND_BEIGE}">Total</td>
+          <td style="padding:10px 0 0;font-weight:bold;color:${BRAND_GOLD};text-align:right;font-size:18px;border-top:1px solid ${BRAND_BEIGE}">${formatRupiah(data.total)}</td>
         </tr>
       </tfoot>
     </table>

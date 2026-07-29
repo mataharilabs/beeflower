@@ -184,6 +184,8 @@ export async function POST(req: NextRequest) {
       paymentMethod: data.paymentMethod,
       logoUrl,
       logoWidth,
+      shippingCost,
+      shippingService: data.shippingService,
     });
     await resend.emails.send({
       from: confirmEmail.from,
