@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, Plus, Trash2, Save } from "lucide-react";
 import { ImageUploader } from "./ImageUploader";
 
@@ -24,6 +24,14 @@ interface SiteSettings {
   tiktok: string | null;
   shopee: string | null;
   tokopedia: string | null;
+  storeProvinsiId: number | null;
+  storeProvinsiName: string | null;
+  storeKabupatenId: number | null;
+  storeKabupatenName: string | null;
+  storeKecamatanId: number | null;
+  storeKecamatanName: string | null;
+  storeKelurahanId: number | null;
+  storeKelurahanName: string | null;
   maintenanceMode: boolean;
   facebookPixelId: string | null;
   headerScripts: string | null;
@@ -49,14 +57,35 @@ interface BankAccount {
   order: number;
 }
 
+interface ShippingSettingsData {
+  id: string;
+  kiriminajaEnabled: boolean;
+  kiriminajaToken: string | null;
+  couriers: string[];
+  flatRateEnabled: boolean;
+  flatRateAmount: string | number | null;
+  flatRateLabel: string | null;
+}
+
+interface RegionItem { id: number; name: string }
+
 interface Props {
   settings: SiteSettings;
   paymentSettings: PaymentSettings;
   bankAccounts: BankAccount[];
+  shippingSettings: ShippingSettingsData | null;
 }
 
-export function SettingsClient({ settings, paymentSettings, bankAccounts: initialBanks }: Props) {
-  const [activeTab, setActiveTab] = useState<"general" | "payment" | "contact" | "marketing">("general");
+const ALL_COURIERS = [
+  { code: "jne", label: "JNE" },
+  { code: "jnt", label: "J&T Express" },
+  { code: "sicepat", label: "SiCepat" },
+  { code: "anteraja", label: "Anteraja" },
+  { code: "pos", label: "POS Indonesia" },
+];
+
+export function SettingsClient({ settings, paymentSettings, bankAccounts: initialBanks, shippingSettings: initialShipping }: Props) {
+  const [activeTab, setActiveTab] = useState<"general" | "payment" | "contact" | "marketing" | "store-location" | "shipping">("general");
   const [saving, setSaving] = useState(false);
 
   const [site, setSite] = useState(settings);
@@ -65,6 +94,77 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
   const [newBank, setNewBank] = useState({ bankName: "", accountHolder: "", accountNumber: "", logoUrl: "" });
   const [addingBank, setAddingBank] = useState(false);
   const [savingBank, setSavingBank] = useState(false);
+
+  // Shipping settings state
+  const [shipping, setShipping] = useState<ShippingSettingsData>(initialShipping ?? {
+    id: "singleton", kiriminajaEnabled: false, kiriminajaToken: null,
+    couriers: ["jne", "jnt", "sicepat", "anteraja", "pos"],
+    flatRateEnabled: false, flatRateAmount: null, flatRateLabel: null,
+  });
+
+  // Store location cascading dropdowns
+  const [provinces, setProvinces] = useState<RegionItem[]>([]);
+  const [cities, setCities] = useState<RegionItem[]>([]);
+  const [districts, setDistricts] = useState<RegionItem[]>([]);
+  const [subdistricts, setSubdistricts] = useState<RegionItem[]>([]);
+
+  const [storeProvinsiId, setStoreProvinsiId] = useState<number | null>(settings.storeProvinsiId ?? null);
+  const [storeProvinsiName, setStoreProvinsiName] = useState(settings.storeProvinsiName ?? "");
+  const [storeKabupatenId, setStoreKabupatenId] = useState<number | null>(settings.storeKabupatenId ?? null);
+  const [storeKabupatenName, setStoreKabupatenName] = useState(settings.storeKabupatenName ?? "");
+  const [storeKecamatanId, setStoreKecamatanId] = useState<number | null>(settings.storeKecamatanId ?? null);
+  const [storeKecamatanName, setStoreKecamatanName] = useState(settings.storeKecamatanName ?? "");
+  const [storeKelurahanId, setStoreKelurahanId] = useState<number | null>(settings.storeKelurahanId ?? null);
+  const [storeKelurahanName, setStoreKelurahanName] = useState(settings.storeKelurahanName ?? "");
+
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+  const [loadingSubdistricts, setLoadingSubdistricts] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === "store-location" && provinces.length === 0) {
+      setLoadingProvinces(true);
+      fetch("/api/kiriminaja/provinces")
+        .then((r) => r.json())
+        .then((d) => setProvinces(d.data ?? []))
+        .catch(() => {})
+        .finally(() => setLoadingProvinces(false));
+    }
+  }, [activeTab, provinces.length]);
+
+  useEffect(() => {
+    if (storeProvinsiId) {
+      setLoadingCities(true);
+      fetch(`/api/kiriminaja/cities?provinsi_id=${storeProvinsiId}`)
+        .then((r) => r.json())
+        .then((d) => setCities(d.data ?? []))
+        .catch(() => {})
+        .finally(() => setLoadingCities(false));
+    }
+  }, [storeProvinsiId]);
+
+  useEffect(() => {
+    if (storeKabupatenId) {
+      setLoadingDistricts(true);
+      fetch(`/api/kiriminaja/districts?kabupaten_id=${storeKabupatenId}`)
+        .then((r) => r.json())
+        .then((d) => setDistricts(d.data ?? []))
+        .catch(() => {})
+        .finally(() => setLoadingDistricts(false));
+    }
+  }, [storeKabupatenId]);
+
+  useEffect(() => {
+    if (storeKecamatanId) {
+      setLoadingSubdistricts(true);
+      fetch(`/api/kiriminaja/subdistricts?kecamatan_id=${storeKecamatanId}`)
+        .then((r) => r.json())
+        .then((d) => setSubdistricts(d.data ?? []))
+        .catch(() => {})
+        .finally(() => setLoadingSubdistricts(false));
+    }
+  }, [storeKecamatanId]);
 
   const saveSiteSettings = async () => {
     setSaving(true);
@@ -75,6 +175,40 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
         body: JSON.stringify(site),
       });
       alert("Pengaturan tersimpan");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveStoreLocation = async () => {
+    setSaving(true);
+    try {
+      await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...site,
+          storeProvinsiId, storeProvinsiName,
+          storeKabupatenId, storeKabupatenName,
+          storeKecamatanId, storeKecamatanName,
+          storeKelurahanId, storeKelurahanName,
+        }),
+      });
+      alert("Lokasi toko tersimpan");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveShippingSettings = async () => {
+    setSaving(true);
+    try {
+      await fetch("/api/shipping/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(shipping),
+      });
+      alert("Pengaturan pengiriman tersimpan");
     } finally {
       setSaving(false);
     }
@@ -132,12 +266,14 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Pengaturan</h1>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 flex-wrap">
         {([
           { key: "general", label: "Umum" },
           { key: "contact", label: "Kontak & Tampilan" },
           { key: "payment", label: "Pembayaran" },
           { key: "marketing", label: "Marketing" },
+          { key: "store-location", label: "Lokasi Toko" },
+          { key: "shipping", label: "Pengiriman" },
         ] as const).map((tab) => (
           <button
             key={tab.key}
@@ -497,6 +633,228 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Tab: Lokasi Toko */}
+      {activeTab === "store-location" && (
+        <div className="space-y-5 max-w-xl">
+          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <h2 className="font-semibold text-gray-900">Lokasi Toko (Origin Pengiriman)</h2>
+            <p className="text-xs text-gray-400">Lokasi ini digunakan sebagai titik asal perhitungan ongkos kirim KiriminAja.</p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Provinsi</label>
+              <select
+                value={storeProvinsiId ?? ""}
+                onChange={(e) => {
+                  const id = Number(e.target.value);
+                  const name = provinces.find((p) => p.id === id)?.name ?? "";
+                  setStoreProvinsiId(id || null);
+                  setStoreProvinsiName(name);
+                  setStoreKabupatenId(null); setStoreKabupatenName("");
+                  setStoreKecamatanId(null); setStoreKecamatanName("");
+                  setStoreKelurahanId(null); setStoreKelurahanName("");
+                  setCities([]); setDistricts([]); setSubdistricts([]);
+                }}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50"
+                disabled={loadingProvinces}
+              >
+                <option value="">{loadingProvinces ? "Memuat..." : "-- Pilih Provinsi --"}</option>
+                {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+
+            {storeProvinsiId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kota / Kabupaten</label>
+                <select
+                  value={storeKabupatenId ?? ""}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    const name = cities.find((c) => c.id === id)?.name ?? "";
+                    setStoreKabupatenId(id || null);
+                    setStoreKabupatenName(name);
+                    setStoreKecamatanId(null); setStoreKecamatanName("");
+                    setStoreKelurahanId(null); setStoreKelurahanName("");
+                    setDistricts([]); setSubdistricts([]);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50"
+                  disabled={loadingCities}
+                >
+                  <option value="">{loadingCities ? "Memuat..." : "-- Pilih Kota/Kabupaten --"}</option>
+                  {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {storeKabupatenId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kecamatan</label>
+                <select
+                  value={storeKecamatanId ?? ""}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    const name = districts.find((d) => d.id === id)?.name ?? "";
+                    setStoreKecamatanId(id || null);
+                    setStoreKecamatanName(name);
+                    setStoreKelurahanId(null); setStoreKelurahanName("");
+                    setSubdistricts([]);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50"
+                  disabled={loadingDistricts}
+                >
+                  <option value="">{loadingDistricts ? "Memuat..." : "-- Pilih Kecamatan --"}</option>
+                  {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {storeKecamatanId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kelurahan</label>
+                <select
+                  value={storeKelurahanId ?? ""}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    const name = subdistricts.find((s) => s.id === id)?.name ?? "";
+                    setStoreKelurahanId(id || null);
+                    setStoreKelurahanName(name);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50"
+                  disabled={loadingSubdistricts}
+                >
+                  <option value="">{loadingSubdistricts ? "Memuat..." : "-- Pilih Kelurahan --"}</option>
+                  {subdistricts.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {storeKelurahanId && (
+              <div className="p-3 bg-brand-cream rounded-lg text-sm text-brand-brown">
+                <p className="font-semibold mb-1">Lokasi terpilih:</p>
+                <p>{storeKelurahanName}, {storeKecamatanName}, {storeKabupatenName}, {storeProvinsiName}</p>
+              </div>
+            )}
+
+            <button
+              onClick={saveStoreLocation}
+              disabled={saving || !storeKelurahanId}
+              className="flex items-center gap-2 px-4 py-2 bg-brand-gold text-white rounded-lg text-sm font-medium hover:bg-brand-brown transition-colors disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Simpan Lokasi Toko
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Pengiriman */}
+      {activeTab === "shipping" && (
+        <div className="space-y-5 max-w-xl">
+          {/* KiriminAja */}
+          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-gray-900">KiriminAja</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Kalkulasi ongkir real-time dari KiriminAja</p>
+              </div>
+              <div
+                onClick={() => setShipping({ ...shipping, kiriminajaEnabled: !shipping.kiriminajaEnabled })}
+                className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${shipping.kiriminajaEnabled ? "bg-brand-gold" : "bg-gray-200"}`}
+              >
+                <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${shipping.kiriminajaEnabled ? "translate-x-4" : ""}`} />
+              </div>
+            </div>
+
+            {shipping.kiriminajaEnabled && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Token API KiriminAja (opsional)</label>
+                  <input
+                    value={shipping.kiriminajaToken ?? ""}
+                    onChange={(e) => setShipping({ ...shipping, kiriminajaToken: e.target.value || null })}
+                    placeholder="Default dari env KIRIMINAJA_TOKEN"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Kosongkan jika sudah set di environment variable Vercel.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Kurir yang diaktifkan</label>
+                  <div className="flex flex-wrap gap-3">
+                    {ALL_COURIERS.map((c) => {
+                      const active = shipping.couriers?.includes(c.code);
+                      return (
+                        <label key={c.code} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!active}
+                            onChange={() => {
+                              const current = shipping.couriers ?? [];
+                              const next = active ? current.filter((x) => x !== c.code) : [...current, c.code];
+                              setShipping({ ...shipping, couriers: next });
+                            }}
+                            className="w-4 h-4 accent-brand-gold"
+                          />
+                          <span className="text-sm text-gray-700">{c.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Flat Rate */}
+          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-gray-900">Flat Rate</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Ongkir tetap terlepas dari lokasi tujuan</p>
+              </div>
+              <div
+                onClick={() => setShipping({ ...shipping, flatRateEnabled: !shipping.flatRateEnabled })}
+                className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${shipping.flatRateEnabled ? "bg-brand-gold" : "bg-gray-200"}`}
+              >
+                <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${shipping.flatRateEnabled ? "translate-x-4" : ""}`} />
+              </div>
+            </div>
+
+            {shipping.flatRateEnabled && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Biaya Flat Rate (Rp)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={shipping.flatRateAmount ?? ""}
+                    onChange={(e) => setShipping({ ...shipping, flatRateAmount: e.target.value ? Number(e.target.value) : null })}
+                    placeholder="Contoh: 20000"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Label (opsional)</label>
+                  <input
+                    value={shipping.flatRateLabel ?? ""}
+                    onChange={(e) => setShipping({ ...shipping, flatRateLabel: e.target.value || null })}
+                    placeholder="Contoh: Flat Rate Nasional"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <button
+            onClick={saveShippingSettings}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-gold text-white rounded-lg text-sm font-medium hover:bg-brand-brown transition-colors disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Simpan Pengaturan Pengiriman
+          </button>
         </div>
       )}
     </div>

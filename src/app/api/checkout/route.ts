@@ -15,8 +15,14 @@ const CheckoutSchema = z.object({
   city: z.string().min(1),
   province: z.string().min(1),
   postalCode: z.string().min(1),
+  district: z.string().optional(),
+  subdistrict: z.string().optional(),
   notes: z.string().optional(),
   paymentMethod: z.enum(["XENDIT", "MANUAL_TRANSFER", "QRIS"]),
+  shippingCost: z.number().min(0).default(0),
+  shippingMethod: z.string().optional(),
+  shippingService: z.string().optional(),
+  shippingCourier: z.string().optional(),
   items: z.array(z.object({
     productId: z.string(),
     quantity: z.number().int().min(1),
@@ -68,7 +74,8 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const total = subtotal;
+  const shippingCost = data.shippingCost ?? 0;
+  const total = subtotal + shippingCost;
   const orderNumber = generateOrderNumber();
 
   // Create order in a transaction
@@ -84,10 +91,15 @@ export async function POST(req: NextRequest) {
         city: data.city,
         province: data.province,
         postalCode: data.postalCode,
+        district: data.district,
+        subdistrict: data.subdistrict,
         notes: data.notes,
         paymentMethod: data.paymentMethod,
         subtotal,
-        shippingCost: 0,
+        shippingCost,
+        shippingMethod: data.shippingMethod,
+        shippingService: data.shippingService,
+        shippingCourier: data.shippingCourier,
         discount: 0,
         total,
         items: { create: orderItems },

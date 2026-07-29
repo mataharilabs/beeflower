@@ -187,6 +187,12 @@ model Order {
   city          String
   province      String
   postalCode    String
+  district      String?
+  subdistrict   String?
+
+  shippingMethod  String?
+  shippingService String?
+  shippingCourier String?
 
   subtotal    Decimal  @db.Decimal(12, 0)
   shippingCost Decimal @db.Decimal(12, 0) @default(0)
@@ -251,6 +257,19 @@ model PaymentSettings {
   updatedAt              DateTime @updatedAt
 
   @@map("payment_settings")
+}
+
+model ShippingSettings {
+  id                String   @id @default("singleton")
+  kiriminajaEnabled Boolean  @default(false)
+  kiriminajaToken   String?
+  couriers          String[] @default(["jne", "jnt", "sicepat", "anteraja", "pos"])
+  flatRateEnabled   Boolean  @default(false)
+  flatRateAmount    Decimal? @db.Decimal(12, 0)
+  flatRateLabel     String?
+  updatedAt         DateTime @updatedAt
+
+  @@map("shipping_settings")
 }
 
 model BankAccount {
@@ -327,6 +346,15 @@ model SiteSettings {
   tiktok          String?
   shopee          String?
   tokopedia       String?
+
+  storeProvinsiId    Int?
+  storeProvinsiName  String?
+  storeKabupatenId   Int?
+  storeKabupatenName String?
+  storeKecamatanId   Int?
+  storeKecamatanName String?
+  storeKelurahanId   Int?
+  storeKelurahanName String?
 
   maintenanceMode Boolean @default(false)
   facebookPixelId String?

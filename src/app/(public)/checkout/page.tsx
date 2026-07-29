@@ -6,7 +6,6 @@ import { signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
-import { PROVINCES, getCitiesForProvince } from "@/lib/indonesia-regions";
 
 interface PaymentConfig {
   xenditEnabled: boolean;
@@ -23,6 +22,18 @@ interface LoggedInUser {
   city?: string | null;
   province?: string | null;
   postalCode?: string | null;
+}
+
+interface RegionItem { id: number; name: string }
+
+interface ShippingOption {
+  id: string;
+  courier: string;
+  service: string;
+  label: string;
+  price: number;
+  etd: string;
+  type: "kiriminaja" | "flat";
 }
 
 type Step = "form" | "payment";
@@ -46,33 +57,123 @@ export default function CheckoutPage() {
     notes: "", paymentMethod: "" as "XENDIT" | "MANUAL_TRANSFER" | "QRIS" | "",
   });
 
+  // Region cascading state
+  const [provinces, setProvinces] = useState<RegionItem[]>([]);
+  const [cities, setCities] = useState<RegionItem[]>([]);
+  const [districts, setDistricts] = useState<RegionItem[]>([]);
+  const [subdistricts, setSubdistricts] = useState<RegionItem[]>([]);
+
+  const [provinsiId, setProvinsiId] = useState<number | null>(null);
+  const [kabupatenId, setKabupatenId] = useState<number | null>(null);
+  const [kecamatanId, setKecamatanId] = useState<number | null>(null);
+  const [kelurahanId, setKelurahanId] = useState<number | null>(null);
+  const [kecamatanName, setKecamatanName] = useState("");
+  const [kelurahanName, setKelurahanName] = useState("");
+
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
+  const [loadingRates, setLoadingRates] = useState(false);
+  const [ratesError, setRatesError] = useState(false);
+
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+  const [loadingSubdistricts, setLoadingSubdistricts] = useState(false);
+
   useEffect(() => {
     Promise.all([
       fetch("/api/payment/settings").then((r) => r.json()).catch(() => ({ xenditEnabled: false, manualTransferEnabled: true })),
       fetch("/api/member/profile").then((r) => r.json()).catch(() => null),
-    ]).then(([config, profile]) => {
+      fetch("/api/kiriminaja/provinces").then((r) => r.json()).catch(() => ({ data: [] })),
+    ]).then(([config, profile, provincesData]) => {
       setPaymentConfig(config);
       if (config.xenditEnabled) setForm((f) => ({ ...f, paymentMethod: "XENDIT" }));
       else if (config.manualTransferEnabled) setForm((f) => ({ ...f, paymentMethod: "MANUAL_TRANSFER" }));
       else if (config.qrisEnabled) setForm((f) => ({ ...f, paymentMethod: "QRIS" }));
 
+      setProvinces(provincesData.data ?? []);
+
       if (profile?.email) {
         setLoggedInUser(profile);
-        const savedProvince = PROVINCES.includes(profile.province ?? "") ? (profile.province ?? "") : "";
-        const savedCity = savedProvince && getCitiesForProvince(savedProvince).includes(profile.city ?? "") ? (profile.city ?? "") : "";
         setForm((f) => ({
           ...f,
           customerName: profile.name ?? "",
           customerEmail: profile.email ?? "",
           customerPhone: profile.phone ?? "",
           address: profile.address ?? "",
-          city: savedCity,
-          province: savedProvince,
           postalCode: profile.postalCode ?? "",
         }));
       }
     });
   }, []);
+
+  const handleProvinceChange = async (id: number, name: string) => {
+    setProvinsiId(id);
+    setForm((f) => ({ ...f, province: name, city: "" }));
+    setKabupatenId(null); setKecamatanId(null); setKelurahanId(null);
+    setKecamatanName(""); setKelurahanName("");
+    setCities([]); setDistricts([]); setSubdistricts([]);
+    setShippingOptions([]); setSelectedShipping(null);
+    if (!id) return;
+    setLoadingCities(true);
+    const d = await fetch(`/api/kiriminaja/cities?provinsi_id=${id}`).then((r) => r.json()).catch(() => ({ data: [] }));
+    setCities(d.data ?? []);
+    setLoadingCities(false);
+  };
+
+  const handleCityChange = async (id: number, name: string) => {
+    setKabupatenId(id);
+    setForm((f) => ({ ...f, city: name }));
+    setKecamatanId(null); setKelurahanId(null);
+    setKecamatanName(""); setKelurahanName("");
+    setDistricts([]); setSubdistricts([]);
+    setShippingOptions([]); setSelectedShipping(null);
+    if (!id) return;
+    setLoadingDistricts(true);
+    const d = await fetch(`/api/kiriminaja/districts?kabupaten_id=${id}`).then((r) => r.json()).catch(() => ({ data: [] }));
+    setDistricts(d.data ?? []);
+    setLoadingDistricts(false);
+  };
+
+  const handleDistrictChange = async (id: number, name: string) => {
+    setKecamatanId(id);
+    setKecamatanName(name);
+    setKelurahanId(null); setKelurahanName("");
+    setSubdistricts([]);
+    setShippingOptions([]); setSelectedShipping(null);
+    if (!id) return;
+    setLoadingSubdistricts(true);
+    const d = await fetch(`/api/kiriminaja/subdistricts?kecamatan_id=${id}`).then((r) => r.json()).catch(() => ({ data: [] }));
+    setSubdistricts(d.data ?? []);
+    setLoadingSubdistricts(false);
+  };
+
+  const handleSubdistrictChange = async (id: number, name: string) => {
+    setKelurahanId(id);
+    setKelurahanName(name);
+    setSelectedShipping(null);
+    if (!id || !kabupatenId) return;
+    setLoadingRates(true);
+    setRatesError(false);
+    setShippingOptions([]);
+    try {
+      const res = await fetch("/api/shipping/rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((i) => ({ productId: i.id, quantity: i.quantity })),
+          kabupatenId,
+          kelurahanId: id,
+        }),
+      });
+      const data = await res.json();
+      setShippingOptions(data.options ?? []);
+      if ((data.options ?? []).length === 0) setRatesError(true);
+    } catch {
+      setRatesError(true);
+    } finally {
+      setLoadingRates(false);
+    }
+  };
 
   useEffect(() => {
     if (items.length === 0 && step === "form" && !submitted) {
@@ -90,6 +191,12 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          district: kecamatanName || undefined,
+          subdistrict: kelurahanName || undefined,
+          shippingCost: selectedShipping?.price ?? 0,
+          shippingMethod: selectedShipping?.type ?? "free",
+          shippingService: selectedShipping?.label ?? undefined,
+          shippingCourier: selectedShipping?.courier ?? undefined,
           items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
         }),
       });
@@ -226,30 +333,68 @@ export default function CheckoutPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Provinsi</label>
                   <select
-                    value={form.province}
-                    onChange={(e) => setForm({ ...form, province: e.target.value, city: "" })}
+                    value={provinsiId ?? ""}
+                    onChange={(e) => {
+                      const id = Number(e.target.value);
+                      const name = provinces.find((p) => p.id === id)?.name ?? "";
+                      handleProvinceChange(id, name);
+                    }}
                     required
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white"
                   >
                     <option value="">-- Pilih Provinsi --</option>
-                    {PROVINCES.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
+                    {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kota / Kabupaten</label>
                   <select
-                    value={form.city}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    value={kabupatenId ?? ""}
+                    onChange={(e) => {
+                      const id = Number(e.target.value);
+                      const name = cities.find((c) => c.id === id)?.name ?? "";
+                      handleCityChange(id, name);
+                    }}
                     required
-                    disabled={!form.province}
+                    disabled={!provinsiId || loadingCities}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50 disabled:text-gray-400"
                   >
-                    <option value="">{form.province ? "-- Pilih Kota --" : "Pilih provinsi dahulu"}</option>
-                    {getCitiesForProvince(form.province).map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                    <option value="">{loadingCities ? "Memuat..." : provinsiId ? "-- Pilih Kota/Kabupaten --" : "Pilih provinsi dahulu"}</option>
+                    {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Kecamatan</label>
+                  <select
+                    value={kecamatanId ?? ""}
+                    onChange={(e) => {
+                      const id = Number(e.target.value);
+                      const name = districts.find((d) => d.id === id)?.name ?? "";
+                      handleDistrictChange(id, name);
+                    }}
+                    required
+                    disabled={!kabupatenId || loadingDistricts}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    <option value="">{loadingDistricts ? "Memuat..." : kabupatenId ? "-- Pilih Kecamatan --" : "Pilih kota dahulu"}</option>
+                    {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Kelurahan</label>
+                  <select
+                    value={kelurahanId ?? ""}
+                    onChange={(e) => {
+                      const id = Number(e.target.value);
+                      const name = subdistricts.find((s) => s.id === id)?.name ?? "";
+                      handleSubdistrictChange(id, name);
+                    }}
+                    required
+                    disabled={!kecamatanId || loadingSubdistricts}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    <option value="">{loadingSubdistricts ? "Memuat..." : kecamatanId ? "-- Pilih Kelurahan --" : "Pilih kecamatan dahulu"}</option>
+                    {subdistricts.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
                 <div>
@@ -264,6 +409,39 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </div>
+
+            {/* Shipping Options */}
+            {kelurahanId && (
+              <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
+                <h2 className="font-semibold text-gray-900">Ongkos Kirim</h2>
+                {loadingRates && (
+                  <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Menghitung ongkos kirim...
+                  </div>
+                )}
+                {!loadingRates && ratesError && shippingOptions.length === 0 && (
+                  <p className="text-sm text-red-500">Ongkos kirim tidak tersedia untuk lokasi ini. Hubungi admin.</p>
+                )}
+                {!loadingRates && shippingOptions.map((opt) => (
+                  <label
+                    key={opt.id}
+                    className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${selectedShipping?.id === opt.id ? "border-brand-gold bg-brand-cream" : "border-gray-200 hover:border-gray-300"}`}
+                  >
+                    <input type="radio" name="shipping" value={opt.id} checked={selectedShipping?.id === opt.id}
+                      onChange={() => setSelectedShipping(opt)} className="sr-only" />
+                    <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${selectedShipping?.id === opt.id ? "border-brand-gold" : "border-gray-300"} flex items-center justify-center`}>
+                      {selectedShipping?.id === opt.id && <div className="w-2 h-2 bg-brand-gold rounded-full" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900">{opt.label}</p>
+                      {opt.etd !== "-" && <p className="text-xs text-gray-400">{opt.etd}</p>}
+                    </div>
+                    <p className="text-sm font-bold text-brand-gold">{opt.price > 0 ? formatPrice(opt.price) : "Gratis"}</p>
+                  </label>
+                ))}
+              </div>
+            )}
 
             {/* Payment Method */}
             <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
@@ -317,7 +495,7 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={loading || !form.paymentMethod}
+              disabled={loading || !form.paymentMethod || (shippingOptions.length > 0 && !selectedShipping)}
               className="w-full flex items-center justify-center gap-2 py-3.5 bg-brand-gold text-white rounded-xl font-bold text-base hover:bg-brand-brown transition-colors disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
@@ -347,10 +525,20 @@ export default function CheckoutPage() {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-gray-100 pt-3">
-                <div className="flex justify-between text-base font-bold text-gray-900">
-                  <span>Total</span>
+              <div className="border-t border-gray-100 pt-3 space-y-2">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Subtotal</span>
                   <span>{formatPrice(totalPrice())}</span>
+                </div>
+                {selectedShipping && (
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Ongkos Kirim</span>
+                    <span>{selectedShipping.price > 0 ? formatPrice(selectedShipping.price) : "Gratis"}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-base font-bold text-gray-900 pt-1 border-t border-gray-100">
+                  <span>Total</span>
+                  <span>{formatPrice(totalPrice() + (selectedShipping?.price ?? 0))}</span>
                 </div>
               </div>
             </div>

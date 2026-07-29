@@ -78,8 +78,10 @@ export default async function OrderDetailPage({
             </div>
             <div className="col-span-2">
               <p className="text-gray-400 text-xs mb-0.5">Alamat Pengiriman</p>
-              <p className="text-gray-900">
-                {order.address}, {order.city}, {order.province} {order.postalCode}
+              <p className="text-gray-900">{order.address}</p>
+              <p className="text-gray-700 text-sm">
+                {[order.subdistrict, order.district, order.city, order.province, order.postalCode]
+                  .filter(Boolean).join(", ")}
               </p>
             </div>
             {order.notes && (
@@ -121,7 +123,7 @@ export default async function OrderDetailPage({
             </div>
             {Number(order.shippingCost) > 0 && (
               <div className="flex justify-between text-gray-600">
-                <span>Ongkos Kirim</span>
+                <span>Ongkos Kirim{order.shippingService ? ` (${order.shippingService})` : ""}</span>
                 <span>{formatPrice(Number(order.shippingCost))}</span>
               </div>
             )}
