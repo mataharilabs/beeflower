@@ -16,12 +16,14 @@ export async function GET(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ kecamatan_id: Number(kecamatanId) }),
-      next: { revalidate: 86400 },
+      cache: "no-store",
     });
+    if (!res.ok) throw new Error(`KiriminAja ${res.status}`);
     const json = await res.json();
-    const data = (json.data ?? []).map((s: { id: number; name: string }) => ({ id: s.id, name: s.name }));
+    const data = (json.data ?? []).map((k: { id: number; name: string }) => ({ id: k.id, name: k.name }));
     return NextResponse.json({ data });
-  } catch {
+  } catch (e) {
+    console.error("[kiriminaja/subdistricts]", e);
     return NextResponse.json({ data: [] });
   }
 }
