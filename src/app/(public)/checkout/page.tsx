@@ -57,6 +57,8 @@ export default function CheckoutPage() {
     notes: "", paymentMethod: "" as "XENDIT" | "MANUAL_TRANSFER" | "QRIS" | "",
   });
 
+  const [activeProvider, setActiveProvider] = useState<"kiriminaja" | "rajaongkir" | null>(null);
+
   // Region cascading state
   const [provinces, setProvinces] = useState<RegionItem[]>([]);
   const [cities, setCities] = useState<RegionItem[]>([]);
@@ -80,17 +82,17 @@ export default function CheckoutPage() {
   const [loadingSubdistricts, setLoadingSubdistricts] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/payment/settings").then((r) => r.json()).catch(() => ({ xenditEnabled: false, manualTransferEnabled: true })),
-      fetch("/api/member/profile").then((r) => r.json()).catch(() => null),
-      fetch("/api/kiriminaja/provinces").then((r) => r.json()).catch(() => ({ data: [] })),
-    ]).then(([config, profile, provincesData]) => {
+    const init = async () => {
+      const [config, profile, shippingConfig] = await Promise.all([
+        fetch("/api/payment/settings").then((r) => r.json()).catch(() => ({ xenditEnabled: false, manualTransferEnabled: true })),
+        fetch("/api/member/profile").then((r) => r.json()).catch(() => null),
+        fetch("/api/shipping/settings").then((r) => r.json()).catch(() => null),
+      ]);
+
       setPaymentConfig(config);
       if (config.xenditEnabled) setForm((f) => ({ ...f, paymentMethod: "XENDIT" }));
       else if (config.manualTransferEnabled) setForm((f) => ({ ...f, paymentMethod: "MANUAL_TRANSFER" }));
       else if (config.qrisEnabled) setForm((f) => ({ ...f, paymentMethod: "QRIS" }));
-
-      setProvinces(provincesData.data ?? []);
 
       if (profile?.email) {
         setLoggedInUser(profile);
@@ -103,8 +105,41 @@ export default function CheckoutPage() {
           postalCode: profile.postalCode ?? "",
         }));
       }
-    });
+
+      const provider: "kiriminaja" | "rajaongkir" | null =
+        shippingConfig?.kiriminajaEnabled ? "kiriminaja" :
+        shippingConfig?.rajaongkirEnabled ? "rajaongkir" : null;
+      setActiveProvider(provider);
+
+      if (provider) {
+        const url = provider === "kiriminaja" ? "/api/kiriminaja/provinces" : "/api/rajaongkir/provinces";
+        const provincesData = await fetch(url).then((r) => r.json()).catch(() => ({ data: [] }));
+        setProvinces(provincesData.data ?? []);
+      }
+    };
+    init();
   }, []);
+
+  const fetchRates = async (params: Record<string, unknown>) => {
+    setLoadingRates(true);
+    setRatesError(false);
+    setShippingOptions([]);
+    setSelectedShipping(null);
+    try {
+      const res = await fetch("/api/shipping/rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: items.map((i) => ({ productId: i.id, quantity: i.quantity })), ...params }),
+      });
+      const data = await res.json();
+      setShippingOptions(data.options ?? []);
+      if ((data.options ?? []).length === 0) setRatesError(true);
+    } catch {
+      setRatesError(true);
+    } finally {
+      setLoadingRates(false);
+    }
+  };
 
   const handleProvinceChange = async (id: number, name: string) => {
     setProvinsiId(id);
@@ -115,7 +150,10 @@ export default function CheckoutPage() {
     setShippingOptions([]); setSelectedShipping(null);
     if (!id) return;
     setLoadingCities(true);
-    const d = await fetch(`/api/kiriminaja/cities?provinsi_id=${id}`).then((r) => r.json()).catch(() => ({ data: [] }));
+    const url = activeProvider === "rajaongkir"
+      ? `/api/rajaongkir/cities?province_id=${id}`
+      : `/api/kiriminaja/cities?provinsi_id=${id}`;
+    const d = await fetch(url).then((r) => r.json()).catch(() => ({ data: [] }));
     setCities(d.data ?? []);
     setLoadingCities(false);
   };
@@ -129,7 +167,10 @@ export default function CheckoutPage() {
     setShippingOptions([]); setSelectedShipping(null);
     if (!id) return;
     setLoadingDistricts(true);
-    const d = await fetch(`/api/kiriminaja/districts?kabupaten_id=${id}`).then((r) => r.json()).catch(() => ({ data: [] }));
+    const url = activeProvider === "rajaongkir"
+      ? `/api/rajaongkir/districts?city_id=${id}`
+      : `/api/kiriminaja/districts?kabupaten_id=${id}`;
+    const d = await fetch(url).then((r) => r.json()).catch(() => ({ data: [] }));
     setDistricts(d.data ?? []);
     setLoadingDistricts(false);
   };
@@ -141,38 +182,27 @@ export default function CheckoutPage() {
     setSubdistricts([]);
     setShippingOptions([]); setSelectedShipping(null);
     if (!id) return;
-    setLoadingSubdistricts(true);
-    const d = await fetch(`/api/kiriminaja/subdistricts?kecamatan_id=${id}`).then((r) => r.json()).catch(() => ({ data: [] }));
-    setSubdistricts(d.data ?? []);
-    setLoadingSubdistricts(false);
+    if (activeProvider === "rajaongkir") {
+      // RajaOngkir: rates calculated at district level
+      await fetchRates({ districtId: id });
+    } else {
+      // KiriminAja: load subdistricts, rates calculated after subdistrict
+      setLoadingSubdistricts(true);
+      const d = await fetch(`/api/kiriminaja/subdistricts?kecamatan_id=${id}`).then((r) => r.json()).catch(() => ({ data: [] }));
+      setSubdistricts(d.data ?? []);
+      setLoadingSubdistricts(false);
+    }
   };
 
   const handleSubdistrictChange = async (id: number, name: string) => {
     setKelurahanId(id);
     setKelurahanName(name);
-    setSelectedShipping(null);
     if (!id || !kabupatenId) return;
-    setLoadingRates(true);
-    setRatesError(false);
-    setShippingOptions([]);
-    try {
-      const res = await fetch("/api/shipping/rates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((i) => ({ productId: i.id, quantity: i.quantity })),
-          kabupatenId,
-          kelurahanId: id,
-        }),
-      });
-      const data = await res.json();
-      setShippingOptions(data.options ?? []);
-      if ((data.options ?? []).length === 0) setRatesError(true);
-    } catch {
-      setRatesError(true);
-    } finally {
-      setLoadingRates(false);
+    if (activeProvider === "rajaongkir") {
+      // RajaOngkir: subdistrict is optional, rates already calculated at district level
+      return;
     }
+    await fetchRates({ kabupatenId, kelurahanId: id });
   };
 
   useEffect(() => {
@@ -380,6 +410,7 @@ export default function CheckoutPage() {
                     {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
+                {activeProvider !== "rajaongkir" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kelurahan</label>
                   <select
@@ -397,6 +428,7 @@ export default function CheckoutPage() {
                     {subdistricts.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kode Pos</label>
                   <input value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
@@ -411,7 +443,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Shipping Options */}
-            {kelurahanId && (
+            {(activeProvider === "rajaongkir" ? kecamatanId : kelurahanId) && (
               <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
                 <h2 className="font-semibold text-gray-900">Ongkos Kirim</h2>
                 {loadingRates && (

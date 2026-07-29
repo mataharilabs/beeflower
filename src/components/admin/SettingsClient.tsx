@@ -32,6 +32,12 @@ interface SiteSettings {
   storeKecamatanName: string | null;
   storeKelurahanId: number | null;
   storeKelurahanName: string | null;
+  storeRoProvinceId: number | null;
+  storeRoProvinceName: string | null;
+  storeRoCityId: number | null;
+  storeRoCityName: string | null;
+  storeRoDistrictId: number | null;
+  storeRoDistrictName: string | null;
   maintenanceMode: boolean;
   facebookPixelId: string | null;
   headerScripts: string | null;
@@ -62,6 +68,9 @@ interface ShippingSettingsData {
   kiriminajaEnabled: boolean;
   kiriminajaToken: string | null;
   couriers: string[];
+  rajaongkirEnabled: boolean;
+  rajaongkirApiKey: string | null;
+  rajaongkirCouriers: string[];
   flatRateEnabled: boolean;
   flatRateAmount: string | number | null;
   flatRateLabel: string | null;
@@ -99,6 +108,8 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
   const [shipping, setShipping] = useState<ShippingSettingsData>(initialShipping ?? {
     id: "singleton", kiriminajaEnabled: false, kiriminajaToken: null,
     couriers: ["jne", "jnt", "sicepat", "anteraja", "pos"],
+    rajaongkirEnabled: false, rajaongkirApiKey: null,
+    rajaongkirCouriers: ["jne", "jnt", "sicepat", "anteraja", "pos"],
     flatRateEnabled: false, flatRateAmount: null, flatRateLabel: null,
   });
 
@@ -121,6 +132,20 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [loadingSubdistricts, setLoadingSubdistricts] = useState(false);
+
+  // RajaOngkir store location
+  const [roProvinces, setRoProvinces] = useState<RegionItem[]>([]);
+  const [roCities, setRoCities] = useState<RegionItem[]>([]);
+  const [roDistricts, setRoDistricts] = useState<RegionItem[]>([]);
+  const [storeRoProvinceId, setStoreRoProvinceId] = useState<number | null>(settings.storeRoProvinceId ?? null);
+  const [storeRoProvinceName, setStoreRoProvinceName] = useState(settings.storeRoProvinceName ?? "");
+  const [storeRoCityId, setStoreRoCityId] = useState<number | null>(settings.storeRoCityId ?? null);
+  const [storeRoCityName, setStoreRoCityName] = useState(settings.storeRoCityName ?? "");
+  const [storeRoDistrictId, setStoreRoDistrictId] = useState<number | null>(settings.storeRoDistrictId ?? null);
+  const [storeRoDistrictName, setStoreRoDistrictName] = useState(settings.storeRoDistrictName ?? "");
+  const [loadingRoProvinces, setLoadingRoProvinces] = useState(false);
+  const [loadingRoCities, setLoadingRoCities] = useState(false);
+  const [loadingRoDistricts, setLoadingRoDistricts] = useState(false);
 
   useEffect(() => {
     if (activeTab === "store-location" && provinces.length === 0) {
@@ -166,6 +191,40 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
     }
   }, [storeKecamatanId]);
 
+  // RajaOngkir location cascade
+  useEffect(() => {
+    if (activeTab === "store-location" && shipping.rajaongkirEnabled && roProvinces.length === 0) {
+      setLoadingRoProvinces(true);
+      fetch("/api/rajaongkir/provinces")
+        .then((r) => r.json())
+        .then((d) => setRoProvinces(d.data ?? []))
+        .catch(() => {})
+        .finally(() => setLoadingRoProvinces(false));
+    }
+  }, [activeTab, shipping.rajaongkirEnabled, roProvinces.length]);
+
+  useEffect(() => {
+    if (storeRoProvinceId) {
+      setLoadingRoCities(true);
+      fetch(`/api/rajaongkir/cities?province_id=${storeRoProvinceId}`)
+        .then((r) => r.json())
+        .then((d) => setRoCities(d.data ?? []))
+        .catch(() => {})
+        .finally(() => setLoadingRoCities(false));
+    }
+  }, [storeRoProvinceId]);
+
+  useEffect(() => {
+    if (storeRoCityId) {
+      setLoadingRoDistricts(true);
+      fetch(`/api/rajaongkir/districts?city_id=${storeRoCityId}`)
+        .then((r) => r.json())
+        .then((d) => setRoDistricts(d.data ?? []))
+        .catch(() => {})
+        .finally(() => setLoadingRoDistricts(false));
+    }
+  }, [storeRoCityId]);
+
   const saveSiteSettings = async () => {
     setSaving(true);
     try {
@@ -192,6 +251,9 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
           storeKabupatenId, storeKabupatenName,
           storeKecamatanId, storeKecamatanName,
           storeKelurahanId, storeKelurahanName,
+          storeRoProvinceId, storeRoProvinceName,
+          storeRoCityId, storeRoCityName,
+          storeRoDistrictId, storeRoDistrictName,
         }),
       });
       alert("Lokasi toko tersimpan");
@@ -639,6 +701,11 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
       {/* Tab: Lokasi Toko */}
       {activeTab === "store-location" && (
         <div className="space-y-5 max-w-xl">
+          {!shipping.kiriminajaEnabled && !shipping.rajaongkirEnabled && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
+              Aktifkan provider pengiriman di tab <strong>Pengiriman</strong> terlebih dahulu, lalu set lokasi toko di sini.
+            </div>
+          )}
           <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
             <h2 className="font-semibold text-gray-900">Lokasi Toko (Origin Pengiriman)</h2>
             <p className="text-xs text-gray-400">Lokasi ini digunakan sebagai titik asal perhitungan ongkos kirim KiriminAja.</p>
@@ -743,68 +810,217 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
               className="flex items-center gap-2 px-4 py-2 bg-brand-gold text-white rounded-lg text-sm font-medium hover:bg-brand-brown transition-colors disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Simpan Lokasi Toko
+              Simpan Lokasi Toko (KiriminAja)
             </button>
           </div>
+
+          {/* RajaOngkir location */}
+          {shipping.rajaongkirEnabled && (
+          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <h2 className="font-semibold text-gray-900">Lokasi Toko (RajaOngkir)</h2>
+            <p className="text-xs text-gray-400">Pilih hingga level Kecamatan — ID ini digunakan sebagai origin kalkulasi ongkir RajaOngkir.</p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Provinsi</label>
+              <select
+                value={storeRoProvinceId ?? ""}
+                onChange={(e) => {
+                  const id = Number(e.target.value);
+                  const name = roProvinces.find((p) => p.id === id)?.name ?? "";
+                  setStoreRoProvinceId(id || null); setStoreRoProvinceName(name);
+                  setStoreRoCityId(null); setStoreRoCityName("");
+                  setStoreRoDistrictId(null); setStoreRoDistrictName("");
+                  setRoCities([]); setRoDistricts([]);
+                }}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50"
+                disabled={loadingRoProvinces}
+              >
+                <option value="">{loadingRoProvinces ? "Memuat..." : "-- Pilih Provinsi --"}</option>
+                {roProvinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+
+            {storeRoProvinceId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kota / Kabupaten</label>
+                <select
+                  value={storeRoCityId ?? ""}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    const name = roCities.find((c) => c.id === id)?.name ?? "";
+                    setStoreRoCityId(id || null); setStoreRoCityName(name);
+                    setStoreRoDistrictId(null); setStoreRoDistrictName("");
+                    setRoDistricts([]);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50"
+                  disabled={loadingRoCities}
+                >
+                  <option value="">{loadingRoCities ? "Memuat..." : "-- Pilih Kota/Kabupaten --"}</option>
+                  {roCities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {storeRoCityId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kecamatan</label>
+                <select
+                  value={storeRoDistrictId ?? ""}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    const name = roDistricts.find((d) => d.id === id)?.name ?? "";
+                    setStoreRoDistrictId(id || null); setStoreRoDistrictName(name);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold bg-white disabled:bg-gray-50"
+                  disabled={loadingRoDistricts}
+                >
+                  <option value="">{loadingRoDistricts ? "Memuat..." : "-- Pilih Kecamatan --"}</option>
+                  {roDistricts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {storeRoDistrictId && (
+              <div className="p-3 bg-brand-cream rounded-lg text-sm text-brand-brown">
+                <p className="font-semibold mb-1">Lokasi terpilih:</p>
+                <p>{storeRoDistrictName}, {storeRoCityName}, {storeRoProvinceName}</p>
+                <p className="text-xs text-gray-400 mt-1">District ID: {storeRoDistrictId}</p>
+              </div>
+            )}
+
+            <button
+              onClick={saveStoreLocation}
+              disabled={saving || !storeRoDistrictId}
+              className="flex items-center gap-2 px-4 py-2 bg-brand-gold text-white rounded-lg text-sm font-medium hover:bg-brand-brown transition-colors disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Simpan Lokasi Toko (RajaOngkir)
+            </button>
+          </div>
+          )}
         </div>
       )}
 
       {/* Tab: Pengiriman */}
       {activeTab === "shipping" && (
         <div className="space-y-5 max-w-xl">
-          {/* KiriminAja */}
+          {/* Provider selection — mutually exclusive */}
           <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold text-gray-900">KiriminAja</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Kalkulasi ongkir real-time dari KiriminAja</p>
-              </div>
-              <div
-                onClick={() => setShipping({ ...shipping, kiriminajaEnabled: !shipping.kiriminajaEnabled })}
-                className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${shipping.kiriminajaEnabled ? "bg-brand-gold" : "bg-gray-200"}`}
-              >
-                <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${shipping.kiriminajaEnabled ? "translate-x-4" : ""}`} />
+            <div>
+              <h2 className="font-semibold text-gray-900 mb-1">Metode Kalkulasi Ongkir Real-time</h2>
+              <p className="text-xs text-gray-400">Hanya satu provider yang dapat aktif sekaligus.</p>
+            </div>
+            <div className="space-y-3">
+              {[
+                { value: "none", label: "Tidak Ada", desc: "Hanya Flat Rate atau tanpa kalkulasi ongkir" },
+                { value: "kiriminaja", label: "KiriminAja", desc: "Kalkulasi ongkir real-time via KiriminAja" },
+                { value: "rajaongkir", label: "RajaOngkir (Komerce)", desc: "Kalkulasi ongkir real-time via RajaOngkir" },
+              ].map((opt) => {
+                const active = opt.value === "none"
+                  ? !shipping.kiriminajaEnabled && !shipping.rajaongkirEnabled
+                  : opt.value === "kiriminaja" ? shipping.kiriminajaEnabled : shipping.rajaongkirEnabled;
+                return (
+                  <label key={opt.value} className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-gray-100 hover:border-brand-gold/40 transition-colors">
+                    <input
+                      type="radio"
+                      name="shippingProvider"
+                      checked={!!active}
+                      onChange={() => setShipping({
+                        ...shipping,
+                        kiriminajaEnabled: opt.value === "kiriminaja",
+                        rajaongkirEnabled: opt.value === "rajaongkir",
+                      })}
+                      className="mt-0.5 accent-brand-gold"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+                      <p className="text-xs text-gray-400">{opt.desc}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* KiriminAja config */}
+          {shipping.kiriminajaEnabled && (
+          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <h2 className="font-semibold text-gray-900">Konfigurasi KiriminAja</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Token API KiriminAja (opsional)</label>
+              <input
+                value={shipping.kiriminajaToken ?? ""}
+                onChange={(e) => setShipping({ ...shipping, kiriminajaToken: e.target.value || null })}
+                placeholder="Default dari env KIRIMINAJA_TOKEN"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
+              />
+              <p className="text-xs text-gray-400 mt-1">Kosongkan jika sudah set di environment variable Vercel.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Kurir yang diaktifkan</label>
+              <div className="flex flex-wrap gap-3">
+                {ALL_COURIERS.map((c) => {
+                  const active = shipping.couriers?.includes(c.code);
+                  return (
+                    <label key={c.code} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!active}
+                        onChange={() => {
+                          const current = shipping.couriers ?? [];
+                          const next = active ? current.filter((x) => x !== c.code) : [...current, c.code];
+                          setShipping({ ...shipping, couriers: next });
+                        }}
+                        className="w-4 h-4 accent-brand-gold"
+                      />
+                      <span className="text-sm text-gray-700">{c.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
-
-            {shipping.kiriminajaEnabled && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Token API KiriminAja (opsional)</label>
-                  <input
-                    value={shipping.kiriminajaToken ?? ""}
-                    onChange={(e) => setShipping({ ...shipping, kiriminajaToken: e.target.value || null })}
-                    placeholder="Default dari env KIRIMINAJA_TOKEN"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">Kosongkan jika sudah set di environment variable Vercel.</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Kurir yang diaktifkan</label>
-                  <div className="flex flex-wrap gap-3">
-                    {ALL_COURIERS.map((c) => {
-                      const active = shipping.couriers?.includes(c.code);
-                      return (
-                        <label key={c.code} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={!!active}
-                            onChange={() => {
-                              const current = shipping.couriers ?? [];
-                              const next = active ? current.filter((x) => x !== c.code) : [...current, c.code];
-                              setShipping({ ...shipping, couriers: next });
-                            }}
-                            className="w-4 h-4 accent-brand-gold"
-                          />
-                          <span className="text-sm text-gray-700">{c.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            )}
           </div>
+          )}
+
+          {/* RajaOngkir config */}
+          {shipping.rajaongkirEnabled && (
+          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <h2 className="font-semibold text-gray-900">Konfigurasi RajaOngkir</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">API Key RajaOngkir (opsional)</label>
+              <input
+                value={shipping.rajaongkirApiKey ?? ""}
+                onChange={(e) => setShipping({ ...shipping, rajaongkirApiKey: e.target.value || null })}
+                placeholder="Default dari env RAJAONGKIR_API_KEY"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
+              />
+              <p className="text-xs text-gray-400 mt-1">Kosongkan jika sudah set di environment variable Vercel.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Kurir yang diaktifkan</label>
+              <div className="flex flex-wrap gap-3">
+                {ALL_COURIERS.map((c) => {
+                  const active = (shipping.rajaongkirCouriers ?? []).includes(c.code);
+                  return (
+                    <label key={c.code} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!active}
+                        onChange={() => {
+                          const current = shipping.rajaongkirCouriers ?? [];
+                          const next = active ? current.filter((x) => x !== c.code) : [...current, c.code];
+                          setShipping({ ...shipping, rajaongkirCouriers: next });
+                        }}
+                        className="w-4 h-4 accent-brand-gold"
+                      />
+                      <span className="text-sm text-gray-700">{c.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          )}
 
           {/* Flat Rate */}
           <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">

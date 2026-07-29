@@ -4,8 +4,9 @@ import { z } from "zod";
 
 const Schema = z.object({
   items: z.array(z.object({ productId: z.string(), quantity: z.number().int().min(1) })),
-  kabupatenId: z.number(),
-  kelurahanId: z.number(),
+  kabupatenId: z.number().optional(),
+  kelurahanId: z.number().optional(),
+  districtId: z.number().optional(),
 });
 
 export interface ShippingOption {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
   const parsed = Schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ options: [] }, { status: 400 });
 
-  const { items, kabupatenId, kelurahanId } = parsed.data;
+  const { items, kabupatenId, kelurahanId, districtId } = parsed.data;
   const productIds = items.map((i) => i.productId);
 
   const [shipping, settings, products] = await Promise.all([
@@ -105,6 +106,58 @@ export async function POST(req: NextRequest) {
       }
     } catch {
       // API error — return what we have (flat rate may still be added below)
+    }
+  }
+
+  if (
+    shipping?.rajaongkirEnabled &&
+    settings?.storeRoDistrictId &&
+    districtId
+  ) {
+    try {
+      const key = process.env.RAJAONGKIR_API_KEY ?? shipping.rajaongkirApiKey ?? "";
+      const couriers = (shipping.rajaongkirCouriers?.length ? shipping.rajaongkirCouriers : ["jne", "jnt", "sicepat"])
+        .join(":");
+
+      const body = new URLSearchParams({
+        origin: String(settings.storeRoDistrictId),
+        destination: String(districtId),
+        weight: String(totalWeight),
+        courier: couriers,
+        price: "lowest",
+      });
+
+      const res = await fetch("https://rajaongkir.komerce.id/api/v1/calculate/district/domestic-cost", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded", key },
+        body,
+        cache: "no-store",
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const results: Record<string, unknown>[] = json.data ?? [];
+        for (const r of results) {
+          const courierCode = String(r.courier_code ?? r.code ?? "").toLowerCase();
+          const courierName = String(r.courier_name ?? r.name ?? courierCode.toUpperCase());
+          const serviceCode = String(r.service_code ?? r.service ?? "").toUpperCase();
+          const serviceName = String(r.service_name ?? r.description ?? serviceCode);
+          const price = Number(r.price ?? r.cost ?? 0);
+          const etd = String(r.etd ?? "-");
+          if (!price) continue;
+          options.push({
+            id: `ro_${courierCode}_${serviceCode.toLowerCase()}`,
+            courier: courierCode,
+            service: serviceCode,
+            label: `${courierName} ${serviceName}`,
+            price,
+            etd: etd.includes("Hari") ? etd : `${etd} Hari`,
+            type: "kiriminaja",
+          });
+        }
+      }
+    } catch {
+      // API error — continue
     }
   }
 
