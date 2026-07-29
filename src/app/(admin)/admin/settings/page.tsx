@@ -21,12 +21,22 @@ export default async function SettingsPage() {
     }).catch(() => null),
   ]);
 
+  const shippingSettingsData = shippingSettings
+    ? {
+        ...shippingSettings,
+        flatRateAmount:
+          shippingSettings.flatRateAmount != null
+            ? Number(shippingSettings.flatRateAmount.toString())
+            : null,
+      }
+    : null;
+
   return (
     <SettingsClient
       settings={settings}
       paymentSettings={paymentSettings}
       bankAccounts={bankAccounts}
-      shippingSettings={shippingSettings}
+      shippingSettings={shippingSettingsData}
     />
   );
 }
