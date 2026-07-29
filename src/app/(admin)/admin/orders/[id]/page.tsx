@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
+import { DeleteOrderButton } from "@/components/admin/DeleteOrderButton";
 
 const statusLabel: Record<string, { label: string; color: string }> = {
   PENDING: { label: "Menunggu Pembayaran", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
@@ -33,11 +34,18 @@ export default async function OrderDetailPage({
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/admin/orders" className="text-sm text-gray-400 hover:text-gray-600">
-          ← Kembali
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Order #{order.orderNumber}</h1>
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <Link href="/admin/orders" className="text-sm text-gray-400 hover:text-gray-600">
+            ← Kembali
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">Order #{order.orderNumber}</h1>
+        </div>
+        <DeleteOrderButton
+          orderId={order.id}
+          orderNumber={order.orderNumber}
+          redirectAfter="/admin/orders"
+        />
       </div>
 
       <div className="grid gap-5">

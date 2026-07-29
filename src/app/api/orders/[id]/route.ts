@@ -72,3 +72,33 @@ export async function PATCH(
 
   return NextResponse.json(order);
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await params;
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { items: { select: { productId: true, quantity: true } } },
+  });
+  if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  await prisma.order.delete({ where: { id } });
+
+  const RESTORE_STATUSES = ["PENDING", "PAID", "PROCESSING", "CANCELLED"];
+  if (RESTORE_STATUSES.includes(order.status)) {
+    for (const item of order.items) {
+      await prisma.product
+        .update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } })
+        .catch(() => {});
+    }
+  }
+
+  return NextResponse.json({ success: true });
+}

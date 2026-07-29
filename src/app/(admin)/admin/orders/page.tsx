@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
+import { DeleteOrderButton } from "@/components/admin/DeleteOrderButton";
 
 const statusLabel: Record<string, { label: string; color: string }> = {
   PENDING: { label: "Menunggu", color: "bg-yellow-50 text-yellow-700" },
@@ -62,7 +63,7 @@ export default async function OrdersPage() {
                     {formatPrice(Number(order.total))}
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-600">
-                    {order.paymentMethod === "XENDIT" ? "Xendit" : "Transfer Bank"}
+                    {order.paymentMethod === "XENDIT" ? "Xendit Online" : order.paymentMethod === "QRIS" ? "QRIS" : "Transfer Bank"}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
@@ -73,12 +74,15 @@ export default async function OrdersPage() {
                     {new Date(order.createdAt).toLocaleDateString("id-ID")}
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/orders/${order.id}`}
-                      className="text-brand-gold hover:text-brand-brown text-xs font-medium"
-                    >
-                      Detail
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="text-brand-gold hover:text-brand-brown text-xs font-medium"
+                      >
+                        Detail
+                      </Link>
+                      <DeleteOrderButton orderId={order.id} orderNumber={order.orderNumber} />
+                    </div>
                   </td>
                 </tr>
               );
