@@ -12,17 +12,20 @@ async function getToken(): Promise<string> {
 export async function GET() {
   try {
     const token = await getToken();
+    console.log("[kiriminaja/provinces] token present:", !!token, "len:", token.length);
     const res = await fetch("https://tdev.kiriminaja.com/api/mitra/province", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-    if (!res.ok) throw new Error(`KiriminAja ${res.status}`);
+    console.log("[kiriminaja/provinces] status:", res.status);
     const json = await res.json();
-    const data = (json.data ?? []).map((p: { id: number; name: string }) => ({ id: p.id, name: p.name }));
+    console.log("[kiriminaja/provinces] keys:", Object.keys(json), "data count:", Array.isArray(json.data) ? json.data.length : json.data);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${JSON.stringify(json)}`);
+    const data = (Array.isArray(json.data) ? json.data : []).map((p: { id: number; name: string }) => ({ id: p.id, name: p.name }));
     return NextResponse.json({ data });
   } catch (e) {
-    console.error("[kiriminaja/provinces]", e);
+    console.error("[kiriminaja/provinces] error:", e);
     return NextResponse.json({ data: [] });
   }
 }
