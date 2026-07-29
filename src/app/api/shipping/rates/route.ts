@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       const token = process.env.KIRIMINAJA_TOKEN ?? shipping.kiriminajaToken ?? "";
       const couriers = shipping.couriers?.length ? shipping.couriers : ["jne", "jnt", "sicepat"];
 
-      const res = await fetch("https://tdev.kiriminaja.com/api/mitra/v6.1/shipping_price", {
+      const res = await fetch("https://client.kiriminaja.com/api/mitra/v6.1/shipping_price", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
       if (res.ok) {
         const json = await res.json();
-        const couriersData: Record<string, unknown>[] = json.data ?? [];
+        const couriersData: Record<string, unknown>[] = json.datas ?? json.data ?? [];
         for (const c of couriersData) {
           const courierCode = (c.courier_code as string ?? "").toLowerCase();
           const services: Record<string, unknown>[] = (c.services as Record<string, unknown>[]) ?? [];

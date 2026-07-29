@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (!kabupatenId) return NextResponse.json({ data: [] });
   try {
     const token = await getToken();
-    const res = await fetch("https://tdev.kiriminaja.com/api/mitra/kecamatan", {
+    const res = await fetch("https://client.kiriminaja.com/api/mitra/kecamatan", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ kabupaten_id: Number(kabupatenId) }),
@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
     });
     if (!res.ok) throw new Error(`KiriminAja ${res.status}`);
     const json = await res.json();
-    const data = (json.data ?? []).map((d: { id: number; name: string }) => ({ id: d.id, name: d.name }));
+    const list = json.datas ?? json.data ?? [];
+    const data = (Array.isArray(list) ? list : []).map((d: { id: number; name: string }) => ({ id: d.id, name: d.name }));
     return NextResponse.json({ data });
   } catch (e) {
     console.error("[kiriminaja/districts]", e);

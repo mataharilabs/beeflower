@@ -12,20 +12,18 @@ async function getToken(): Promise<string> {
 export async function GET() {
   try {
     const token = await getToken();
-    console.log("[kiriminaja/provinces] token present:", !!token, "len:", token.length);
-    const res = await fetch("https://tdev.kiriminaja.com/api/mitra/province", {
+    const res = await fetch("https://client.kiriminaja.com/api/mitra/province", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-    console.log("[kiriminaja/provinces] status:", res.status);
+    if (!res.ok) throw new Error(`KiriminAja ${res.status}`);
     const json = await res.json();
-    console.log("[kiriminaja/provinces] keys:", Object.keys(json), "data count:", Array.isArray(json.data) ? json.data.length : json.data);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${JSON.stringify(json)}`);
-    const data = (Array.isArray(json.data) ? json.data : []).map((p: { id: number; name: string }) => ({ id: p.id, name: p.name }));
+    const list = json.datas ?? json.data ?? [];
+    const data = (Array.isArray(list) ? list : []).map((p: { id: number; name: string }) => ({ id: p.id, name: p.name }));
     return NextResponse.json({ data });
   } catch (e) {
-    console.error("[kiriminaja/provinces] error:", e);
+    console.error("[kiriminaja/provinces]", e);
     return NextResponse.json({ data: [] });
   }
 }

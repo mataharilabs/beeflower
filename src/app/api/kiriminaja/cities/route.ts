@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (!provinsiId) return NextResponse.json({ data: [] });
   try {
     const token = await getToken();
-    const res = await fetch("https://tdev.kiriminaja.com/api/mitra/city", {
+    const res = await fetch("https://client.kiriminaja.com/api/mitra/city", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ provinsi_id: Number(provinsiId) }),
@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
     });
     if (!res.ok) throw new Error(`KiriminAja ${res.status}`);
     const json = await res.json();
-    const data = (json.data ?? []).map((c: { id: number; name: string }) => ({ id: c.id, name: c.name }));
+    const list = json.datas ?? json.data ?? [];
+    const data = (Array.isArray(list) ? list : []).map((c: { id: number; name: string }) => ({ id: c.id, name: c.name }));
     return NextResponse.json({ data });
   } catch (e) {
     console.error("[kiriminaja/cities]", e);
