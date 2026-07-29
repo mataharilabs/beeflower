@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 import { ProofUploadSection } from "@/components/shop/ProofUploadSection";
+import { auth } from "@/lib/auth";
+import { MemberSidebar } from "@/components/member/MemberSidebar";
 
 const STATUS_INFO: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   PENDING: { label: "Menunggu Pembayaran", icon: <Clock className="w-12 h-12" />, color: "text-yellow-500" },
@@ -24,10 +26,13 @@ export default async function OrderPage({
   const { id } = await params;
   const { status: queryStatus } = await searchParams;
 
-  const order = await prisma.order.findUnique({
-    where: { id },
-    include: { items: true },
-  });
+  const [session, order] = await Promise.all([
+    auth(),
+    prisma.order.findUnique({
+      where: { id },
+      include: { items: true },
+    }),
+  ]);
 
   if (!order) notFound();
 
@@ -46,7 +51,11 @@ export default async function OrderPage({
 
   return (
     <div className="min-h-screen bg-brand-cream py-12 px-4">
-      <div className="max-w-lg mx-auto">
+      <div className={session ? "max-w-5xl mx-auto flex gap-6 items-start" : "max-w-lg mx-auto"}>
+        {session && (
+          <MemberSidebar userName={session.user?.name} userEmail={session.user?.email} />
+        )}
+        <div className={session ? "flex-1 min-w-0" : "w-full"}>
         <div className="bg-white rounded-2xl p-8 shadow-sm text-center mb-6">
           <div className={`flex justify-center mb-4 ${statusInfo.color}`}>
             {statusInfo.icon}
@@ -149,6 +158,7 @@ export default async function OrderPage({
           >
             Lanjut Belanja
           </Link>
+        </div>
         </div>
       </div>
     </div>

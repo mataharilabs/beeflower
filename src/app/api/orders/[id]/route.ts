@@ -44,25 +44,30 @@ export async function PATCH(
     },
   });
 
-  if (process.env.RESEND_API_KEY && NOTIFY_STATUSES.includes(body.status)) {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const brandSettings = await prisma.siteSettings.findUnique({
-      where: { id: "singleton" },
-      select: { logoUrl: true, logoWidth: true },
-    }).catch(() => null);
-    const email = orderStatusEmail({
-      orderNumber: order.orderNumber,
-      customerName: order.customerName,
-      status: body.status,
-      logoUrl: brandSettings?.logoUrl,
-      logoWidth: brandSettings?.logoWidth,
-    });
-    resend.emails.send({
-      from: email.from,
-      to: order.customerEmail,
-      subject: email.subject,
-      html: email.html,
-    }).catch(console.error);
+  const newStatus = String(body.status ?? "");
+  if (process.env.RESEND_API_KEY && NOTIFY_STATUSES.includes(newStatus)) {
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const brandSettings = await prisma.siteSettings.findUnique({
+        where: { id: "singleton" },
+        select: { logoUrl: true, logoWidth: true },
+      }).catch(() => null);
+      const email = orderStatusEmail({
+        orderNumber: order.orderNumber,
+        customerName: order.customerName,
+        status: newStatus,
+        logoUrl: brandSettings?.logoUrl,
+        logoWidth: brandSettings?.logoWidth,
+      });
+      await resend.emails.send({
+        from: email.from,
+        to: order.customerEmail,
+        subject: email.subject,
+        html: email.html,
+      });
+    } catch (e) {
+      console.error("[orderStatus email]", e);
+    }
   }
 
   return NextResponse.json(order);

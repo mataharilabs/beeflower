@@ -12,7 +12,7 @@ import { loginSchema, type LoginFormData } from "@/lib/validations";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/member/orders";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/member/";
   const resetSuccess = searchParams.get("reset") === "success";
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);

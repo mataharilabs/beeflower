@@ -214,7 +214,7 @@ export function orderStatusEmail(data: {
       <span style="display:inline-block;background:${cfg.badgeBg};color:${cfg.badgeColor};padding:8px 20px;border-radius:20px;font-size:14px;font-weight:bold">${cfg.label}</span>
     </div>
     <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 24px">${cfg.message}</p>
-    <a href="${APP_URL}/toko/pesanan" style="display:inline-block;padding:12px 24px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-weight:bold">Lihat Detail Pesanan</a>
+    <a href="${APP_URL}/member/orders" style="display:inline-block;padding:12px 24px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-weight:bold">Lihat Detail Pesanan</a>
   `, data.logoUrl, data.logoWidth);
 
   return {

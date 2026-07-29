@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, Menu, X, User, LogIn, ChevronDown } from "lucide-react";
+import { ShoppingCart, Menu, X, User, LogIn, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -58,6 +58,7 @@ export function Header({ logoUrl, logoWidth, siteName, navLinks, ctaButton, user
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showHeaderPassword, setShowHeaderPassword] = useState(false);
   const { totalItems, openCart } = useCartStore();
   const cartCount = totalItems();
 
@@ -77,7 +78,7 @@ export function Header({ logoUrl, logoWidth, siteName, navLinks, ctaButton, user
       if (result?.error) {
         setLoginError("Email atau password salah");
       } else {
-        window.location.href = "/member/orders";
+        window.location.href = "/member/";
       }
     } finally {
       setLoginLoading(false);
@@ -244,7 +245,7 @@ export function Header({ logoUrl, logoWidth, siteName, navLinks, ctaButton, user
                         {loginError && (
                           <p className="text-xs text-red-500 mb-2 bg-red-50 px-2 py-1.5 rounded-lg">{loginError}</p>
                         )}
-                        <div className="space-y-2 mb-3">
+                        <div className="space-y-2 mb-2">
                           <input
                             type="email"
                             placeholder="Email"
@@ -253,14 +254,28 @@ export function Header({ logoUrl, logoWidth, siteName, navLinks, ctaButton, user
                             required
                             className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-brand-gold"
                           />
-                          <input
-                            type="password"
-                            placeholder="Password"
-                            value={loginPassword}
-                            onChange={(e) => setLoginPassword(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-brand-gold"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showHeaderPassword ? "text" : "password"}
+                              placeholder="Password"
+                              value={loginPassword}
+                              onChange={(e) => setLoginPassword(e.target.value)}
+                              required
+                              className="w-full px-3 py-2 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-brand-gold"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowHeaderPassword(!showHeaderPassword)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-brown"
+                            >
+                              {showHeaderPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex justify-end mb-3">
+                          <Link href="/forgot-password" onClick={() => setAccountOpen(false)} className="text-xs text-brand-gold hover:underline">
+                            Lupa Password?
+                          </Link>
                         </div>
                         <button
                           type="submit"
