@@ -2,11 +2,13 @@ import { redirect } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/shop/CartDrawer";
+import { PopupAdDisplay } from "@/components/shop/PopupAdDisplay";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [settings, headerNav, ctaItems, session] = await Promise.all([
+  const now = new Date();
+  const [settings, headerNav, ctaItems, session, activePopup] = await Promise.all([
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }).catch(() => null),
     prisma.navItem
       .findMany({
@@ -19,6 +21,15 @@ export default async function PublicLayout({ children }: { children: React.React
       .findMany({ where: { location: "HEADER_CTA", isActive: true }, orderBy: { order: "asc" }, take: 1 })
       .catch(() => []),
     auth().catch(() => null),
+    prisma.popupAd.findFirst({
+      where: {
+        isActive: true,
+        OR: [{ startAt: null }, { startAt: { lte: now } }],
+        AND: [{ OR: [{ endAt: null }, { endAt: { gte: now } }] }],
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, content: true, useCookies: true, cookieDays: true, delaySeconds: true, width: true, height: true },
+    }).catch(() => null),
   ]);
 
   if (settings?.maintenanceMode) {
@@ -38,6 +49,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <main className="flex-1">{children}</main>
       <Footer />
       <CartDrawer />
+      {activePopup && <PopupAdDisplay popup={activePopup} />}
     </>
   );
 }
