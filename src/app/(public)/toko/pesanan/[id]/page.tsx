@@ -168,6 +168,12 @@ export default async function OrderPage({
                 <span>{formatPrice(Number(order.shippingCost))}</span>
               </div>
             )}
+            {Number(order.discount) > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Diskon{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+                <span>-{formatPrice(Number(order.discount))}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200">
               <span>Total</span>
               <span>{formatPrice(Number(order.total))}</span>

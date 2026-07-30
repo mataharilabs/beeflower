@@ -36,6 +36,16 @@ enum ProofStatus {
   REJECTED
 }
 
+enum CouponDiscountType {
+  SHIPPING
+  PRODUCT
+}
+
+enum CouponDiscountMode {
+  FIXED
+  PERCENTAGE
+}
+
 // ─── AUTH (NextAuth.js) ───────────────────────────────────
 
 model Account {
@@ -215,6 +225,11 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  couponId    String?
+  coupon      Coupon? @relation(fields: [couponId], references: [id])
+  couponCode  String?
+  couponType  String?
+
   items        OrderItem[]
   paymentProof PaymentProof?
 
@@ -235,6 +250,41 @@ model OrderItem {
   product Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+// ─── COUPONS ──────────────────────────────────────────────
+
+model Coupon {
+  id          String  @id @default(cuid())
+  title       String
+  description String? @db.Text
+  code        String  @unique
+  imageUrl    String?
+
+  discountType  CouponDiscountType
+  discountMode  CouponDiscountMode
+  discountValue Decimal @db.Decimal(12, 2)
+
+  isLifetime Boolean   @default(true)
+  startAt    DateTime?
+  endAt      DateTime?
+
+  isUnlimited Boolean @default(true)
+  quota       Int?
+  usedCount   Int     @default(0)
+
+  applicableProductIds String[] @default([])
+  applicableCities     String[] @default([])
+
+  isPaused  Boolean @default(false)
+  isStopped Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("coupons")
 }
 
 // ─── PAYMENT PROOF (Manual Transfer) ─────────────────────

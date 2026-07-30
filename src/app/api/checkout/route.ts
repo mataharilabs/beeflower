@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateOrderNumber } from "@/lib/utils";
 import { orderConfirmationEmail, welcomeEmail } from "@/lib/emails";
+import { isCouponUsable, calculateCouponDiscount } from "@/lib/coupon";
 import { Resend } from "resend";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -23,6 +24,7 @@ const CheckoutSchema = z.object({
   shippingMethod: z.string().optional(),
   shippingService: z.string().optional(),
   shippingCourier: z.string().optional(),
+  couponCode: z.string().optional(),
   items: z.array(z.object({
     productId: z.string(),
     quantity: z.number().int().min(1),
@@ -76,7 +78,40 @@ export async function POST(req: NextRequest) {
   }
 
   const shippingCost = data.shippingCost ?? 0;
-  const total = subtotal + shippingCost;
+
+  // Coupon validation
+  let couponDiscount = 0;
+  let couponId: string | null = null;
+  let couponType: string | null = null;
+  let appliedCouponCode: string | null = null;
+
+  if (data.couponCode) {
+    const coupon = await prisma.coupon.findUnique({ where: { code: data.couponCode.toUpperCase() } });
+    if (coupon && isCouponUsable(coupon)) {
+      const productIds = orderItems.map((i) => i.productId);
+      const productConditionOk =
+        coupon.applicableProductIds.length === 0 ||
+        productIds.every((pid) => coupon.applicableProductIds.includes(pid));
+      const cityConditionOk =
+        coupon.applicableCities.length === 0 ||
+        coupon.applicableCities.some((c) => c.toLowerCase() === data.city.toLowerCase());
+
+      if (productConditionOk && cityConditionOk) {
+        couponDiscount = calculateCouponDiscount(
+          coupon.discountMode,
+          coupon.discountType,
+          Number(coupon.discountValue.toString()),
+          subtotal,
+          shippingCost,
+        );
+        couponId = coupon.id;
+        couponType = coupon.discountType;
+        appliedCouponCode = coupon.code;
+      }
+    }
+  }
+
+  const total = subtotal + shippingCost - couponDiscount;
   const orderNumber = generateOrderNumber();
 
   // Create order in a transaction
@@ -101,7 +136,10 @@ export async function POST(req: NextRequest) {
         shippingMethod: data.shippingMethod,
         shippingService: data.shippingService,
         shippingCourier: data.shippingCourier,
-        discount: 0,
+        discount: couponDiscount,
+        couponId,
+        couponCode: appliedCouponCode,
+        couponType,
         total,
         items: { create: orderItems },
       },
@@ -117,6 +155,14 @@ export async function POST(req: NextRequest) {
 
     return created;
   });
+
+  // Increment coupon usage count
+  if (couponId) {
+    await prisma.coupon.update({
+      where: { id: couponId },
+      data: { usedCount: { increment: 1 } },
+    }).catch(() => {});
+  }
 
   // Auto-create user for guest checkouts
   let isNewUser = false;
@@ -207,6 +253,8 @@ export async function POST(req: NextRequest) {
       orderId: order.id,
       bankAccounts,
       qrisImageUrl,
+      couponCode: appliedCouponCode ?? undefined,
+      couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
     });
     await resend.emails.send({
       from: confirmEmail.from,

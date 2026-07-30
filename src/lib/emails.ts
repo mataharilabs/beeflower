@@ -59,6 +59,8 @@ export function orderConfirmationEmail(data: {
   orderId?: string;
   bankAccounts?: { bankName: string; accountHolder: string; accountNumber: string; logoUrl?: string | null }[];
   qrisImageUrl?: string | null;
+  couponCode?: string | null;
+  couponDiscount?: number;
 }) {
   const subtotal = data.items.reduce((s, i) => s + i.price * i.quantity, 0);
   const itemRows = data.items.map((item) => `
@@ -126,6 +128,10 @@ export function orderConfirmationEmail(data: {
         ${data.shippingCost && data.shippingCost > 0 ? `<tr>
           <td colspan="2" style="padding:4px 0 0;color:#888;font-size:13px">Ongkos Kirim${data.shippingService ? ` (${data.shippingService})` : ""}</td>
           <td style="padding:4px 0 0;color:${BRAND_BROWN};text-align:right">${formatRupiah(data.shippingCost)}</td>
+        </tr>` : ""}
+        ${data.couponDiscount && data.couponDiscount > 0 ? `<tr>
+          <td colspan="2" style="padding:4px 0 0;color:#888;font-size:13px">Diskon Kupon${data.couponCode ? ` (${data.couponCode})` : ""}</td>
+          <td style="padding:4px 0 0;color:#d32f2f;text-align:right">-${formatRupiah(data.couponDiscount)}</td>
         </tr>` : ""}
         <tr>
           <td colspan="2" style="padding:10px 0 0;font-weight:bold;color:${BRAND_BROWN};border-top:1px solid ${BRAND_BEIGE}">Total</td>

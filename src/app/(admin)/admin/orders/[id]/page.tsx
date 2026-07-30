@@ -140,7 +140,7 @@ export default async function OrderDetailPage({
             )}
             {Number(order.discount) > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>Diskon</span>
+                <span>Diskon{order.couponCode ? ` (${order.couponCode})` : ""}</span>
                 <span>-{formatPrice(Number(order.discount))}</span>
               </div>
             )}
