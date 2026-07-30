@@ -18,6 +18,7 @@ interface Product {
   images: string[];
   stock: number;
   category: { name: string } | null;
+  weight?: number | null;
   cartEnabled: boolean;
   cartButtonText: string | null;
   manualButtonEnabled: boolean;
@@ -138,6 +139,11 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
               <span className="text-xs text-brand-beige">
                 Stok: {product.stock}
               </span>
+              {product.weight != null && (
+                <span className="text-xs text-brand-beige">
+                  Berat: {product.weight} gr
+                </span>
+              )}
             </div>
 
             {/* CTA */}

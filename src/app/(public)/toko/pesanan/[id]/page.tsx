@@ -147,7 +147,9 @@ export default async function OrderPage({
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{item.productName}</p>
-                  <p className="text-xs text-gray-400">×{item.quantity}</p>
+                  <p className="text-xs text-gray-400">
+                    ×{item.quantity}{item.weight != null ? ` · ${item.weight} gr` : ""}
+                  </p>
                 </div>
                 <p className="text-sm font-semibold text-gray-900">
                   {formatPrice(Number(item.price) * item.quantity)}

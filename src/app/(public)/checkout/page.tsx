@@ -78,6 +78,9 @@ export default function CheckoutPage() {
   const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
   const [loadingRates, setLoadingRates] = useState(false);
   const [ratesError, setRatesError] = useState(false);
+  const [productWeights, setProductWeights] = useState<Map<string, number | null>>(new Map());
+  const [weightError, setWeightError] = useState(false);
+  const [ratesOrigin, setRatesOrigin] = useState<string | null>(null);
 
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
@@ -117,12 +120,33 @@ export default function CheckoutPage() {
         const url = provider === "kiriminaja" ? "/api/kiriminaja/provinces" : "/api/rajaongkir/provinces";
         const provincesData = await fetch(url).then((r) => r.json()).catch(() => ({ data: [] }));
         setProvinces(provincesData.data ?? []);
+        checkProductWeights();
       } else {
         fetchRates({});
       }
     };
     init();
   }, []);
+
+  const applyWeightsFromResponse = (data: { productWeights?: { productId: string; weight: number | null }[]; weightError?: boolean; storeOrigin?: string | null }) => {
+    if (data.productWeights) {
+      setProductWeights(new Map(data.productWeights.map((pw) => [pw.productId, pw.weight])));
+    }
+    if (data.weightError) setWeightError(true);
+    if (data.storeOrigin) setRatesOrigin(data.storeOrigin);
+  };
+
+  const checkProductWeights = async () => {
+    try {
+      const res = await fetch("/api/shipping/rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: items.map((i) => ({ productId: i.id, quantity: i.quantity })) }),
+      });
+      const data = await res.json();
+      applyWeightsFromResponse(data);
+    } catch {}
+  };
 
   const fetchRates = async (params: Record<string, unknown>) => {
     setLoadingRates(true);
@@ -136,8 +160,9 @@ export default function CheckoutPage() {
         body: JSON.stringify({ items: items.map((i) => ({ productId: i.id, quantity: i.quantity })), ...params }),
       });
       const data = await res.json();
+      applyWeightsFromResponse(data);
       setShippingOptions(data.options ?? []);
-      if ((data.options ?? []).length === 0) setRatesError(true);
+      if ((data.options ?? []).length === 0 && !data.weightError) setRatesError(true);
     } catch {
       setRatesError(true);
     } finally {
@@ -479,10 +504,24 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {/* Weight Error */}
+            {weightError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+                Salah satu product tidak memiliki berat, Ongkir tidak bisa di hitung, hubungi Admin
+              </div>
+            )}
+
             {/* Shipping Options */}
             {(shippingOptions.length > 0 || loadingRates) && (
               <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
                 <h2 className="font-semibold text-gray-900">Ongkos Kirim</h2>
+                {ratesOrigin && form.city && (
+                  <p className="text-xs text-gray-400">
+                    Pengiriman dari <strong className="text-gray-600">{ratesOrigin}</strong>
+                    {" ke "}
+                    <strong className="text-gray-600">{form.city}</strong>
+                  </p>
+                )}
                 {loadingRates && (
                   <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -564,7 +603,7 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={loading || !form.paymentMethod || (shippingOptions.length > 0 && !selectedShipping)}
+              disabled={loading || !form.paymentMethod || weightError || (shippingOptions.length > 0 && !selectedShipping)}
               className="w-full flex items-center justify-center gap-2 py-3.5 bg-brand-gold text-white rounded-xl font-bold text-base hover:bg-brand-brown transition-colors disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
@@ -577,22 +616,27 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-2xl p-6 shadow-sm sticky top-4">
               <h2 className="font-semibold text-gray-900 mb-4">Ringkasan Pesanan</h2>
               <div className="space-y-3 mb-4">
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3">
-                    {item.image && (
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                {items.map((item) => {
+                  const itemWeight = productWeights.get(item.id);
+                  return (
+                    <div key={item.id} className="flex items-center gap-3">
+                      {item.image && (
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                        <p className="text-xs text-gray-400">
+                          ×{item.quantity}{itemWeight != null ? ` · ${itemWeight} gr` : ""}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                      <p className="text-xs text-gray-400">×{item.quantity}</p>
+                      <p className="text-sm font-semibold text-gray-900 shrink-0">
+                        {formatPrice(item.price * item.quantity)}
+                      </p>
                     </div>
-                    <p className="text-sm font-semibold text-gray-900 shrink-0">
-                      {formatPrice(item.price * item.quantity)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <div className="border-t border-gray-100 pt-3 space-y-2">
                 <div className="flex justify-between text-sm text-gray-600">

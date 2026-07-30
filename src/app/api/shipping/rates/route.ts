@@ -41,16 +41,33 @@ export async function POST(req: NextRequest) {
   ]);
 
   const productMap = new Map(products.map((p) => [p.id, p]));
-  let totalWeight = 0;
+
+  const productWeights = items.map((item) => ({
+    productId: item.productId,
+    weight: productMap.get(item.productId)?.weight ?? null,
+  }));
+  const storeOrigin = settings?.storeKabupatenName ?? null;
+
+  const missingWeight = items.some((item) => {
+    const p = productMap.get(item.productId);
+    return !!p && (p.weight === null || p.weight === undefined);
+  });
+
+  if (missingWeight) {
+    return NextResponse.json({ options: [], weightError: true, productWeights, storeOrigin });
+  }
+
+  let totalWeightGrams = 0;
   let itemValue = 0;
 
   for (const item of items) {
     const p = productMap.get(item.productId);
     if (!p) continue;
-    totalWeight += (p.weight ?? 500) * item.quantity;
+    totalWeightGrams += (p.weight ?? 0) * item.quantity;
     itemValue += Number(p.price.toString()) * item.quantity;
   }
-  if (totalWeight === 0) totalWeight = 500;
+
+  const roundedGrams = Math.max(1000, Math.ceil(totalWeightGrams / 1000) * 1000);
 
   const options: ShippingOption[] = [];
 
@@ -71,7 +88,7 @@ export async function POST(req: NextRequest) {
           subdistrict_origin: settings.storeKelurahanId,
           destination: kabupatenId,
           subdistrict_destination: kelurahanId,
-          weight: totalWeight,
+          weight: roundedGrams,
           length: 1,
           width: 1,
           height: 1,
@@ -122,7 +139,7 @@ export async function POST(req: NextRequest) {
       const body = new URLSearchParams({
         origin: String(settings.storeRoDistrictId),
         destination: String(districtId),
-        weight: String(totalWeight),
+        weight: String(roundedGrams),
         courier: couriers,
         price: "lowest",
       });
@@ -173,5 +190,5 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ options });
+  return NextResponse.json({ options, weightError: false, productWeights, storeOrigin });
 }

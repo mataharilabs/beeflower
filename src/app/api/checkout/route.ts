@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   });
 
   const productMap = new Map(products.map((p) => [p.id, p]));
-  const orderItems: { productId: string; productName: string; price: number; quantity: number; image: string | null }[] = [];
+  const orderItems: { productId: string; productName: string; price: number; quantity: number; image: string | null; weight: number | null }[] = [];
   let subtotal = 0;
 
   for (const item of data.items) {
@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
       price,
       quantity: item.quantity,
       image: product.images[0] ?? null,
+      weight: product.weight ?? null,
     });
   }
 
