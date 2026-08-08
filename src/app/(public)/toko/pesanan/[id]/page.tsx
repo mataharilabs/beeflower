@@ -181,6 +181,22 @@ export default async function OrderPage({
           </div>
         </div>
 
+        {order.awbNumber && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
+            <h2 className="font-semibold text-gray-900 mb-3">Info Pengiriman &amp; Resi</h2>
+            <div className="flex items-center gap-6">
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Kurir</p>
+                <p className="text-sm font-semibold text-gray-900">{order.awbCourier}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">No. Resi / AWB</p>
+                <p className="text-lg font-mono font-bold text-brand-gold tracking-wider">{order.awbNumber}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
           <h2 className="font-semibold text-gray-900 mb-3">Informasi Pengiriman</h2>
           <div className="text-sm text-gray-600 space-y-1">

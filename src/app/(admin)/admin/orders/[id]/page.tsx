@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
 import { DeleteOrderButton } from "@/components/admin/DeleteOrderButton";
+import { AwbModal } from "@/components/admin/AwbModal";
 
 const statusLabel: Record<string, { label: string; color: string }> = {
   PENDING: { label: "Menunggu Pembayaran", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
@@ -59,6 +60,35 @@ export default async function OrderDetailPage({
               </span>
             </div>
             <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
+          </div>
+        </div>
+
+        {/* AWB / Resi */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Informasi Pengiriman (AWB / Resi)</p>
+              {order.awbNumber ? (
+                <div className="flex items-center gap-4 mt-1">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">Kurir</p>
+                    <p className="text-sm font-semibold text-gray-900">{order.awbCourier}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">No. Resi</p>
+                    <p className="text-sm font-mono font-bold text-brand-gold tracking-wider">{order.awbNumber}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 mt-1">Belum ada informasi resi</p>
+              )}
+            </div>
+            <AwbModal
+              orderId={order.id}
+              orderNumber={order.orderNumber}
+              currentAwbNumber={order.awbNumber}
+              currentAwbCourier={order.awbCourier}
+            />
           </div>
         </div>
 

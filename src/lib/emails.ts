@@ -257,6 +257,47 @@ export function orderStatusEmail(data: {
   };
 }
 
+// --- AWB / Resi Update (to customer) ---
+
+export function awbUpdateEmail(data: {
+  orderNumber: string;
+  customerName: string;
+  awbNumber: string;
+  awbCourier: string;
+  orderId: string;
+  logoUrl?: string | null;
+  logoWidth?: number | null;
+}) {
+  const orderDetailUrl = `${APP_URL}/toko/pesanan/${data.orderId}`;
+
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 4px;color:${BRAND_BROWN};font-size:20px">Info Pengiriman</h2>
+    <p style="margin:0 0 24px;color:#666;font-size:14px">Halo <strong>${data.customerName}</strong>, pesanan Anda sedang dalam perjalanan!</p>
+    <div style="background:${BRAND_CREAM};padding:20px 24px;border-radius:8px;margin-bottom:24px">
+      <p style="margin:0 0 4px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px">Nomor Pesanan</p>
+      <p style="margin:0 0 16px;font-size:18px;font-weight:bold;color:${BRAND_BROWN};letter-spacing:1px">#${data.orderNumber}</p>
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div>
+          <p style="margin:0 0 4px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px">Kurir</p>
+          <p style="margin:0;font-size:16px;font-weight:bold;color:${BRAND_BROWN}">${data.awbCourier}</p>
+        </div>
+        <div>
+          <p style="margin:0 0 4px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px">No. Resi / AWB</p>
+          <p style="margin:0;font-size:18px;font-weight:bold;color:${BRAND_GOLD};font-family:monospace;letter-spacing:2px">${data.awbNumber}</p>
+        </div>
+      </div>
+    </div>
+    <p style="color:#555;font-size:14px;line-height:1.6;margin-bottom:20px">Gunakan nomor resi di atas untuk melacak posisi paket Anda di website kurir.</p>
+    <a href="${orderDetailUrl}" style="display:inline-block;padding:12px 24px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px">Lihat Detail Pesanan</a>
+  `, data.logoUrl, data.logoWidth);
+
+  return {
+    subject: `Info Pengiriman & No. Resi - Pesanan #${data.orderNumber}`,
+    html,
+    from: FROM,
+  };
+}
+
 // --- Password Reset (to customer) ---
 
 export function passwordResetEmail(data: {
