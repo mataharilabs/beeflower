@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Plus } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { DeleteProductButton } from "@/components/admin/DeleteProductButton";
+import { QuickStockEdit } from "@/components/admin/QuickStockEdit";
 
 export default async function ProductsPage() {
   const products = await prisma.product.findMany({
@@ -58,17 +59,7 @@ export default async function ProductsPage() {
                   {formatPrice(Number(product.price))}
                 </td>
                 <td className="px-4 py-3">
-                  <span
-                    className={`text-sm font-medium ${
-                      product.stock > 10
-                        ? "text-green-600"
-                        : product.stock > 0
-                        ? "text-orange-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {product.stock}
-                  </span>
+                  <QuickStockEdit productId={product.id} stock={product.stock} />
                 </td>
                 <td className="px-4 py-3">
                   <span
