@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -7,7 +8,7 @@ import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import {
   Bold, Italic, List, ListOrdered, Heading2, AlignLeft, AlignCenter,
-  AlignRight, ImageIcon, LinkIcon, Unlink, Undo, Redo,
+  AlignRight, ImageIcon, LinkIcon, Unlink, Undo, Redo, Upload, Loader2,
 } from "lucide-react";
 
 interface Props {
@@ -16,6 +17,9 @@ interface Props {
 }
 
 export function PopupEditor({ content, onChange }: Props) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -36,18 +40,32 @@ export function PopupEditor({ content, onChange }: Props) {
 
   if (!editor) return null;
 
-  const addImage = () => {
+  const addImageByUrl = () => {
     const url = prompt("URL Gambar:");
     if (!url) return;
     const linkUrl = prompt("URL Link (opsional, kosongkan jika tidak ada):");
     if (linkUrl) {
-      editor.chain().focus()
-        .setImage({ src: url })
-        .run();
-      // Wrap inserted image with link
+      editor.chain().focus().setImage({ src: url }).run();
       editor.chain().focus().setLink({ href: linkUrl }).run();
     } else {
       editor.chain().focus().setImage({ src: url }).run();
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "beeflower/popups");
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload gagal");
+      const { url } = await res.json();
+      editor?.chain().focus().setImage({ src: url }).run();
+    } catch {
+      alert("Gagal upload gambar. Pastikan Cloudinary sudah dikonfigurasi.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -90,10 +108,31 @@ export function PopupEditor({ content, onChange }: Props) {
         {btn(() => editor.chain().focus().toggleBulletList().run(), editor.isActive("bulletList"), <List className="w-4 h-4" />, "Bullet List")}
         {btn(() => editor.chain().focus().toggleOrderedList().run(), editor.isActive("orderedList"), <ListOrdered className="w-4 h-4" />, "Numbered List")}
         <div className="w-px h-5 bg-gray-300 mx-1" />
-        {btn(addImage, false, <ImageIcon className="w-4 h-4" />, "Sisipkan Gambar")}
+        {btn(addImageByUrl, false, <ImageIcon className="w-4 h-4" />, "Sisipkan Gambar via URL")}
+        <button
+          type="button"
+          title="Upload Gambar"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="p-1.5 rounded transition-colors text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+        >
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+        </button>
         {btn(setLink, editor.isActive("link"), <LinkIcon className="w-4 h-4" />, "Tambah Link")}
         {editor.isActive("link") && btn(() => editor.chain().focus().unsetLink().run(), false, <Unlink className="w-4 h-4" />, "Hapus Link")}
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImageUpload(file);
+          e.target.value = "";
+        }}
+      />
 
       {/* Editor area */}
       <EditorContent editor={editor} className="bg-white" />
