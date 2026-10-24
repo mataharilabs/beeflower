@@ -42,6 +42,7 @@ interface Props {
 export function PopupEditor({ content, onChange }: Props) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [, forceUpdate] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -53,6 +54,11 @@ export function PopupEditor({ content, onChange }: Props) {
     content,
     onUpdate({ editor }) {
       onChange(editor.getHTML());
+    },
+    // Tiptap v3 tidak auto re-render saat selection berubah,
+    // sehingga isActive("image") tidak reaktif tanpa ini.
+    onSelectionUpdate() {
+      forceUpdate((n) => n + 1);
     },
     editorProps: {
       attributes: {
