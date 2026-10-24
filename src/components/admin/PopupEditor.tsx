@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import BaseImage from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -42,7 +42,6 @@ interface Props {
 export function PopupEditor({ content, onChange }: Props) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [, forceUpdate] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -55,16 +54,21 @@ export function PopupEditor({ content, onChange }: Props) {
     onUpdate({ editor }) {
       onChange(editor.getHTML());
     },
-    // Tiptap v3 tidak auto re-render saat selection berubah,
-    // sehingga isActive("image") tidak reaktif tanpa ini.
-    onSelectionUpdate() {
-      forceUpdate((n) => n + 1);
-    },
     editorProps: {
       attributes: {
         class: "prose prose-sm max-w-none min-h-[200px] px-4 py-3 focus:outline-none",
       },
     },
+  });
+
+  // useEditorState adalah cara yang benar di Tiptap v3 untuk membaca
+  // state editor secara reaktif (termasuk selection changes).
+  const { imageActive, currentWidth } = useEditorState({
+    editor,
+    selector: (ctx) => ({
+      imageActive: ctx.editor?.isActive("image") ?? false,
+      currentWidth: (ctx.editor?.getAttributes("image").width as string | null) ?? null,
+    }),
   });
 
   if (!editor) return null;
@@ -118,9 +122,6 @@ export function PopupEditor({ content, onChange }: Props) {
       {children}
     </button>
   );
-
-  const imageActive = editor.isActive("image");
-  const currentWidth = editor.getAttributes("image").width as string | null;
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
