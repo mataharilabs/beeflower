@@ -3,13 +3,36 @@
 import { useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
+import BaseImage from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import {
   Bold, Italic, List, ListOrdered, Heading2, AlignLeft, AlignCenter,
   AlignRight, ImageIcon, LinkIcon, Unlink, Undo, Redo, Upload, Loader2,
 } from "lucide-react";
+
+// Extend Image to support resizable width via inline style
+const Image = BaseImage.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        renderHTML(attrs) {
+          if (!attrs.width) return {};
+          return { style: `width: ${attrs.width}; max-width: 100%;` };
+        },
+        parseHTML(el) {
+          const style = el.getAttribute("style") ?? "";
+          const m = style.match(/width:\s*([^;]+)/);
+          return m ? m[1].trim() : null;
+        },
+      },
+    };
+  },
+});
+
+const SIZE_PRESETS = ["25%", "50%", "75%", "100%"];
 
 interface Props {
   content: string;
@@ -90,9 +113,12 @@ export function PopupEditor({ content, onChange }: Props) {
     </button>
   );
 
+  const imageActive = editor.isActive("image");
+  const currentWidth = editor.getAttributes("image").width as string | null;
+
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
-      {/* Toolbar */}
+      {/* Main toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 p-2 bg-gray-50 border-b border-gray-200">
         {btn(() => editor.chain().focus().undo().run(), false, <Undo className="w-4 h-4" />, "Undo")}
         {btn(() => editor.chain().focus().redo().run(), false, <Redo className="w-4 h-4" />, "Redo")}
@@ -121,6 +147,38 @@ export function PopupEditor({ content, onChange }: Props) {
         {btn(setLink, editor.isActive("link"), <LinkIcon className="w-4 h-4" />, "Tambah Link")}
         {editor.isActive("link") && btn(() => editor.chain().focus().unsetLink().run(), false, <Unlink className="w-4 h-4" />, "Hapus Link")}
       </div>
+
+      {/* Image resize toolbar — muncul saat gambar dipilih */}
+      {imageActive && (
+        <div className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 border-b border-amber-100">
+          <span className="text-xs text-gray-500 mr-1">Ukuran gambar:</span>
+          {SIZE_PRESETS.map((w) => (
+            <button
+              key={w}
+              type="button"
+              onClick={() => editor.chain().focus().updateAttributes("image", { width: w }).run()}
+              className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                currentWidth === w
+                  ? "bg-brand-gold text-white"
+                  : "bg-white border border-gray-200 text-gray-600 hover:border-brand-gold hover:text-brand-gold"
+              }`}
+            >
+              {w}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().updateAttributes("image", { width: null }).run()}
+            className={`px-2 py-0.5 text-xs rounded transition-colors ${
+              !currentWidth
+                ? "bg-brand-gold text-white"
+                : "bg-white border border-gray-200 text-gray-600 hover:border-brand-gold hover:text-brand-gold"
+            }`}
+          >
+            Asli
+          </button>
+        </div>
+      )}
 
       <input
         ref={fileInputRef}
