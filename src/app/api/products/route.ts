@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
@@ -49,8 +50,20 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const product = await prisma.product.create({ data: body });
-  revalidatePath("/");
-  revalidatePath("/toko", "page");
-  return NextResponse.json(product, { status: 201 });
+
+  if (!body.sku?.trim()) {
+    return NextResponse.json({ error: "SKU Produk wajib diisi" }, { status: 400 });
+  }
+
+  try {
+    const product = await prisma.product.create({ data: body });
+    revalidatePath("/");
+    revalidatePath("/toko", "page");
+    return NextResponse.json(product, { status: 201 });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return NextResponse.json({ error: "SKU sudah digunakan produk lain" }, { status: 409 });
+    }
+    throw e;
+  }
 }

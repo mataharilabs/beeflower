@@ -15,6 +15,7 @@ interface Product {
   id: string;
   name: string;
   slug: string;
+  sku: string | null;
   description: string | null;
   shortDesc: string | null;
   price: { toString(): string };
@@ -49,6 +50,7 @@ export function ProductForm({ product, categories }: Props) {
   const [form, setForm] = useState({
     name: product?.name ?? "",
     slug: product?.slug ?? "",
+    sku: product?.sku ?? "",
     description: product?.description ?? "",
     shortDesc: product?.shortDesc ?? "",
     price: product ? Number(product.price.toString()).toString() : "",
@@ -119,7 +121,11 @@ export function ProductForm({ product, categories }: Props) {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Gagal menyimpan produk");
+        return;
+      }
       router.push("/admin/products");
       router.refresh();
     } catch {
@@ -153,6 +159,19 @@ export function ProductForm({ product, categories }: Props) {
               required
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
             />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              SKU Produk <span className="text-red-500">*</span>
+            </label>
+            <input
+              value={form.sku}
+              onChange={(e) => setForm({ ...form, sku: e.target.value })}
+              required
+              placeholder="Contoh: BF-001"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
+            />
+            <p className="text-xs text-gray-400 mt-1">Kode unik produk, tidak boleh sama antar produk.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Harga (Rp)</label>

@@ -28,6 +28,7 @@ export default async function ProductsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 text-gray-500 text-xs uppercase tracking-wider">
+              <th className="text-left px-4 py-3 font-medium">SKU</th>
               <th className="text-left px-4 py-3 font-medium">Produk</th>
               <th className="text-left px-4 py-3 font-medium">Kategori</th>
               <th className="text-left px-4 py-3 font-medium">Harga</th>
@@ -39,13 +40,16 @@ export default async function ProductsPage() {
           <tbody className="divide-y divide-gray-50">
             {products.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
                   Belum ada produk
                 </td>
               </tr>
             )}
             {products.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                <td className="px-4 py-3">
+                  <span className="font-mono text-xs text-gray-500">{product.sku ?? "—"}</span>
+                </td>
                 <td className="px-4 py-3">
                   <div>
                     <p className="font-medium text-gray-900">{product.name}</p>

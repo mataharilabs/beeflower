@@ -83,6 +83,7 @@ CREATE TABLE "products" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
+    "sku" TEXT,
     "description" TEXT,
     "shortDesc" TEXT,
     "price" DECIMAL(12,0) NOT NULL,
@@ -302,6 +303,9 @@ CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "products_slug_key" ON "products"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "products_sku_key" ON "products"("sku");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "cart_items_userId_productId_key" ON "cart_items"("userId", "productId");
