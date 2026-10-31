@@ -176,7 +176,9 @@ export default async function ProductsPage({
                 </td>
                 <td className="px-4 py-3">
                   <div>
-                    <p className="font-medium text-gray-900">{product.name}</p>
+                    <Link href={`/admin/products/${product.id}`} className="font-medium text-gray-900 hover:text-brand-gold transition-colors">
+                      {product.name}
+                    </Link>
                     <p className="text-gray-400 text-xs">{product.slug}</p>
                   </div>
                 </td>

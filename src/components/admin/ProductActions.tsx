@@ -102,7 +102,7 @@ export function ProductActions({ id, name, sku, tab }: Props) {
     }
   };
 
-  const link = "text-xs font-medium transition-colors";
+  const link = "text-xs font-medium transition-colors cursor-pointer";
 
   return (
     <>
