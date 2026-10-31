@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
-import { Plus, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { ProductImagePreview, ProductImagePlaceholder } from "@/components/admin/ProductImagePreview";
 import { DeleteProductButton } from "@/components/admin/DeleteProductButton";
 import { QuickStockEdit } from "@/components/admin/QuickStockEdit";
 import { ProductFilters } from "@/components/admin/ProductFilters";
@@ -120,21 +120,9 @@ export default async function ProductsPage({
                   <span className="font-mono text-xs text-gray-500">{product.sku ?? "—"}</span>
                 </td>
                 <td className="px-2 py-2">
-                  {product.images[0] ? (
-                    <div className="relative w-10 h-10 rounded-md overflow-hidden bg-gray-100 shrink-0">
-                      <Image
-                        src={product.images[0]}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                        sizes="40px"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center shrink-0">
-                      <ImageOff className="w-4 h-4 text-gray-300" />
-                    </div>
-                  )}
+                  {product.images[0]
+                    ? <ProductImagePreview src={product.images[0]} name={product.name} />
+                    : <ProductImagePlaceholder />}
                 </td>
                 <td className="px-4 py-3">
                   <div>
