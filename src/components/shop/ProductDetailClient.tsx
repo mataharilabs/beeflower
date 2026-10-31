@@ -6,6 +6,7 @@ import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
 import { ProductCard } from "./ProductCard";
+import type { VariantGroup, ProductVariant } from "@/types/variant";
 
 interface Product {
   id: string;
@@ -24,6 +25,10 @@ interface Product {
   manualButtonEnabled: boolean;
   manualButtonText: string | null;
   manualButtonUrl: string | null;
+  variantsEnabled?: boolean;
+  variantWeightPerVariant?: boolean;
+  variantGroups?: unknown;
+  variants?: unknown;
 }
 
 interface Props {
@@ -34,26 +39,83 @@ interface Props {
 export function ProductDetailClient({ product, relatedProducts }: Props) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const { addItem, openCart } = useCartStore();
 
-  const price = Number(product.price.toString());
+  const basePrice = Number(product.price.toString());
   const comparePrice = product.comparePrice
     ? Number(product.comparePrice.toString())
     : null;
 
+  // Variant data
+  const variantsEnabled = product.variantsEnabled ?? false;
+  const variantWeightPerVariant = product.variantWeightPerVariant ?? false;
+  const variantGroups = (product.variantGroups as VariantGroup[] | null) ?? [];
+  const variants = (product.variants as ProductVariant[] | null) ?? [];
+
+  // Find matching variant for current selection
+  const activeVariant =
+    variantsEnabled && variants.length > 0
+      ? variants.find((v) =>
+          Object.keys(v.combination).every(
+            (k) => selectedOptions[k] === v.combination[k]
+          )
+        ) ?? null
+      : null;
+
+  const allGroupsSelected =
+    variantsEnabled &&
+    variantGroups.length > 0 &&
+    variantGroups.every((g) => selectedOptions[g.name]);
+
+  // Effective values based on selection
+  const effectivePrice = allGroupsSelected && activeVariant ? activeVariant.price : basePrice;
+  const effectiveStock = allGroupsSelected && activeVariant ? activeVariant.stock : product.stock;
+  const effectiveWeight =
+    variantsEnabled && variantWeightPerVariant && allGroupsSelected && activeVariant?.weight != null
+      ? activeVariant.weight
+      : product.weight;
+  const effectiveImage =
+    allGroupsSelected && activeVariant?.imageUrl
+      ? activeVariant.imageUrl
+      : product.images[selectedImage] || "/images/product-placeholder.jpg";
+
+  // Check if an option still has stock given other selections
+  const optionHasStock = (groupName: string, optionValue: string) => {
+    const testSelection = { ...selectedOptions, [groupName]: optionValue };
+    return variants.some((v) => {
+      const matchesAll = Object.keys(v.combination).every(
+        (k) => testSelection[k] === undefined || testSelection[k] === v.combination[k]
+      );
+      return matchesAll && v.stock > 0;
+    });
+  };
+
   const handleAddToCart = () => {
+    if (variantsEnabled && variantGroups.length > 0 && !allGroupsSelected) return;
+
+    const variantLabel = allGroupsSelected
+      ? Object.entries(selectedOptions)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ")
+      : null;
+
     for (let i = 0; i < quantity; i++) {
       addItem({
         id: product.id,
-        name: product.name,
-        price,
-        image: product.images[0] || "/images/product-placeholder.jpg",
+        name: variantLabel ? `${product.name} (${variantLabel})` : product.name,
+        price: effectivePrice,
+        image: effectiveImage,
         slug: product.slug,
-        stock: product.stock,
+        stock: effectiveStock,
       });
     }
     openCart();
   };
+
+  const canAddToCart =
+    effectiveStock > 0 &&
+    (!variantsEnabled || !variantGroups.length || allGroupsSelected);
 
   return (
     <div className="min-h-screen bg-white">
@@ -63,7 +125,7 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
           <div className="space-y-3">
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-brand-cream">
               <Image
-                src={product.images[selectedImage] || "/images/product-placeholder.jpg"}
+                src={effectiveImage}
                 alt={product.name}
                 fill
                 className="object-cover"
@@ -98,24 +160,82 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
               {product.name}
             </h1>
 
-            <div className="flex items-baseline gap-3 mb-6">
+            <div className="flex items-baseline gap-3 mb-4">
               <span className="text-3xl font-bold text-brand-brown">
-                {formatPrice(price)}
+                {formatPrice(effectivePrice)}
               </span>
-              {comparePrice && comparePrice > price && (
+              {comparePrice && comparePrice > basePrice && !allGroupsSelected && (
                 <span className="text-lg text-brand-beige line-through">
                   {formatPrice(comparePrice)}
+                </span>
+              )}
+              {allGroupsSelected && activeVariant && activeVariant.price !== basePrice && (
+                <span className="text-sm text-brand-beige line-through">
+                  {formatPrice(basePrice)}
                 </span>
               )}
             </div>
 
             {product.shortDesc && (
-              <p className="text-brand-brown/70 leading-relaxed mb-6 text-sm">
+              <p className="text-brand-brown/70 leading-relaxed mb-4 text-sm">
                 {product.shortDesc}
               </p>
             )}
 
-            {/* Quantity */}
+            {/* Variant selector */}
+            {variantsEnabled && variantGroups.length > 0 && (
+              <div className="space-y-4 mb-5">
+                {variantGroups.map((group) => (
+                  <div key={group.id}>
+                    <p className="text-sm font-semibold text-brand-brown mb-2">
+                      {group.name}
+                      {selectedOptions[group.name] && (
+                        <span className="font-normal text-brand-brown/60 ml-1.5">
+                          : {selectedOptions[group.name]}
+                        </span>
+                      )}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.options.map((opt) => {
+                        const hasStock = optionHasStock(group.name, opt);
+                        const isSelected = selectedOptions[group.name] === opt;
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() =>
+                              setSelectedOptions((p) => ({ ...p, [group.name]: opt }))
+                            }
+                            disabled={!hasStock}
+                            className={`relative px-4 py-1.5 text-sm border rounded-lg transition-all disabled:cursor-not-allowed ${
+                              isSelected
+                                ? "border-brand-gold bg-brand-gold text-white font-semibold shadow-sm"
+                                : hasStock
+                                ? "border-brand-beige text-brand-brown hover:border-brand-gold"
+                                : "border-gray-200 text-gray-300 line-through"
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {!allGroupsSelected && (
+                  <p className="text-xs text-amber-600">
+                    Pilih{" "}
+                    {variantGroups
+                      .filter((g) => !selectedOptions[g.name])
+                      .map((g) => g.name)
+                      .join(", ")}{" "}
+                    terlebih dahulu
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Quantity + stock info */}
             <div className="flex items-center gap-4 mb-6">
               <span className="text-sm font-medium text-brand-brown">Jumlah:</span>
               <div className="flex items-center border border-brand-beige rounded-lg overflow-hidden">
@@ -129,20 +249,18 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
                   {quantity}
                 </span>
                 <button
-                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                  disabled={quantity >= product.stock}
+                  onClick={() => setQuantity(Math.min(effectiveStock, quantity + 1))}
+                  disabled={quantity >= effectiveStock || !canAddToCart}
                   className="px-3 py-2 text-brand-brown hover:bg-brand-cream transition-colors disabled:opacity-40"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
-              <span className="text-xs text-brand-beige">
-                Stok: {product.stock}
-              </span>
-              {product.weight != null && (
-                <span className="text-xs text-brand-beige">
-                  Berat: {product.weight} gr
-                </span>
+              {allGroupsSelected || !variantsEnabled ? (
+                <span className="text-xs text-brand-beige">Stok: {effectiveStock}</span>
+              ) : null}
+              {effectiveWeight != null && (
+                <span className="text-xs text-brand-beige">Berat: {effectiveWeight} gr</span>
               )}
             </div>
 
@@ -151,12 +269,14 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
               {product.cartEnabled && (
                 <button
                   onClick={handleAddToCart}
-                  disabled={product.stock === 0}
+                  disabled={!canAddToCart}
                   className="flex items-center justify-center gap-2 w-full px-8 py-4 bg-brand-gold text-white font-semibold rounded-lg tracking-wide hover:bg-brand-brown transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ShoppingCart className="w-5 h-5" />
-                  {product.stock === 0
+                  {effectiveStock === 0 && (allGroupsSelected || !variantsEnabled)
                     ? "STOK HABIS"
+                    : variantsEnabled && variantGroups.length > 0 && !allGroupsSelected
+                    ? "PILIH VARIANT DULU"
                     : (product.cartButtonText?.trim() || "TAMBAH KE KERANJANG").toUpperCase()}
                 </button>
               )}
@@ -187,9 +307,7 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-xl font-bold text-brand-brown mb-6">
-              Produk Terkait
-            </h2>
+            <h2 className="text-xl font-bold text-brand-brown mb-6">Produk Terkait</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
               {relatedProducts.map((p) => (
                 <ProductCard

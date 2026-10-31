@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
@@ -29,11 +30,13 @@ export async function POST(
   if (existingSku)  sku  = `Copy-${original.sku}-${ts}`;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id: _, createdAt, updatedAt, ...rest } = original;
+  const { id: _, createdAt, updatedAt, variantGroups: vg, variants: vv, ...rest } = original;
 
   const duplicate = await prisma.product.create({
     data: {
       ...rest,
+      variantGroups: (vg ?? []) as Prisma.InputJsonValue,
+      variants:      (vv ?? []) as Prisma.InputJsonValue,
       name:       `Copy-${original.name}`,
       slug,
       sku,

@@ -165,6 +165,11 @@ model Product {
   manualButtonText    String?
   manualButtonUrl     String?
 
+  variantsEnabled         Boolean @default(false)
+  variantWeightPerVariant Boolean @default(false)
+  variantGroups           Json    @default("[]")
+  variants                Json    @default("[]")
+
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   orderItems OrderItem[]

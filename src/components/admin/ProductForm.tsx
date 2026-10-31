@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, X } from "lucide-react";
 import { ImageUploader } from "./ImageUploader";
+import { ProductVariantManager } from "./ProductVariantManager";
 import { slugify } from "@/lib/utils";
+import type { VariantGroup, ProductVariant } from "@/types/variant";
 
 interface Category {
   id: string;
@@ -35,6 +37,10 @@ interface Product {
   manualButtonEnabled: boolean;
   manualButtonText: string | null;
   manualButtonUrl: string | null;
+  variantsEnabled?: boolean;
+  variantWeightPerVariant?: boolean;
+  variantGroups?: unknown;
+  variants?: unknown;
 }
 
 interface Props {
@@ -70,6 +76,10 @@ export function ProductForm({ product, categories }: Props) {
     manualButtonEnabled: product?.manualButtonEnabled ?? false,
     manualButtonText: product?.manualButtonText ?? "",
     manualButtonUrl: product?.manualButtonUrl ?? "",
+    variantsEnabled: product?.variantsEnabled ?? false,
+    variantWeightPerVariant: product?.variantWeightPerVariant ?? false,
+    variantGroups: (product?.variantGroups ?? []) as VariantGroup[],
+    variants: (product?.variants ?? []) as ProductVariant[],
   });
 
   const handleNameChange = (name: string) => {
@@ -308,6 +318,15 @@ export function ProductForm({ product, categories }: Props) {
           )}
         </div>
       </div>
+
+      {/* Variants */}
+      <ProductVariantManager
+        variantsEnabled={form.variantsEnabled}
+        variantWeightPerVariant={form.variantWeightPerVariant}
+        variantGroups={form.variantGroups}
+        variants={form.variants}
+        onChange={(updates) => setForm((f) => ({ ...f, ...updates }))}
+      />
 
       {/* Action Buttons */}
       <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm space-y-4">
