@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const take = parseInt(searchParams.get("take") || "20");
   const skip = parseInt(searchParams.get("skip") || "0");
 
-  const where: Record<string, unknown> = isAdmin ? {} : { isActive: true };
+  const where: Record<string, unknown> = isAdmin ? {} : { isActive: true, isArchived: false };
   if (category) where.categoryId = category;
   if (featured === "true") where.isFeatured = true;
   if (bestseller === "true") where.isBestSeller = true;

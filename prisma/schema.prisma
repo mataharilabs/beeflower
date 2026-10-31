@@ -149,6 +149,7 @@ model Product {
   weight       Int?
   images       String[]
   isActive     Boolean  @default(true)
+  isArchived   Boolean  @default(false)
   isFeatured   Boolean  @default(false)
   isBestSeller Boolean  @default(false)
   categoryId   String?

@@ -46,8 +46,9 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  _req: NextRequest,
+// PATCH — aksi spesifik: archive, unarchive, restore
+export async function PATCH(
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
@@ -55,6 +56,45 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
-  await prisma.product.update({ where: { id }, data: { isActive: false } });
+  const { action } = await req.json();
+
+  const dataMap: Record<string, Prisma.ProductUpdateInput> = {
+    archive:   { isArchived: true,  isActive: true  },
+    unarchive: { isArchived: false, isActive: true  },
+    restore:   { isActive: true,    isArchived: false },
+  };
+
+  if (!dataMap[action]) {
+    return NextResponse.json({ error: "Aksi tidak valid" }, { status: 400 });
+  }
+
+  const product = await prisma.product.update({ where: { id }, data: dataMap[action] });
+  revalidatePath("/");
+  revalidatePath("/toko", "page");
+  revalidatePath(`/toko/${product.slug}`, "page");
+  return NextResponse.json({ success: true });
+}
+
+// DELETE — soft delete (default) atau permanent delete (?permanent=true)
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await params;
+  const permanent = new URL(req.url).searchParams.get("permanent") === "true";
+
+  if (permanent) {
+    await prisma.product.delete({ where: { id } });
+  } else {
+    // Soft delete — pindah ke Trash
+    await prisma.product.update({ where: { id }, data: { isActive: false, isArchived: false } });
+  }
+
+  revalidatePath("/");
+  revalidatePath("/toko", "page");
   return NextResponse.json({ success: true });
 }
