@@ -1,7 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { DeleteProductButton } from "@/components/admin/DeleteProductButton";
 import { QuickStockEdit } from "@/components/admin/QuickStockEdit";
@@ -96,6 +97,7 @@ export default async function ProductsPage({
           <thead>
             <tr className="border-b border-gray-100 text-gray-500 text-xs uppercase tracking-wider">
               <th className="text-left px-4 py-3 font-medium">SKU</th>
+              <th className="px-4 py-3 font-medium w-16"></th>
               <th className="text-left px-4 py-3 font-medium">Produk</th>
               <th className="text-left px-4 py-3 font-medium">Kategori</th>
               <th className="text-left px-4 py-3 font-medium">Harga</th>
@@ -107,7 +109,7 @@ export default async function ProductsPage({
           <tbody className="divide-y divide-gray-50">
             {products.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
                   {trimmedSearch ? `Tidak ada produk untuk "${trimmedSearch}"` : "Belum ada produk"}
                 </td>
               </tr>
@@ -116,6 +118,23 @@ export default async function ProductsPage({
               <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
                 <td className="px-4 py-3">
                   <span className="font-mono text-xs text-gray-500">{product.sku ?? "—"}</span>
+                </td>
+                <td className="px-2 py-2">
+                  {product.images[0] ? (
+                    <div className="relative w-10 h-10 rounded-md overflow-hidden bg-gray-100 shrink-0">
+                      <Image
+                        src={product.images[0]}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center shrink-0">
+                      <ImageOff className="w-4 h-4 text-gray-300" />
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <div>
