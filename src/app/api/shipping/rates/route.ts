@@ -46,7 +46,13 @@ export async function POST(req: NextRequest) {
     productId: item.productId,
     weight: productMap.get(item.productId)?.weight ?? null,
   }));
-  const storeOrigin = settings?.storeKabupatenName ?? null;
+  // Pick city name from the active shipping provider's store location settings
+  const storeOrigin =
+    (shipping?.kiriminajaEnabled ? settings?.storeKabupatenName : null) ??
+    (shipping?.rajaongkirEnabled ? settings?.storeRoCityName : null) ??
+    settings?.storeKabupatenName ??
+    settings?.storeRoCityName ??
+    null;
 
   const missingWeight = items.some((item) => {
     const p = productMap.get(item.productId);
