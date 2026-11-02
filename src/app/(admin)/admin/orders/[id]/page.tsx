@@ -7,12 +7,13 @@ import { DeleteOrderButton } from "@/components/admin/DeleteOrderButton";
 import { AwbModal } from "@/components/admin/AwbModal";
 
 const statusLabel: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Menunggu Pembayaran", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-  PAID: { label: "Sudah Dibayar", color: "bg-blue-50 text-blue-700 border-blue-200" },
-  PROCESSING: { label: "Sedang Diproses", color: "bg-purple-50 text-purple-700 border-purple-200" },
-  SHIPPED: { label: "Dikirim", color: "bg-cyan-50 text-cyan-700 border-cyan-200" },
-  DELIVERED: { label: "Diterima", color: "bg-green-50 text-green-700 border-green-200" },
-  CANCELLED: { label: "Dibatalkan", color: "bg-red-50 text-red-700 border-red-200" },
+  PENDING:              { label: "Menunggu Pembayaran",  color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  PAYMENT_CONFIRMATION: { label: "Konfirmasi Pembayaran",color: "bg-orange-50 text-orange-700 border-orange-200" },
+  PAID:                 { label: "Sudah Dibayar",        color: "bg-blue-50 text-blue-700 border-blue-200" },
+  PROCESSING:           { label: "Sedang Diproses",      color: "bg-purple-50 text-purple-700 border-purple-200" },
+  SHIPPED:              { label: "Dikirim",              color: "bg-cyan-50 text-cyan-700 border-cyan-200" },
+  DELIVERED:            { label: "Diterima",             color: "bg-green-50 text-green-700 border-green-200" },
+  CANCELLED:            { label: "Dibatalkan",           color: "bg-red-50 text-red-700 border-red-200" },
 };
 
 export default async function OrderDetailPage({

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
-import { Loader2, Tag, X, ChevronRight, Globe, Truck, Gift } from "lucide-react";
+import { Loader2, Tag, X, ChevronRight, Globe, Truck, Gift, MapPin, AlertCircle, LogIn } from "lucide-react";
 import { XenditPaymentModal } from "@/components/shop/XenditPaymentModal";
 import {
   getProductDiscount,
@@ -119,6 +119,14 @@ export default function CheckoutPage() {
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [loadingSubdistricts, setLoadingSubdistricts] = useState(false);
+
+  // Email check + inline login
+  const [emailExists, setEmailExists] = useState(false);
+  const [emailChecking, setEmailChecking] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
 
   // Multi-coupon state
   const [couponCode, setCouponCode] = useState("");
@@ -278,6 +286,52 @@ export default function CheckoutPage() {
     if (!id || !kabupatenId) return;
     if (activeProvider === "rajaongkir") return;
     await fetchRates({ kabupatenId, kelurahanId: id });
+  };
+
+  const handleEmailBlur = async () => {
+    const email = form.customerEmail.trim();
+    if (!email || loggedInUser) return;
+    setEmailChecking(true);
+    try {
+      const res = await fetch(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      setEmailExists(data.exists);
+      if (!data.exists) setShowLoginForm(false);
+    } catch {}
+    setEmailChecking(false);
+  };
+
+  const handleInlineLogin = async () => {
+    setLoginLoading(true);
+    setLoginError("");
+    try {
+      const result = await signIn("credentials", {
+        email: form.customerEmail,
+        password: loginPassword,
+        redirect: false,
+      });
+      if (result?.error) {
+        setLoginError("Email atau password salah. Coba lagi.");
+      } else {
+        const profile = await fetch("/api/member/profile").then((r) => r.json()).catch(() => null);
+        if (profile?.email) {
+          setLoggedInUser(profile);
+          setForm((f) => ({
+            ...f,
+            customerName: profile.name ?? f.customerName,
+            customerEmail: profile.email ?? f.customerEmail,
+            customerPhone: profile.phone ?? f.customerPhone,
+            address: profile.address ?? f.address,
+            postalCode: profile.postalCode ?? f.postalCode,
+          }));
+          setEmailExists(false);
+          setShowLoginForm(false);
+        }
+      }
+    } catch {
+      setLoginError("Gagal login, coba lagi.");
+    }
+    setLoginLoading(false);
   };
 
   const handleApplyCoupon = async (codeOverride?: string) => {
@@ -498,6 +552,20 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form */}
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-4">
+            {/* Guest checkout notice */}
+            {!loggedInUser && (
+              <div className="flex items-start gap-3 bg-brand-cream border border-brand-beige/40 rounded-xl px-4 py-3">
+                <LogIn className="w-4 h-4 text-brand-gold mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-brand-brown">
+                  Anda checkout sebagai tamu. Sudah punya akun?{" "}
+                  <a href="/auth/login" className="text-brand-gold font-semibold hover:underline">
+                    Login
+                  </a>{" "}
+                  untuk menyimpan pesanan ini ke akun Anda.
+                </p>
+              </div>
+            )}
+
             <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-gray-900">Informasi Pengiriman</h2>
@@ -515,14 +583,75 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={form.customerEmail}
-                    onChange={(e) => !loggedInUser && setForm({ ...form, customerEmail: e.target.value })}
-                    readOnly={!!loggedInUser}
-                    required
-                    className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold ${loggedInUser ? "bg-gray-50 text-gray-500 cursor-default" : ""}`}
-                  />
+                  <div className="relative">
+                    <input
+                      type="email"
+                      value={form.customerEmail}
+                      onChange={(e) => {
+                        if (!loggedInUser) {
+                          setForm({ ...form, customerEmail: e.target.value });
+                          setEmailExists(false);
+                          setShowLoginForm(false);
+                        }
+                      }}
+                      onBlur={handleEmailBlur}
+                      readOnly={!!loggedInUser}
+                      required
+                      className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold ${loggedInUser ? "bg-gray-50 text-gray-500 cursor-default" : ""}`}
+                    />
+                    {emailChecking && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                    )}
+                  </div>
+                  {emailExists && !loggedInUser && (
+                    <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <p className="text-xs text-amber-700">
+                          Email ini sudah terdaftar. Login untuk mengisi data secara otomatis.
+                        </p>
+                      </div>
+                      {!showLoginForm ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginForm(true)}
+                          className="text-xs text-brand-gold font-semibold hover:underline flex items-center gap-1"
+                        >
+                          <LogIn className="w-3 h-3" />
+                          Login sekarang
+                        </button>
+                      ) : (
+                        <div className="space-y-2 pt-1">
+                          <input
+                            type="password"
+                            value={loginPassword}
+                            onChange={(e) => setLoginPassword(e.target.value)}
+                            placeholder="Password"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                          />
+                          {loginError && <p className="text-xs text-red-500">{loginError}</p>}
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={handleInlineLogin}
+                              disabled={loginLoading || !loginPassword}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-gold text-white text-xs font-semibold rounded-lg hover:bg-brand-brown disabled:opacity-50 transition-colors"
+                            >
+                              {loginLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogIn className="w-3 h-3" />}
+                              {loginLoading ? "Masuk..." : "Masuk"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowLoginForm(false)}
+                              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">No. HP</label>
@@ -653,15 +782,19 @@ export default function CheckoutPage() {
             )}
 
             {/* Shipping Options */}
-            {(shippingOptions.length > 0 || loadingRates) && (
+            {(shippingOptions.length > 0 || loadingRates || !!ratesOrigin) && (
               <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
                 <h2 className="font-semibold text-gray-900">Ongkos Kirim</h2>
-                {ratesOrigin && form.city && (
-                  <p className="text-xs text-gray-400">
-                    Pengiriman dari <strong className="text-gray-600">{ratesOrigin}</strong>
-                    {" ke "}
-                    <strong className="text-gray-600">{form.city}</strong>
-                  </p>
+                {ratesOrigin && (
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-600">
+                    <MapPin className="w-3.5 h-3.5 text-brand-gold flex-shrink-0" />
+                    <span>
+                      Dari <strong className="text-gray-800">{ratesOrigin}</strong>
+                      {form.city
+                        ? <> → ke <strong className="text-gray-800">{form.city}</strong></>
+                        : <span className="text-gray-400"> → ke alamat tujuan Anda</span>}
+                    </span>
+                  </div>
                 )}
                 {loadingRates && (
                   <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
@@ -823,52 +956,64 @@ export default function CheckoutPage() {
             </div>
 
             {/* Payment Method */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
+            <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
               <h2 className="font-semibold text-gray-900">Metode Pembayaran</h2>
               {!paymentConfig.xenditEnabled && !paymentConfig.manualTransferEnabled && !paymentConfig.qrisEnabled && (
                 <p className="text-sm text-red-500">Tidak ada metode pembayaran aktif. Hubungi admin.</p>
               )}
+
+              {/* Konfirmasi Otomatis */}
               {paymentConfig.xenditEnabled && (
-                <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.paymentMethod === "XENDIT" ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
-                  <input type="radio" name="payment" value="XENDIT" checked={form.paymentMethod === "XENDIT"}
-                    onChange={() => setForm({ ...form, paymentMethod: "XENDIT" })} className="sr-only" />
-                  <div className={`w-4 h-4 rounded-full border-2 ${form.paymentMethod === "XENDIT" ? "border-brand-gold" : "border-gray-300"} flex items-center justify-center`}>
-                    {form.paymentMethod === "XENDIT" && <div className="w-2 h-2 bg-brand-gold rounded-full" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">Bayar Online (Xendit)</p>
-                    <p className="text-xs text-gray-400">QRIS, Virtual Account, Kartu Kredit, dll</p>
-                  </div>
-                </label>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Konfirmasi Otomatis</p>
+                  <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.paymentMethod === "XENDIT" ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
+                    <input type="radio" name="payment" value="XENDIT" checked={form.paymentMethod === "XENDIT"}
+                      onChange={() => setForm({ ...form, paymentMethod: "XENDIT" })} className="sr-only" />
+                    <div className={`w-4 h-4 rounded-full border-2 ${form.paymentMethod === "XENDIT" ? "border-brand-gold" : "border-gray-300"} flex items-center justify-center flex-shrink-0`}>
+                      {form.paymentMethod === "XENDIT" && <div className="w-2 h-2 bg-brand-gold rounded-full" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Bayar Online (Xendit)</p>
+                      <p className="text-xs text-gray-400">QRIS dinamis, Virtual Account, Kartu Kredit, dll</p>
+                    </div>
+                  </label>
+                </div>
               )}
-              {paymentConfig.manualTransferEnabled && (
-                <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.paymentMethod === "MANUAL_TRANSFER" ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
-                  <input type="radio" name="payment" value="MANUAL_TRANSFER" checked={form.paymentMethod === "MANUAL_TRANSFER"}
-                    onChange={() => setForm({ ...form, paymentMethod: "MANUAL_TRANSFER" })} className="sr-only" />
-                  <div className={`w-4 h-4 rounded-full border-2 ${form.paymentMethod === "MANUAL_TRANSFER" ? "border-brand-gold" : "border-gray-300"} flex items-center justify-center`}>
-                    {form.paymentMethod === "MANUAL_TRANSFER" && <div className="w-2 h-2 bg-brand-gold rounded-full" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">Transfer Bank Manual</p>
-                    <p className="text-xs text-gray-400">Transfer ke rekening kami dan upload bukti</p>
-                  </div>
-                </label>
-              )}
-              {paymentConfig.qrisEnabled && (
-                <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.paymentMethod === "QRIS" ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
-                  <input type="radio" name="payment" value="QRIS" checked={form.paymentMethod === "QRIS"}
-                    onChange={() => setForm({ ...form, paymentMethod: "QRIS" })} className="sr-only" />
-                  <div className={`w-4 h-4 rounded-full border-2 ${form.paymentMethod === "QRIS" ? "border-brand-gold" : "border-gray-300"} flex items-center justify-center`}>
-                    {form.paymentMethod === "QRIS" && <div className="w-2 h-2 bg-brand-gold rounded-full" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-900">QRIS</p>
-                    <p className="text-xs text-gray-400">Scan QR code dengan e-wallet atau mobile banking</p>
-                  </div>
-                  {paymentConfig.qrisImageUrl && (
-                    <img src={paymentConfig.qrisImageUrl} alt="QRIS" className="w-12 h-12 object-contain rounded" />
+
+              {/* Manual */}
+              {(paymentConfig.manualTransferEnabled || paymentConfig.qrisEnabled) && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Manual</p>
+                  {paymentConfig.manualTransferEnabled && (
+                    <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.paymentMethod === "MANUAL_TRANSFER" ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
+                      <input type="radio" name="payment" value="MANUAL_TRANSFER" checked={form.paymentMethod === "MANUAL_TRANSFER"}
+                        onChange={() => setForm({ ...form, paymentMethod: "MANUAL_TRANSFER" })} className="sr-only" />
+                      <div className={`w-4 h-4 rounded-full border-2 ${form.paymentMethod === "MANUAL_TRANSFER" ? "border-brand-gold" : "border-gray-300"} flex items-center justify-center flex-shrink-0`}>
+                        {form.paymentMethod === "MANUAL_TRANSFER" && <div className="w-2 h-2 bg-brand-gold rounded-full" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Transfer Bank Manual</p>
+                        <p className="text-xs text-gray-400">Transfer ke rekening kami dan upload bukti pembayaran</p>
+                      </div>
+                    </label>
                   )}
-                </label>
+                  {paymentConfig.qrisEnabled && (
+                    <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.paymentMethod === "QRIS" ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
+                      <input type="radio" name="payment" value="QRIS" checked={form.paymentMethod === "QRIS"}
+                        onChange={() => setForm({ ...form, paymentMethod: "QRIS" })} className="sr-only" />
+                      <div className={`w-4 h-4 rounded-full border-2 ${form.paymentMethod === "QRIS" ? "border-brand-gold" : "border-gray-300"} flex items-center justify-center flex-shrink-0`}>
+                        {form.paymentMethod === "QRIS" && <div className="w-2 h-2 bg-brand-gold rounded-full" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900">QRIS Statis</p>
+                        <p className="text-xs text-gray-400">Scan QR code dengan e-wallet atau mobile banking</p>
+                      </div>
+                      {paymentConfig.qrisImageUrl && (
+                        <img src={paymentConfig.qrisImageUrl} alt="QRIS" className="w-12 h-12 object-contain rounded" />
+                      )}
+                    </label>
+                  )}
+                </div>
               )}
             </div>
 

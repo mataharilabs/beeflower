@@ -7,6 +7,7 @@ import { Search, X, Loader2 } from "lucide-react";
 const STATUS_OPTIONS = [
   { value: "", label: "Semua Status" },
   { value: "PENDING", label: "Menunggu" },
+  { value: "PAYMENT_CONFIRMATION", label: "Konfirmasi Pembayaran" },
   { value: "PAID", label: "Dibayar" },
   { value: "PROCESSING", label: "Diproses" },
   { value: "SHIPPED", label: "Dikirim" },

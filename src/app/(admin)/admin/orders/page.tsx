@@ -7,12 +7,13 @@ import { DeleteOrderButton } from "@/components/admin/DeleteOrderButton";
 import { OrderFilters } from "@/components/admin/OrderFilters";
 
 const statusLabel: Record<string, { label: string; color: string }> = {
-  PENDING:    { label: "Menunggu",  color: "bg-yellow-50 text-yellow-700" },
-  PAID:       { label: "Dibayar",   color: "bg-blue-50 text-blue-700" },
-  PROCESSING: { label: "Diproses",  color: "bg-purple-50 text-purple-700" },
-  SHIPPED:    { label: "Dikirim",   color: "bg-cyan-50 text-cyan-700" },
-  DELIVERED:  { label: "Diterima",  color: "bg-green-50 text-green-700" },
-  CANCELLED:  { label: "Dibatalkan",color: "bg-red-50 text-red-700" },
+  PENDING:              { label: "Menunggu",             color: "bg-yellow-50 text-yellow-700" },
+  PAYMENT_CONFIRMATION: { label: "Konfirmasi Pembayaran",color: "bg-orange-50 text-orange-700" },
+  PAID:                 { label: "Dibayar",              color: "bg-blue-50 text-blue-700" },
+  PROCESSING:           { label: "Diproses",             color: "bg-purple-50 text-purple-700" },
+  SHIPPED:              { label: "Dikirim",              color: "bg-cyan-50 text-cyan-700" },
+  DELIVERED:            { label: "Diterima",             color: "bg-green-50 text-green-700" },
+  CANCELLED:            { label: "Dibatalkan",           color: "bg-red-50 text-red-700" },
 };
 
 const paymentLabel: Record<string, string> = {

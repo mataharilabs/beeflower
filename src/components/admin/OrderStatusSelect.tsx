@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 
 const ORDER_STATUSES = [
   { value: "PENDING", label: "Menunggu Pembayaran" },
+  { value: "PAYMENT_CONFIRMATION", label: "Konfirmasi Pembayaran" },
   { value: "PAID", label: "Sudah Dibayar" },
   { value: "PROCESSING", label: "Sedang Diproses" },
   { value: "SHIPPED", label: "Dikirim" },
