@@ -1017,13 +1017,30 @@ export default function CheckoutPage() {
               )}
             </div>
 
+            {emailExists && !loggedInUser && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-700">
+                  Email ini sudah terdaftar. Anda harus{" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginForm(true)}
+                    className="font-semibold underline hover:text-red-900"
+                  >
+                    login
+                  </button>{" "}
+                  terlebih dahulu untuk melanjutkan checkout.
+                </p>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={loading || !form.paymentMethod || weightError || (shippingOptions.length > 0 && !selectedShipping)}
-              className="w-full flex items-center justify-center gap-2 py-3.5 bg-brand-gold text-white rounded-xl font-bold text-base hover:bg-brand-brown transition-colors disabled:opacity-50"
+              disabled={loading || !form.paymentMethod || weightError || (shippingOptions.length > 0 && !selectedShipping) || (emailExists && !loggedInUser)}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-brand-gold text-white rounded-xl font-bold text-base hover:bg-brand-brown transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-              Pesan Sekarang
+              {emailExists && !loggedInUser ? "Login untuk Melanjutkan" : "Pesan Sekarang"}
             </button>
           </form>
 
