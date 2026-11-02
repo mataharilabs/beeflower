@@ -247,8 +247,8 @@ model Order {
   couponCode  String?
   couponType  String?
 
-  shippingCouponId   String?
-  shippingCouponCode String?
+  shippingCouponId   String? @map("shipping_coupon_id")
+  shippingCouponCode String? @map("shipping_coupon_code")
 
   items        OrderItem[]
   paymentProof PaymentProof?
@@ -298,7 +298,7 @@ model Coupon {
 
   isPaused  Boolean @default(false)
   isStopped Boolean @default(false)
-  isPublic  Boolean @default(false)
+  isPublic  Boolean @default(false) @map("is_public")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
