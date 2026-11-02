@@ -176,6 +176,7 @@ model Product {
   variantWeightPerVariant Boolean @default(false)
   variantGroups           Json    @default("[]")
   variants                Json    @default("[]")
+  tags                    String[] @default([])
 
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt

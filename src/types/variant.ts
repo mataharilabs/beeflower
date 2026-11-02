@@ -11,4 +11,5 @@ export interface ProductVariant {
   stock: number;
   weight: number | null;
   imageUrl: string | null;
+  sku?: string | null;
 }

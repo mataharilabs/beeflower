@@ -4,19 +4,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { useState, useTransition } from "react";
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-export function ShopFilters({ categories }: { categories: Category[] }) {
+export function ShopFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
 
-  const currentCategory = searchParams.get("category") ?? "";
   const currentSort = searchParams.get("sort") ?? "createdAt";
 
   const updateParam = (key: string, value: string) => {
@@ -43,20 +36,6 @@ export function ShopFilters({ categories }: { categories: Category[] }) {
           className="w-full pl-9 pr-4 py-2.5 border border-brand-beige/50 rounded-lg text-sm bg-white focus:outline-none focus:border-brand-gold"
         />
       </form>
-
-      {/* Category filter */}
-      <select
-        value={currentCategory}
-        onChange={(e) => updateParam("category", e.target.value)}
-        className="px-4 py-2.5 border border-brand-beige/50 rounded-lg text-sm bg-white focus:outline-none focus:border-brand-gold text-brand-brown min-w-[150px]"
-      >
-        <option value="">Semua Kategori</option>
-        {categories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
 
       {/* Sort */}
       <select

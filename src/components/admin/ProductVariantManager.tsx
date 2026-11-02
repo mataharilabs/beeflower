@@ -44,7 +44,7 @@ function syncVariants(
     const found = map.get(combinationKey(combination));
     return found
       ? { ...found, combination }
-      : { id: genId(), combination, price: 0, stock: 0, weight: null, imageUrl: null };
+      : { id: genId(), combination, price: 0, stock: 0, weight: null, imageUrl: null, sku: null };
   });
 }
 
@@ -363,6 +363,9 @@ export function ProductVariantManager({
                           Variant
                         </th>
                         <th className="text-left px-3 py-2 text-xs font-medium text-gray-600 whitespace-nowrap">
+                          SKU
+                        </th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-600 whitespace-nowrap">
                           Harga (Rp)
                         </th>
                         <th className="text-left px-3 py-2 text-xs font-medium text-gray-600 whitespace-nowrap">
@@ -385,6 +388,19 @@ export function ProductVariantManager({
                             <span className="text-xs font-semibold text-gray-800 whitespace-nowrap">
                               {combinationLabel(v.combination)}
                             </span>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <input
+                              type="text"
+                              value={v.sku ?? ""}
+                              onChange={(e) =>
+                                updateVariant(v.id, {
+                                  sku: e.target.value || null,
+                                })
+                              }
+                              placeholder="SKU-001"
+                              className="w-24 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:border-brand-gold font-mono"
+                            />
                           </td>
                           <td className="px-3 py-2.5">
                             <input

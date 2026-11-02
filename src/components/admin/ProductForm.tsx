@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, X } from "lucide-react";
 import { ImageUploader } from "./ImageUploader";
@@ -41,6 +41,7 @@ interface Product {
   variantWeightPerVariant?: boolean;
   variantGroups?: unknown;
   variants?: unknown;
+  tags?: string[];
 }
 
 interface Props {
@@ -80,7 +81,32 @@ export function ProductForm({ product, categories }: Props) {
     variantWeightPerVariant: product?.variantWeightPerVariant ?? false,
     variantGroups: (product?.variantGroups ?? []) as VariantGroup[],
     variants: (product?.variants ?? []) as ProductVariant[],
+    tags: (product?.tags ?? []) as string[],
   });
+
+  const [tagInput, setTagInput] = useState("");
+  const tagInputRef = useRef<HTMLInputElement>(null);
+
+  const addTag = (value: string) => {
+    const trimmed = value.trim().toLowerCase();
+    if (trimmed && !form.tags.includes(trimmed)) {
+      setForm((f) => ({ ...f, tags: [...f.tags, trimmed] }));
+    }
+    setTagInput("");
+  };
+
+  const removeTag = (tag: string) => {
+    setForm((f) => ({ ...f, tags: f.tags.filter((t) => t !== tag) }));
+  };
+
+  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTag(tagInput);
+    } else if (e.key === "Backspace" && !tagInput && form.tags.length > 0) {
+      removeTag(form.tags[form.tags.length - 1]);
+    }
+  };
 
   const handleNameChange = (name: string) => {
     setForm((f) => ({
@@ -236,6 +262,39 @@ export function ProductForm({ product, categories }: Props) {
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tags Produk</label>
+            <div
+              className="flex flex-wrap gap-1.5 min-h-[42px] w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus-within:border-brand-gold cursor-text"
+              onClick={() => tagInputRef.current?.focus()}
+            >
+              {form.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 bg-brand-gold/10 text-brand-brown text-xs px-2 py-0.5 rounded-full"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
+                    className="text-brand-brown/50 hover:text-brand-brown"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              <input
+                ref={tagInputRef}
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                onBlur={() => { if (tagInput) addTag(tagInput); }}
+                placeholder={form.tags.length === 0 ? "Ketik tag lalu Enter..." : ""}
+                className="flex-1 min-w-[120px] outline-none text-xs bg-transparent"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Tekan Enter atau koma untuk menambah tag. Backspace untuk hapus tag terakhir.</p>
           </div>
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi Singkat</label>
