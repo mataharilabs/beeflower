@@ -25,6 +25,7 @@ interface CouponData {
   quota: number | null;
   applicableProductIds: string[];
   applicableCities: string[];
+  isPublic: boolean;
 }
 
 interface Props {
@@ -59,6 +60,7 @@ export function CouponForm({ coupon, products }: Props) {
   const [quota, setQuota] = useState(coupon?.quota ?? 1);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>(coupon?.applicableProductIds ?? []);
   const [allProducts, setAllProducts] = useState((coupon?.applicableProductIds ?? []).length === 0);
+  const [isPublic, setIsPublic] = useState(coupon?.isPublic ?? false);
   const [cityInput, setCityInput] = useState("");
   const [cities, setCities] = useState<string[]>(coupon?.applicableCities ?? []);
   const [allCities, setAllCities] = useState((coupon?.applicableCities ?? []).length === 0);
@@ -117,6 +119,7 @@ export function CouponForm({ coupon, products }: Props) {
         quota: isUnlimited ? null : quota,
         applicableProductIds: allProducts ? [] : selectedProductIds,
         applicableCities: allCities ? [] : cities,
+        isPublic,
       };
 
       const url = isEdit ? `/api/coupons/${coupon.id}` : "/api/coupons";
@@ -295,6 +298,43 @@ export function CouponForm({ coupon, products }: Props) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Visibility */}
+      <div className={sectionClass}>
+        <h2 className="font-semibold text-gray-900">Visibilitas Kupon</h2>
+        <div className="flex flex-col gap-3">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="visibility"
+              checked={!isPublic}
+              onChange={() => setIsPublic(false)}
+              className="mt-0.5 text-brand-gold"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-900">Privat</span>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Kode kupon valid tetapi <strong>tidak ditampilkan</strong> di halaman checkout. Admin membagikan kode secara manual ke pelanggan tertentu.
+              </p>
+            </div>
+          </label>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="visibility"
+              checked={isPublic}
+              onChange={() => setIsPublic(true)}
+              className="mt-0.5 text-brand-gold"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-900">Publik</span>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Kupon <strong>tampil di halaman checkout</strong> pada menu &quot;Klaim Kupon&quot;. Semua pelanggan bisa melihat dan langsung mengklaim kode ini.
+              </p>
+            </div>
+          </label>
+        </div>
       </div>
 
       {/* City Condition */}

@@ -57,6 +57,7 @@ export async function PATCH(
       ...(body.applicableCities !== undefined && { applicableCities: body.applicableCities }),
       ...(body.isPaused !== undefined && { isPaused: body.isPaused }),
       ...(body.isStopped !== undefined && { isStopped: body.isStopped }),
+      ...(body.isPublic !== undefined && { isPublic: body.isPublic }),
     },
   });
 

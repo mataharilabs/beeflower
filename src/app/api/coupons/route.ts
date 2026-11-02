@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       quota: body.quota ?? null,
       applicableProductIds: body.applicableProductIds ?? [],
       applicableCities: body.applicableCities ?? [],
+      isPublic: body.isPublic ?? false,
     },
   });
 

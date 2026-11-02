@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, Tag, X, ChevronRight, Globe } from "lucide-react";
 import { XenditPaymentModal } from "@/components/shop/XenditPaymentModal";
 
 interface PaymentConfig {
@@ -37,6 +37,27 @@ interface ShippingOption {
   type: "kiriminaja" | "flat";
 }
 
+interface AppliedCoupon {
+  couponId: string;
+  code: string;
+  title: string;
+  discount: number;
+  discountType: "SHIPPING" | "PRODUCT";
+}
+
+interface PublicCoupon {
+  id: string;
+  code: string;
+  title: string;
+  description: string | null;
+  discountType: string;
+  discountMode: string;
+  discountValue: { toString(): string } | number;
+  isUnlimited: boolean;
+  quota: number | null;
+  usedCount: number;
+}
+
 type Step = "form" | "payment";
 
 export default function CheckoutPage() {
@@ -61,7 +82,6 @@ export default function CheckoutPage() {
 
   const [activeProvider, setActiveProvider] = useState<"kiriminaja" | "rajaongkir" | null>(null);
 
-  // Region cascading state
   const [provinces, setProvinces] = useState<RegionItem[]>([]);
   const [cities, setCities] = useState<RegionItem[]>([]);
   const [districts, setDistricts] = useState<RegionItem[]>([]);
@@ -86,13 +106,17 @@ export default function CheckoutPage() {
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [loadingSubdistricts, setLoadingSubdistricts] = useState(false);
 
+  // Multi-coupon state
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{
-    couponId: string; code: string; title: string;
-    discount: number; discountType: "SHIPPING" | "PRODUCT";
-  } | null>(null);
+  const [appliedProductCoupon, setAppliedProductCoupon] = useState<AppliedCoupon | null>(null);
+  const [appliedShippingCoupon, setAppliedShippingCoupon] = useState<AppliedCoupon | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState("");
+
+  // Klaim kupon modal
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [publicCoupons, setPublicCoupons] = useState<PublicCoupon[]>([]);
+  const [loadingPublicCoupons, setLoadingPublicCoupons] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -220,10 +244,8 @@ export default function CheckoutPage() {
     setShippingOptions([]); setSelectedShipping(null);
     if (!id) return;
     if (activeProvider === "rajaongkir") {
-      // RajaOngkir: rates calculated at district level
       await fetchRates({ districtId: id });
     } else {
-      // KiriminAja: load subdistricts, rates calculated after subdistrict
       setLoadingSubdistricts(true);
       const d = await fetch(`/api/kiriminaja/subdistricts?kecamatan_id=${id}`).then((r) => r.json()).catch(() => ({ data: [] }));
       setSubdistricts(d.data ?? []);
@@ -231,8 +253,17 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) return;
+  const handleSubdistrictChange = async (id: number, name: string) => {
+    setKelurahanId(id);
+    setKelurahanName(name);
+    if (!id || !kabupatenId) return;
+    if (activeProvider === "rajaongkir") return;
+    await fetchRates({ kabupatenId, kelurahanId: id });
+  };
+
+  const handleApplyCoupon = async (codeOverride?: string) => {
+    const codeToApply = (codeOverride ?? couponCode).trim().toUpperCase();
+    if (!codeToApply) return;
     setCouponLoading(true);
     setCouponError("");
     try {
@@ -240,7 +271,7 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          code: couponCode.trim().toUpperCase(),
+          code: codeToApply,
           items: items.map((i) => ({ productId: i.id, quantity: i.quantity })),
           city: form.city || undefined,
           subtotal: totalPrice(),
@@ -249,8 +280,13 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       if (data.valid) {
-        setAppliedCoupon(data);
-        setCouponCode("");
+        if (data.discountType === "SHIPPING") {
+          setAppliedShippingCoupon(data);
+        } else {
+          setAppliedProductCoupon(data);
+        }
+        if (!codeOverride) setCouponCode("");
+        setClaimModalOpen(false);
       } else {
         setCouponError(data.error ?? "Kode kupon tidak valid");
       }
@@ -261,15 +297,17 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleSubdistrictChange = async (id: number, name: string) => {
-    setKelurahanId(id);
-    setKelurahanName(name);
-    if (!id || !kabupatenId) return;
-    if (activeProvider === "rajaongkir") {
-      // RajaOngkir: subdistrict is optional, rates already calculated at district level
-      return;
+  const openClaimModal = async () => {
+    setClaimModalOpen(true);
+    if (publicCoupons.length === 0) {
+      setLoadingPublicCoupons(true);
+      try {
+        const res = await fetch("/api/coupons/public");
+        const data = await res.json();
+        setPublicCoupons(data);
+      } catch {}
+      setLoadingPublicCoupons(false);
     }
-    await fetchRates({ kabupatenId, kelurahanId: id });
   };
 
   useEffect(() => {
@@ -277,6 +315,11 @@ export default function CheckoutPage() {
       router.replace("/toko");
     }
   }, [items, step, router, submitted]);
+
+  const totalProductDiscount = appliedProductCoupon?.discount ?? 0;
+  const totalShippingDiscount = appliedShippingCoupon?.discount ?? 0;
+  const totalDiscount = totalProductDiscount + totalShippingDiscount;
+  const grandTotal = totalPrice() + (selectedShipping?.price ?? 0) - totalDiscount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -294,7 +337,8 @@ export default function CheckoutPage() {
           shippingMethod: selectedShipping?.type ?? "free",
           shippingService: selectedShipping?.label ?? undefined,
           shippingCourier: selectedShipping?.courier ?? undefined,
-          couponCode: appliedCoupon?.code ?? undefined,
+          couponCode: appliedProductCoupon?.code ?? undefined,
+          shippingCouponCode: appliedShippingCoupon?.code ?? undefined,
           items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
         }),
       });
@@ -387,7 +431,8 @@ export default function CheckoutPage() {
     );
   }
 
-  // Step: form
+  const bothApplied = !!appliedProductCoupon && !!appliedShippingCoupon;
+
   return (
     <div className="min-h-screen bg-brand-cream py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -590,26 +635,55 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* Coupon */}
+            {/* Coupon Section */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h2 className="font-semibold text-gray-900 mb-3">Kode Kupon</h2>
-              {appliedCoupon ? (
-                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                  <div>
-                    <p className="text-sm font-semibold text-green-700">{appliedCoupon.code}</p>
-                    <p className="text-xs text-green-600">
-                      {appliedCoupon.title} — hemat {formatPrice(appliedCoupon.discount)}
-                    </p>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-gray-900">Kode Kupon</h2>
+                <button
+                  type="button"
+                  onClick={openClaimModal}
+                  className="flex items-center gap-1 text-xs text-brand-gold hover:text-brand-brown transition-colors font-medium"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  Klaim Kupon...
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* Applied coupons display */}
+              <div className="space-y-2 mb-3">
+                {appliedProductCoupon && (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-green-700">{appliedProductCoupon.code}</p>
+                        <p className="text-xs text-green-600">{appliedProductCoupon.title} — hemat {formatPrice(appliedProductCoupon.discount)} (produk)</p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setAppliedProductCoupon(null)} className="text-gray-400 hover:text-gray-600 ml-2">
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setAppliedCoupon(null)}
-                    className="text-gray-400 hover:text-gray-600 ml-4"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
+                )}
+                {appliedShippingCoupon && (
+                  <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-blue-700">{appliedShippingCoupon.code}</p>
+                        <p className="text-xs text-blue-600">{appliedShippingCoupon.title} — hemat {formatPrice(appliedShippingCoupon.discount)} (ongkir)</p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setAppliedShippingCoupon(null)} className="text-gray-400 hover:text-gray-600 ml-2">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Input field — hidden when both types applied */}
+              {!bothApplied && (
                 <>
                   <div className="flex gap-2">
                     <input
@@ -620,7 +694,7 @@ export default function CheckoutPage() {
                     />
                     <button
                       type="button"
-                      onClick={handleApplyCoupon}
+                      onClick={() => handleApplyCoupon()}
                       disabled={couponLoading || !couponCode.trim()}
                       className="px-4 py-2 bg-brand-gold text-white rounded-lg text-sm font-medium hover:bg-brand-brown disabled:opacity-50 transition-colors flex items-center gap-1"
                     >
@@ -628,6 +702,14 @@ export default function CheckoutPage() {
                     </button>
                   </div>
                   {couponError && <p className="text-sm text-red-500 mt-2">{couponError}</p>}
+                  {!appliedProductCoupon && !appliedShippingCoupon && (
+                    <p className="text-xs text-gray-400 mt-2">Bisa pakai 1 kupon produk + 1 kupon ongkir sekaligus</p>
+                  )}
+                  {(appliedProductCoupon || appliedShippingCoupon) && (
+                    <p className="text-xs text-gray-400 mt-2">
+                      {appliedProductCoupon ? "Masukkan kode kupon ongkir untuk diskon tambahan" : "Masukkan kode kupon produk untuk diskon tambahan"}
+                    </p>
+                  )}
                 </>
               )}
             </div>
@@ -730,21 +812,97 @@ export default function CheckoutPage() {
                     <span>{selectedShipping.price > 0 ? formatPrice(selectedShipping.price) : "Gratis"}</span>
                   </div>
                 )}
-                {appliedCoupon && (
+                {appliedProductCoupon && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>Diskon ({appliedCoupon.code})</span>
-                    <span>-{formatPrice(appliedCoupon.discount)}</span>
+                    <span>Diskon Produk ({appliedProductCoupon.code})</span>
+                    <span>-{formatPrice(appliedProductCoupon.discount)}</span>
+                  </div>
+                )}
+                {appliedShippingCoupon && (
+                  <div className="flex justify-between text-sm text-blue-600">
+                    <span>Diskon Ongkir ({appliedShippingCoupon.code})</span>
+                    <span>-{formatPrice(appliedShippingCoupon.discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-base font-bold text-gray-900 pt-1 border-t border-gray-100">
                   <span>Total</span>
-                  <span>{formatPrice(totalPrice() + (selectedShipping?.price ?? 0) - (appliedCoupon?.discount ?? 0))}</span>
+                  <span>{formatPrice(grandTotal)}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Klaim Kupon Modal */}
+      {claimModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Klaim Kupon</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Kupon publik yang tersedia</p>
+              </div>
+              <button onClick={() => setClaimModalOpen(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+              {loadingPublicCoupons && (
+                <div className="flex items-center justify-center py-8 text-gray-400 gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-sm">Memuat kupon...</span>
+                </div>
+              )}
+              {!loadingPublicCoupons && publicCoupons.length === 0 && (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  Tidak ada kupon publik yang tersedia saat ini.
+                </div>
+              )}
+              {!loadingPublicCoupons && publicCoupons.map((c) => {
+                const discountLabel = c.discountMode === "FIXED"
+                  ? `-${formatPrice(Number(c.discountValue.toString()))}`
+                  : `-${Number(c.discountValue.toString())}%`;
+                const typeLabel = c.discountType === "PRODUCT" ? "Diskon Produk" : "Diskon Ongkir";
+                const typeColor = c.discountType === "PRODUCT" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700";
+                const alreadyApplied =
+                  (c.discountType === "PRODUCT" && appliedProductCoupon?.code === c.code) ||
+                  (c.discountType === "SHIPPING" && appliedShippingCoupon?.code === c.code);
+
+                return (
+                  <div key={c.id} className="flex items-start gap-3 p-4 border border-gray-100 rounded-xl hover:border-gray-200 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="font-mono font-bold text-brand-brown text-sm">{c.code}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${typeColor}`}>{typeLabel}</span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">{c.title}</p>
+                      {c.description && <p className="text-xs text-gray-500 mt-0.5">{c.description}</p>}
+                      <p className="text-sm font-bold text-brand-gold mt-1">{discountLabel}</p>
+                      {!c.isUnlimited && c.quota != null && (
+                        <p className="text-xs text-gray-400 mt-0.5">Sisa: {c.quota - c.usedCount} kupon</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCoupon(c.code)}
+                      disabled={couponLoading || alreadyApplied}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${
+                        alreadyApplied
+                          ? "bg-gray-100 text-gray-400 cursor-default"
+                          : "bg-brand-gold text-white hover:bg-brand-brown"
+                      }`}
+                    >
+                      {alreadyApplied ? "Diklaim" : "Klaim"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

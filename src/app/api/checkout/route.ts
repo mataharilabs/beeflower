@@ -25,6 +25,7 @@ const CheckoutSchema = z.object({
   shippingService: z.string().optional(),
   shippingCourier: z.string().optional(),
   couponCode: z.string().optional(),
+  shippingCouponCode: z.string().optional(),
   items: z.array(z.object({
     productId: z.string(),
     quantity: z.number().int().min(1),
@@ -79,39 +80,66 @@ export async function POST(req: NextRequest) {
 
   const shippingCost = data.shippingCost ?? 0;
 
-  // Coupon validation
+  // Coupon validation helper
+  const validateCoupon = async (code: string, expectedType?: string) => {
+    const coupon = await prisma.coupon.findUnique({ where: { code: code.toUpperCase() } });
+    if (!coupon || !isCouponUsable(coupon)) return null;
+    if (expectedType && coupon.discountType !== expectedType) return null;
+    const productIds = orderItems.map((i) => i.productId);
+    const productConditionOk =
+      coupon.applicableProductIds.length === 0 ||
+      productIds.every((pid) => coupon.applicableProductIds.includes(pid));
+    const cityConditionOk =
+      coupon.applicableCities.length === 0 ||
+      coupon.applicableCities.some((c) => c.toLowerCase() === data.city.toLowerCase());
+    if (!productConditionOk || !cityConditionOk) return null;
+    return coupon;
+  };
+
+  // Product coupon
   let couponDiscount = 0;
   let couponId: string | null = null;
   let couponType: string | null = null;
   let appliedCouponCode: string | null = null;
 
   if (data.couponCode) {
-    const coupon = await prisma.coupon.findUnique({ where: { code: data.couponCode.toUpperCase() } });
-    if (coupon && isCouponUsable(coupon)) {
-      const productIds = orderItems.map((i) => i.productId);
-      const productConditionOk =
-        coupon.applicableProductIds.length === 0 ||
-        productIds.every((pid) => coupon.applicableProductIds.includes(pid));
-      const cityConditionOk =
-        coupon.applicableCities.length === 0 ||
-        coupon.applicableCities.some((c) => c.toLowerCase() === data.city.toLowerCase());
-
-      if (productConditionOk && cityConditionOk) {
-        couponDiscount = calculateCouponDiscount(
-          coupon.discountMode,
-          coupon.discountType,
-          Number(coupon.discountValue.toString()),
-          subtotal,
-          shippingCost,
-        );
-        couponId = coupon.id;
-        couponType = coupon.discountType;
-        appliedCouponCode = coupon.code;
-      }
+    const coupon = await validateCoupon(data.couponCode);
+    if (coupon) {
+      couponDiscount = calculateCouponDiscount(
+        coupon.discountMode,
+        coupon.discountType,
+        Number(coupon.discountValue.toString()),
+        subtotal,
+        shippingCost,
+      );
+      couponId = coupon.id;
+      couponType = coupon.discountType;
+      appliedCouponCode = coupon.code;
     }
   }
 
-  const total = subtotal + shippingCost - couponDiscount;
+  // Shipping coupon (separate, additive)
+  let shippingCouponDiscount = 0;
+  let shippingCouponId: string | null = null;
+  let appliedShippingCouponCode: string | null = null;
+
+  if (data.shippingCouponCode) {
+    const coupon = await validateCoupon(data.shippingCouponCode, "SHIPPING");
+    if (coupon) {
+      shippingCouponDiscount = calculateCouponDiscount(
+        coupon.discountMode,
+        coupon.discountType,
+        Number(coupon.discountValue.toString()),
+        subtotal,
+        shippingCost,
+      );
+      shippingCouponId = coupon.id;
+      appliedShippingCouponCode = coupon.code;
+    }
+  }
+
+  const totalCouponDiscount = couponDiscount + shippingCouponDiscount;
+  const total = subtotal + shippingCost - totalCouponDiscount;
   const orderNumber = generateOrderNumber();
 
   // Create order in a transaction
@@ -136,10 +164,12 @@ export async function POST(req: NextRequest) {
         shippingMethod: data.shippingMethod,
         shippingService: data.shippingService,
         shippingCourier: data.shippingCourier,
-        discount: couponDiscount,
+        discount: totalCouponDiscount,
         couponId,
         couponCode: appliedCouponCode,
         couponType,
+        shippingCouponId,
+        shippingCouponCode: appliedShippingCouponCode,
         total,
         items: { create: orderItems },
       },
@@ -156,10 +186,16 @@ export async function POST(req: NextRequest) {
     return created;
   });
 
-  // Increment coupon usage count
+  // Increment coupon usage counts
   if (couponId) {
     await prisma.coupon.update({
       where: { id: couponId },
+      data: { usedCount: { increment: 1 } },
+    }).catch(() => {});
+  }
+  if (shippingCouponId) {
+    await prisma.coupon.update({
+      where: { id: shippingCouponId },
       data: { usedCount: { increment: 1 } },
     }).catch(() => {});
   }
@@ -254,7 +290,7 @@ export async function POST(req: NextRequest) {
       bankAccounts,
       qrisImageUrl,
       couponCode: appliedCouponCode ?? undefined,
-      couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+      couponDiscount: totalCouponDiscount > 0 ? totalCouponDiscount : undefined,
     });
     await resend.emails.send({
       from: confirmEmail.from,
