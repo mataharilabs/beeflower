@@ -11,18 +11,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  // Verify the order exists and is PENDING
+  // Verify the order exists and is awaiting payment
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
-  if (order.status !== "PENDING") {
-    return NextResponse.json({ error: "Order is not pending" }, { status: 400 });
+  if (order.status !== "PENDING" && order.status !== "PAYMENT_CONFIRMATION") {
+    return NextResponse.json({ error: "Order is not awaiting payment" }, { status: 400 });
   }
 
-  const proof = await prisma.paymentProof.upsert({
-    where: { orderId },
-    update: { imageUrl, bankAccountId: bankAccountId || null, notes: notes || null, status: "PENDING" },
-    create: { orderId, imageUrl, bankAccountId: bankAccountId || null, notes: notes || null },
-  });
+  const [proof] = await prisma.$transaction([
+    prisma.paymentProof.upsert({
+      where: { orderId },
+      update: { imageUrl, bankAccountId: bankAccountId || null, notes: notes || null, status: "PENDING" },
+      create: { orderId, imageUrl, bankAccountId: bankAccountId || null, notes: notes || null },
+    }),
+    prisma.order.update({
+      where: { id: orderId },
+      data: { status: "PAYMENT_CONFIRMATION" },
+    }),
+  ]);
 
   // Notify admin via email
   if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
