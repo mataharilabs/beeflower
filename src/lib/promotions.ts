@@ -21,6 +21,8 @@ export interface ActivePromotion {
   getDiscountMode: DiscountMode | null;
   getDiscountValue: number | null;
   applicableCities: string[];
+  getProductImage?: string | null;
+  getProductSlug?: string | null;
   startAt: string;
   endAt: string;
 }

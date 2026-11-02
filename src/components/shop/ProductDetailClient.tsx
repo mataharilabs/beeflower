@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Minus, Plus, ShoppingCart, Gift, Clock, Tag } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, isExternalUrl } from "@/lib/utils";
 import { ProductCard } from "./ProductCard";
 import type { VariantGroup, ProductVariant } from "@/types/variant";
 import {
@@ -246,13 +247,42 @@ export function ProductDetailClient({ product, relatedProducts, promotions = [] 
 
             {/* Beli X Dapat Y banner */}
             {buyXGetYPromo && buyXGetYPromo.getProductId && (
-              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
-                <Gift className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-semibold text-amber-800">{buyXGetYPromo.name}</p>
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+                {/* getProduct image */}
+                {buyXGetYPromo.getProductImage && (
+                  buyXGetYPromo.getProductSlug ? (
+                    <Link href={`/toko/${buyXGetYPromo.getProductSlug}`} className="flex-shrink-0">
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-white border border-amber-200 hover:opacity-80 transition-opacity">
+                        {isExternalUrl(buyXGetYPromo.getProductImage) ? (
+                          <Image src={buyXGetYPromo.getProductImage} alt={buyXGetYPromo.getProductName ?? "Bonus"} fill className="object-cover" />
+                        ) : null}
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-white border border-amber-200 flex-shrink-0">
+                      {isExternalUrl(buyXGetYPromo.getProductImage) && (
+                        <Image src={buyXGetYPromo.getProductImage} alt={buyXGetYPromo.getProductName ?? "Bonus"} fill className="object-cover" />
+                      )}
+                    </div>
+                  )
+                )}
+                {!buyXGetYPromo.getProductImage && (
+                  <Gift className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 min-w-0 text-sm">
+                  <p className="font-semibold text-amber-800 flex items-center gap-1">
+                    <Gift className="w-3.5 h-3.5" />
+                    {buyXGetYPromo.name}
+                  </p>
                   <p className="text-amber-700 text-xs mt-0.5">
                     Beli {buyXGetYPromo.buyQuantity}x produk ini, dapatkan{" "}
-                    <strong>{buyXGetYPromo.getProductName ?? "produk bonus"}</strong>{" "}
+                    {buyXGetYPromo.getProductSlug ? (
+                      <Link href={`/toko/${buyXGetYPromo.getProductSlug}`} className="font-semibold underline hover:text-amber-900">
+                        {buyXGetYPromo.getProductName ?? "produk bonus"}
+                      </Link>
+                    ) : (
+                      <strong>{buyXGetYPromo.getProductName ?? "produk bonus"}</strong>
+                    )}{" "}
                     {buyXGetYPromo.getQuantity && buyXGetYPromo.getQuantity > 1
                       ? `(${buyXGetYPromo.getQuantity}x) `
                       : ""}

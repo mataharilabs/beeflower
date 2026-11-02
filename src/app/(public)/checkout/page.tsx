@@ -69,7 +69,14 @@ type Step = "form" | "payment";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, totalPrice, clearCart } = useCartStore();
+  const {
+    selectedItems: getSelectedItems,
+    selectedIds,
+    selectedTotalPrice,
+    removeSelectedItems,
+  } = useCartStore();
+  const items = getSelectedItems();
+  const totalPrice = selectedTotalPrice;
   const [step, setStep] = useState<Step>("form");
   const [loading, setLoading] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
@@ -323,10 +330,10 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (items.length === 0 && step === "form" && !submitted) {
+    if (selectedIds.length === 0 && step === "form" && !submitted) {
       router.replace("/toko");
     }
-  }, [items, step, router, submitted]);
+  }, [selectedIds, step, router, submitted]);
 
   const cartSubtotal = totalPrice();
 
@@ -412,7 +419,7 @@ export default function CheckoutPage() {
       }
 
       setSubmitted(true);
-      clearCart();
+      removeSelectedItems(selectedIds);
       setOrderNumber(data.orderNumber);
       setCreatedOrderId(data.orderId ?? "");
 
@@ -714,11 +721,21 @@ export default function CheckoutPage() {
                 ))}
                 {buyXGetYBonus && (
                   <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
-                    <Gift className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                    <div className="text-sm">
+                    {buyXGetYBonus.getProductImage ? (
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-amber-200 flex-shrink-0">
+                        <img
+                          src={buyXGetYBonus.getProductImage}
+                          alt={buyXGetYBonus.getProductName ?? "Bonus"}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <Gift className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    )}
+                    <div className="text-sm flex-1 min-w-0">
                       <p className="font-semibold text-amber-700">{buyXGetYBonus.name}</p>
                       <p className="text-amber-600 text-xs mt-0.5">
-                        {buyXGetYBonus.getProductName ?? "Produk bonus"} ×{buyXGetYBonus.getQuantity ?? 1} akan ditambahkan otomatis ke pesanan
+                        <strong>{buyXGetYBonus.getProductName ?? "Produk bonus"}</strong> ×{buyXGetYBonus.getQuantity ?? 1} akan ditambahkan otomatis ke pesanan
                       </p>
                     </div>
                   </div>
@@ -928,12 +945,24 @@ export default function CheckoutPage() {
 
                 {/* Promotion: Beli X Dapat Y */}
                 {buyXGetYBonus && buyXGetYBonus.getProductId && (
-                  <div className="flex justify-between text-sm text-amber-600">
-                    <span className="flex items-center gap-1">
-                      <Gift className="w-3.5 h-3.5" />
-                      Bonus: {buyXGetYBonus.getProductName ?? "Produk Bonus"} ×{buyXGetYBonus.getQuantity ?? 1}
-                    </span>
-                    <span className="text-xs font-semibold">GRATIS</span>
+                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 text-sm text-amber-700">
+                    {buyXGetYBonus.getProductImage && (
+                      <div className="w-10 h-10 rounded overflow-hidden bg-white border border-amber-200 flex-shrink-0">
+                        <img
+                          src={buyXGetYBonus.getProductImage}
+                          alt={buyXGetYBonus.getProductName ?? "Bonus"}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    {!buyXGetYBonus.getProductImage && <Gift className="w-4 h-4 flex-shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-amber-600">Bonus otomatis:</p>
+                      <p className="font-medium truncate">
+                        {buyXGetYBonus.getProductName ?? "Produk Bonus"} ×{buyXGetYBonus.getQuantity ?? 1}
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold text-green-600 flex-shrink-0">GRATIS</span>
                   </div>
                 )}
 

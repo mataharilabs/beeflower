@@ -54,15 +54,34 @@ export default async function ProductDetailPage({
 
   if (!product) notFound();
 
-  const relatedProducts = await prisma.product.findMany({
-    where: {
-      isActive: true,
-      categoryId: product.categoryId,
-      id: { not: product.id },
-    },
-    take: 4,
-    include: { category: true },
-  });
+  // Fetch getProduct details for BUY_X_GET_Y promos
+  const getProductIds = [
+    ...new Set(
+      activePromos
+        .filter((p) => p.type === "BUY_X_GET_Y" && p.getProductId)
+        .map((p) => p.getProductId!)
+    ),
+  ];
+
+  const [relatedProducts, getProductsData] = await Promise.all([
+    prisma.product.findMany({
+      where: {
+        isActive: true,
+        categoryId: product.categoryId,
+        id: { not: product.id },
+      },
+      take: 4,
+      include: { category: true },
+    }),
+    getProductIds.length > 0
+      ? prisma.product.findMany({
+          where: { id: { in: getProductIds }, isActive: true },
+          select: { id: true, images: true, slug: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const getProductMap = new Map(getProductsData.map((p) => [p.id, p]));
 
   const promotions: ActivePromotion[] = activePromos.map((p) => ({
     ...p,
@@ -72,6 +91,8 @@ export default async function ProductDetailPage({
     minimumPurchase: p.minimumPurchase ? Number(p.minimumPurchase.toString()) : null,
     getDiscountMode: p.getDiscountMode as ActivePromotion["getDiscountMode"],
     getDiscountValue: p.getDiscountValue ? Number(p.getDiscountValue.toString()) : null,
+    getProductImage: p.getProductId ? (getProductMap.get(p.getProductId)?.images[0] ?? null) : null,
+    getProductSlug: p.getProductId ? (getProductMap.get(p.getProductId)?.slug ?? null) : null,
     startAt: p.startAt.toISOString(),
     endAt: p.endAt.toISOString(),
   }));
