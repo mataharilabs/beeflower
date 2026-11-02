@@ -77,6 +77,21 @@ export function ContactForm() {
 
       <div>
         <label className="block text-sm font-medium text-brand-brown mb-1.5">
+          No. Telepon / WhatsApp <span className="text-red-500">*</span>
+        </label>
+        <input
+          {...register("phone")}
+          type="tel"
+          placeholder="Contoh: 08123456789"
+          className="w-full px-4 py-3 border border-brand-beige rounded-lg text-sm text-brand-brown placeholder:text-brand-beige/60 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/30"
+        />
+        {errors.phone && (
+          <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-brand-brown mb-1.5">
           Pesan
         </label>
         <textarea

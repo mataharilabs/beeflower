@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       data: {
         name: data.name,
         email: data.email,
+        phone: data.phone,
         message: data.message,
       },
     });
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
           <h2>Pesan Baru dari Form Kontak</h2>
           <p><strong>Nama:</strong> ${data.name}</p>
           <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>No. Telepon/WhatsApp:</strong> ${data.phone}</p>
           <p><strong>Pesan:</strong></p>
           <p>${data.message}</p>
           <hr/>

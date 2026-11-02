@@ -3,7 +3,7 @@ import { z } from "zod";
 export const contactFormSchema = z.object({
   name: z.string().min(2, "Nama minimal 2 karakter"),
   email: z.string().email("Email tidak valid"),
-  phone: z.string().optional(),
+  phone: z.string().min(8, "No. telepon/WhatsApp wajib diisi"),
   message: z.string().min(10, "Pesan minimal 10 karakter"),
 });
 
