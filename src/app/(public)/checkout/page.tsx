@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
-import { Loader2, Tag, X, ChevronRight, Globe } from "lucide-react";
+import { Loader2, Tag, X, ChevronRight, Globe, Truck, Gift } from "lucide-react";
 import { XenditPaymentModal } from "@/components/shop/XenditPaymentModal";
+import {
+  getProductDiscount,
+  getOrderDiscountPromos,
+  getFreeShippingPromos,
+  findBuyXGetYForProduct,
+  type ActivePromotion,
+} from "@/lib/promotions";
 
 interface PaymentConfig {
   xenditEnabled: boolean;
@@ -118,13 +125,18 @@ export default function CheckoutPage() {
   const [publicCoupons, setPublicCoupons] = useState<PublicCoupon[]>([]);
   const [loadingPublicCoupons, setLoadingPublicCoupons] = useState(false);
 
+  // Active promotions
+  const [activePromotions, setActivePromotions] = useState<ActivePromotion[]>([]);
+
   useEffect(() => {
     const init = async () => {
-      const [config, profile, shippingConfig] = await Promise.all([
+      const [config, profile, shippingConfig, promos] = await Promise.all([
         fetch("/api/payment/settings").then((r) => r.json()).catch(() => ({ xenditEnabled: false, manualTransferEnabled: true })),
         fetch("/api/member/profile").then((r) => r.json()).catch(() => null),
         fetch("/api/shipping/settings").then((r) => r.json()).catch(() => null),
+        fetch("/api/promotions/active").then((r) => r.json()).catch(() => []),
       ]);
+      setActivePromotions(promos);
 
       setPaymentConfig(config);
       if (config.xenditEnabled) setForm((f) => ({ ...f, paymentMethod: "XENDIT" }));
@@ -316,10 +328,48 @@ export default function CheckoutPage() {
     }
   }, [items, step, router, submitted]);
 
+  const cartSubtotal = totalPrice();
+
+  // Promotion: product discounts
+  const productPromoDiscount = useMemo(() => {
+    let total = 0;
+    for (const item of items) {
+      const d = getProductDiscount(item.id, null, item.price, activePromotions);
+      if (d) total += Math.round((item.price - d.discountedPrice) * item.quantity);
+    }
+    return total;
+  }, [items, activePromotions]);
+
+  // Promotion: order discount
+  const { totalDiscount: orderPromoDiscount, promos: orderPromoList } = useMemo(
+    () => getOrderDiscountPromos(cartSubtotal - productPromoDiscount, activePromotions),
+    [cartSubtotal, productPromoDiscount, activePromotions]
+  );
+
+  // Promotion: free shipping
+  const freeShippingPromos = useMemo(
+    () => getFreeShippingPromos(form.city, cartSubtotal - productPromoDiscount, activePromotions),
+    [form.city, cartSubtotal, productPromoDiscount, activePromotions]
+  );
+  const freeShippingApplies = freeShippingPromos.length > 0;
+
+  // Promotion: Beli X Dapat Y
+  const buyXGetYBonus = useMemo(() => {
+    for (const promo of activePromotions) {
+      if (promo.type !== "BUY_X_GET_Y" || !promo.buyProductId || !promo.buyQuantity) continue;
+      const buyItem = items.find((i) => i.id === promo.buyProductId);
+      if (!buyItem || buyItem.quantity < promo.buyQuantity) continue;
+      return promo;
+    }
+    return null;
+  }, [items, activePromotions]);
+
+  const effectiveShipping = freeShippingApplies ? 0 : (selectedShipping?.price ?? 0);
+
   const totalProductDiscount = appliedProductCoupon?.discount ?? 0;
   const totalShippingDiscount = appliedShippingCoupon?.discount ?? 0;
-  const totalDiscount = totalProductDiscount + totalShippingDiscount;
-  const grandTotal = totalPrice() + (selectedShipping?.price ?? 0) - totalDiscount;
+  const totalCouponDiscount = totalProductDiscount + totalShippingDiscount;
+  const grandTotal = cartSubtotal - productPromoDiscount - orderPromoDiscount + effectiveShipping - totalCouponDiscount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -635,6 +685,47 @@ export default function CheckoutPage() {
               </div>
             )}
 
+            {/* Active Promotions Info */}
+            {(orderPromoList.length > 0 || freeShippingPromos.length > 0 || buyXGetYBonus) && (
+              <div className="space-y-2">
+                {orderPromoList.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3">
+                    <Tag className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-orange-700">{p.name}</p>
+                      <p className="text-orange-600 text-xs mt-0.5">
+                        {p.discountMode === "PERCENTAGE" ? `Diskon ${p.discountValue}%` : `Hemat ${formatPrice(p.discountValue ?? 0)}`}
+                        {p.minimumPurchase ? ` untuk pembelian min. ${formatPrice(p.minimumPurchase)}` : ""} — otomatis diterapkan
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {freeShippingPromos.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-3">
+                    <Truck className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-green-700">{p.name}</p>
+                      <p className="text-green-600 text-xs mt-0.5">
+                        Gratis ongkos kirim{p.minimumPurchase ? ` min. ${formatPrice(p.minimumPurchase)}` : ""}
+                        {p.applicableCities.length > 0 ? ` (${p.applicableCities.join(", ")})` : ""} — otomatis diterapkan
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {buyXGetYBonus && (
+                  <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+                    <Gift className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-amber-700">{buyXGetYBonus.name}</p>
+                      <p className="text-amber-600 text-xs mt-0.5">
+                        {buyXGetYBonus.getProductName ?? "Produk bonus"} ×{buyXGetYBonus.getQuantity ?? 1} akan ditambahkan otomatis ke pesanan
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Coupon Section */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-3">
@@ -804,29 +895,89 @@ export default function CheckoutPage() {
               <div className="border-t border-gray-100 pt-3 space-y-2">
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Subtotal</span>
-                  <span>{formatPrice(totalPrice())}</span>
+                  <span>{formatPrice(cartSubtotal)}</span>
                 </div>
+
+                {/* Promotion: product discount */}
+                {productPromoDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-red-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="w-3.5 h-3.5" />
+                      Diskon Promosi Produk
+                    </span>
+                    <span>-{formatPrice(productPromoDiscount)}</span>
+                  </div>
+                )}
+
+                {/* Promotion: order discount */}
+                {orderPromoList.map((p) => {
+                  const disc =
+                    p.discountMode === "PERCENTAGE"
+                      ? Math.round(((cartSubtotal - productPromoDiscount) * (p.discountValue ?? 0)) / 100)
+                      : (p.discountValue ?? 0);
+                  return (
+                    <div key={p.id} className="flex justify-between text-sm text-orange-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="w-3.5 h-3.5" />
+                        {p.name}
+                      </span>
+                      <span>-{formatPrice(disc)}</span>
+                    </div>
+                  );
+                })}
+
+                {/* Promotion: Beli X Dapat Y */}
+                {buyXGetYBonus && buyXGetYBonus.getProductId && (
+                  <div className="flex justify-between text-sm text-amber-600">
+                    <span className="flex items-center gap-1">
+                      <Gift className="w-3.5 h-3.5" />
+                      Bonus: {buyXGetYBonus.getProductName ?? "Produk Bonus"} ×{buyXGetYBonus.getQuantity ?? 1}
+                    </span>
+                    <span className="text-xs font-semibold">GRATIS</span>
+                  </div>
+                )}
+
+                {/* Shipping */}
                 {selectedShipping && (
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Ongkos Kirim</span>
-                    <span>{selectedShipping.price > 0 ? formatPrice(selectedShipping.price) : "Gratis"}</span>
+                    {freeShippingApplies ? (
+                      <span className="flex items-center gap-1 text-green-600 font-medium">
+                        <Truck className="w-3.5 h-3.5" />
+                        Gratis
+                      </span>
+                    ) : (
+                      <span>{selectedShipping.price > 0 ? formatPrice(selectedShipping.price) : "Gratis"}</span>
+                    )}
                   </div>
                 )}
+                {freeShippingApplies && selectedShipping && selectedShipping.price > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Truck className="w-3.5 h-3.5" />
+                      Diskon Ongkir Promosi
+                    </span>
+                    <span>-{formatPrice(selectedShipping.price)}</span>
+                  </div>
+                )}
+
+                {/* Coupon discounts */}
                 {appliedProductCoupon && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>Diskon Produk ({appliedProductCoupon.code})</span>
+                    <span>Kupon Produk ({appliedProductCoupon.code})</span>
                     <span>-{formatPrice(appliedProductCoupon.discount)}</span>
                   </div>
                 )}
                 {appliedShippingCoupon && (
                   <div className="flex justify-between text-sm text-blue-600">
-                    <span>Diskon Ongkir ({appliedShippingCoupon.code})</span>
+                    <span>Kupon Ongkir ({appliedShippingCoupon.code})</span>
                     <span>-{formatPrice(appliedShippingCoupon.discount)}</span>
                   </div>
                 )}
+
                 <div className="flex justify-between text-base font-bold text-gray-900 pt-1 border-t border-gray-100">
                   <span>Total</span>
-                  <span>{formatPrice(grandTotal)}</span>
+                  <span>{formatPrice(Math.max(0, grandTotal))}</span>
                 </div>
               </div>
             </div>

@@ -1,14 +1,39 @@
 "use client";
 
-import { X, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
+import { X, ShoppingBag, Minus, Plus, Trash2, Tag, Truck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import {
+  getOrderDiscountPromos,
+  getFreeShippingPromos,
+  type ActivePromotion,
+} from "@/lib/promotions";
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, totalPrice } =
     useCartStore();
+
+  const [promotions, setPromotions] = useState<ActivePromotion[]>([]);
+  const [loadedPromos, setLoadedPromos] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && !loadedPromos) {
+      fetch("/api/promotions/active")
+        .then((r) => r.json())
+        .then((data: ActivePromotion[]) => {
+          setPromotions(data);
+          setLoadedPromos(true);
+        })
+        .catch(() => setLoadedPromos(true));
+    }
+  }, [isOpen, loadedPromos]);
+
+  const subtotal = totalPrice();
+  const { promos: orderDiscountPromos } = getOrderDiscountPromos(subtotal, promotions);
+  const freeShipPromos = getFreeShippingPromos("", subtotal, promotions);
 
   return (
     <>
@@ -118,10 +143,38 @@ export function CartDrawer() {
           {/* Footer */}
           {items.length > 0 && (
             <div className="px-6 py-5 border-t border-brand-beige/30 bg-brand-cream/30">
+              {/* Promo banners */}
+              {(orderDiscountPromos.length > 0 || freeShipPromos.length > 0) && (
+                <div className="space-y-1.5 mb-4">
+                  {orderDiscountPromos.map((p) => (
+                    <div key={p.id} className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 text-xs text-orange-700">
+                      <Tag className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>
+                        <strong>{p.name}:</strong>{" "}
+                        {p.discountMode === "PERCENTAGE"
+                          ? `Hemat ${p.discountValue}%`
+                          : `Hemat ${formatPrice(p.discountValue ?? 0)}`}
+                        {p.minimumPurchase ? ` (min. ${formatPrice(p.minimumPurchase)})` : ""}
+                      </span>
+                    </div>
+                  ))}
+                  {freeShipPromos.map((p) => (
+                    <div key={p.id} className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs text-green-700">
+                      <Truck className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>
+                        <strong>{p.name}:</strong> Gratis ongkos kirim
+                        {p.minimumPurchase ? ` min. ${formatPrice(p.minimumPurchase)}` : ""}
+                        {p.applicableCities.length > 0 ? ` (${p.applicableCities.join(", ")})` : ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="flex items-center justify-between mb-4">
                 <span className="font-semibold text-brand-brown">Total</span>
                 <span className="font-bold text-xl text-brand-gold">
-                  {formatPrice(totalPrice())}
+                  {formatPrice(subtotal)}
                 </span>
               </div>
               <Link

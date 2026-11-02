@@ -1,12 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Minus, Plus, ShoppingCart, Gift, Clock, Tag } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice } from "@/lib/utils";
 import { ProductCard } from "./ProductCard";
 import type { VariantGroup, ProductVariant } from "@/types/variant";
+import {
+  getProductDiscount,
+  findBuyXGetYForProduct,
+  type ActivePromotion,
+} from "@/lib/promotions";
 
 interface Product {
   id: string;
@@ -16,6 +21,7 @@ interface Product {
   shortDesc: string | null;
   price: { toString(): string };
   comparePrice?: { toString(): string } | null;
+  categoryId?: string | null;
   images: string[];
   stock: number;
   category: { name: string } | null;
@@ -34,9 +40,39 @@ interface Product {
 interface Props {
   product: Product;
   relatedProducts: Product[];
+  promotions?: ActivePromotion[];
 }
 
-export function ProductDetailClient({ product, relatedProducts }: Props) {
+function CountdownTimer({ endAt }: { endAt: string }) {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      const diff = new Date(endAt).getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft(""); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      if (d > 0) setTimeLeft(`${d}h ${h}j ${m}m`);
+      else if (h > 0) setTimeLeft(`${h}j ${m}m ${s}d`);
+      else setTimeLeft(`${m}m ${s}d`);
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [endAt]);
+
+  if (!timeLeft) return null;
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-orange-600 font-medium">
+      <Clock className="w-3.5 h-3.5" />
+      <span>Berakhir dalam: <strong>{timeLeft}</strong></span>
+    </div>
+  );
+}
+
+export function ProductDetailClient({ product, relatedProducts, promotions = [] }: Props) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
@@ -46,6 +82,14 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
   const comparePrice = product.comparePrice
     ? Number(product.comparePrice.toString())
     : null;
+
+  const promoDiscount = getProductDiscount(
+    product.id,
+    product.categoryId ?? null,
+    basePrice,
+    promotions
+  );
+  const buyXGetYPromo = findBuyXGetYForProduct(product.id, promotions);
 
   // Variant data
   const variantsEnabled = product.variantsEnabled ?? false;
@@ -160,21 +204,69 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
               {product.name}
             </h1>
 
+            {/* Promo banner */}
+            {promoDiscount && !allGroupsSelected && (
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="inline-flex items-center gap-1 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                  <Tag className="w-3 h-3" />
+                  -{promoDiscount.discountPercent}% {promoDiscount.promo.name}
+                </span>
+                <CountdownTimer endAt={promoDiscount.promo.endAt} />
+              </div>
+            )}
+
             <div className="flex items-baseline gap-3 mb-4">
-              <span className="text-3xl font-bold text-brand-brown">
-                {formatPrice(effectivePrice)}
-              </span>
-              {comparePrice && comparePrice > basePrice && !allGroupsSelected && (
-                <span className="text-lg text-brand-beige line-through">
-                  {formatPrice(comparePrice)}
-                </span>
-              )}
-              {allGroupsSelected && activeVariant && activeVariant.price !== basePrice && (
-                <span className="text-sm text-brand-beige line-through">
-                  {formatPrice(basePrice)}
-                </span>
+              {promoDiscount && !allGroupsSelected ? (
+                <>
+                  <span className="text-3xl font-bold text-red-600">
+                    {formatPrice(Math.round(promoDiscount.discountedPrice))}
+                  </span>
+                  <span className="text-lg text-brand-beige line-through">
+                    {formatPrice(effectivePrice)}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-3xl font-bold text-brand-brown">
+                    {formatPrice(effectivePrice)}
+                  </span>
+                  {comparePrice && comparePrice > basePrice && !allGroupsSelected && (
+                    <span className="text-lg text-brand-beige line-through">
+                      {formatPrice(comparePrice)}
+                    </span>
+                  )}
+                  {allGroupsSelected && activeVariant && activeVariant.price !== basePrice && (
+                    <span className="text-sm text-brand-beige line-through">
+                      {formatPrice(basePrice)}
+                    </span>
+                  )}
+                </>
               )}
             </div>
+
+            {/* Beli X Dapat Y banner */}
+            {buyXGetYPromo && buyXGetYPromo.getProductId && (
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
+                <Gift className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-semibold text-amber-800">{buyXGetYPromo.name}</p>
+                  <p className="text-amber-700 text-xs mt-0.5">
+                    Beli {buyXGetYPromo.buyQuantity}x produk ini, dapatkan{" "}
+                    <strong>{buyXGetYPromo.getProductName ?? "produk bonus"}</strong>{" "}
+                    {buyXGetYPromo.getQuantity && buyXGetYPromo.getQuantity > 1
+                      ? `(${buyXGetYPromo.getQuantity}x) `
+                      : ""}
+                    {!buyXGetYPromo.getDiscountMode
+                      ? "gratis!"
+                      : buyXGetYPromo.getDiscountMode === "PERCENTAGE" && buyXGetYPromo.getDiscountValue === 100
+                      ? "gratis!"
+                      : buyXGetYPromo.getDiscountMode === "PERCENTAGE"
+                      ? `diskon ${buyXGetYPromo.getDiscountValue}%!`
+                      : `diskon ${formatPrice(buyXGetYPromo.getDiscountValue ?? 0)}!`}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {product.shortDesc && (
               <p className="text-brand-brown/70 leading-relaxed mb-4 text-sm">
@@ -319,6 +411,7 @@ export function ProductDetailClient({ product, relatedProducts }: Props) {
                       ? Number(p.comparePrice.toString())
                       : null,
                   }}
+                  promotions={promotions}
                 />
               ))}
             </div>

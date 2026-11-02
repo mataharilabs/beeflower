@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice, isExternalUrl } from "@/lib/utils";
+import { getProductDiscount, type ActivePromotion } from "@/lib/promotions";
 
 interface Product {
   id: string;
@@ -11,6 +12,7 @@ interface Product {
   slug: string;
   price: string | number | { toString(): string };
   comparePrice?: string | number | { toString(): string } | null;
+  categoryId?: string | null;
   images: string[];
   stock: number;
   cartEnabled?: boolean | null;
@@ -20,11 +22,21 @@ interface Product {
   manualButtonUrl?: string | null;
 }
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  promotions,
+}: {
+  product: Product;
+  promotions?: ActivePromotion[];
+}) {
   const { addItem } = useCartStore();
   const price = Number(product.price.toString());
   const comparePrice = product.comparePrice ? Number(product.comparePrice.toString()) : null;
   const image = product.images[0] ?? "";
+
+  const promoDiscount = promotions
+    ? getProductDiscount(product.id, product.categoryId ?? null, price, promotions)
+    : null;
 
   const showCart = product.cartEnabled !== false;
   const showManual = !!(product.manualButtonEnabled && product.manualButtonUrl);
@@ -48,6 +60,9 @@ export function ProductCard({ product }: { product: Product }) {
     window.open(product.manualButtonUrl!, "_blank", "noopener,noreferrer");
   };
 
+  const displayPrice = promoDiscount ? Math.round(promoDiscount.discountedPrice) : price;
+  const strikethroughPrice = promoDiscount ? price : comparePrice && comparePrice > price ? comparePrice : null;
+
   return (
     <div className="group bg-white border border-brand-beige/30 rounded-xl overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
       <Link href={`/toko/${product.slug}`} className="block">
@@ -64,18 +79,23 @@ export function ProductCard({ product }: { product: Product }) {
               <span className="text-3xl font-bold text-brand-gold/20 select-none">B&F</span>
             </div>
           )}
+          {promoDiscount && (
+            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              -{promoDiscount.discountPercent}%
+            </div>
+          )}
         </div>
         <div className="p-3 lg:p-4 pb-2">
           <h3 className="font-semibold text-sm text-brand-brown line-clamp-2 mb-2 leading-snug">
             {product.name}
           </h3>
           <div className="flex items-baseline gap-2">
-            <span className="font-bold text-brand-brown text-base">
-              {formatPrice(price)}
+            <span className={`font-bold text-base ${promoDiscount ? "text-red-600" : "text-brand-brown"}`}>
+              {formatPrice(displayPrice)}
             </span>
-            {comparePrice && comparePrice > price && (
+            {strikethroughPrice && (
               <span className="text-xs text-brand-beige line-through">
-                {formatPrice(comparePrice)}
+                {formatPrice(strikethroughPrice)}
               </span>
             )}
           </div>

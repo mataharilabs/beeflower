@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { generateOrderNumber } from "@/lib/utils";
 import { orderConfirmationEmail, welcomeEmail } from "@/lib/emails";
 import { isCouponUsable, calculateCouponDiscount } from "@/lib/coupon";
+import { getProductDiscount, getOrderDiscountPromos, getFreeShippingPromos } from "@/lib/promotions";
 import { Resend } from "resend";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -80,6 +81,92 @@ export async function POST(req: NextRequest) {
 
   const shippingCost = data.shippingCost ?? 0;
 
+  // ── Promotions ─────────────────────────────────────────────────────────────
+  const now = new Date();
+  const activePromos = await prisma.promotion.findMany({
+    where: { isActive: true, startAt: { lte: now }, endAt: { gte: now } },
+  }).catch(() => []);
+
+  const promotions = activePromos.map((p) => ({
+    ...p,
+    type: p.type as "PRODUCT_DISCOUNT" | "ORDER_DISCOUNT" | "BUY_X_GET_Y" | "FREE_SHIPPING",
+    discountMode: p.discountMode as "FIXED" | "PERCENTAGE" | null,
+    discountValue: p.discountValue ? Number(p.discountValue.toString()) : null,
+    minimumPurchase: p.minimumPurchase ? Number(p.minimumPurchase.toString()) : null,
+    getDiscountMode: p.getDiscountMode as "FIXED" | "PERCENTAGE" | null,
+    getDiscountValue: p.getDiscountValue ? Number(p.getDiscountValue.toString()) : null,
+    startAt: p.startAt.toISOString(),
+    endAt: p.endAt.toISOString(),
+  }));
+
+  // Apply PRODUCT_DISCOUNT: reduce per-item prices
+  let productPromoDiscountTotal = 0;
+  const adjustedOrderItems = orderItems.map((item) => {
+    const productObj = productMap.get(item.productId);
+    const promoD = getProductDiscount(
+      item.productId,
+      productObj?.categoryId ?? null,
+      item.price,
+      promotions
+    );
+    if (promoD) {
+      const discountedPrice = Math.round(promoD.discountedPrice);
+      const discountPerUnit = item.price - discountedPrice;
+      productPromoDiscountTotal += discountPerUnit * item.quantity;
+      return { ...item, price: discountedPrice };
+    }
+    return item;
+  });
+
+  // Apply BUY_X_GET_Y: add free/discounted item to order
+  let buyXGetYDiscount = 0;
+  for (const promo of promotions) {
+    if (promo.type !== "BUY_X_GET_Y") continue;
+    if (!promo.buyProductId || !promo.buyQuantity || !promo.getProductId) continue;
+    const buyItem = adjustedOrderItems.find((i) => i.productId === promo.buyProductId);
+    if (!buyItem || buyItem.quantity < promo.buyQuantity) continue;
+
+    // Fetch the get product
+    const getProduct = await prisma.product.findUnique({
+      where: { id: promo.getProductId, isActive: true },
+    }).catch(() => null);
+    if (!getProduct || getProduct.stock < (promo.getQuantity ?? 1)) continue;
+
+    const originalGetPrice = Number(getProduct.price.toString());
+    let getPrice = 0;
+    if (promo.getDiscountMode === "PERCENTAGE" && promo.getDiscountValue != null) {
+      getPrice = Math.max(0, Math.round(originalGetPrice * (1 - promo.getDiscountValue / 100)));
+    } else if (promo.getDiscountMode === "FIXED" && promo.getDiscountValue != null) {
+      getPrice = Math.max(0, originalGetPrice - promo.getDiscountValue);
+    }
+    const getQty = promo.getQuantity ?? 1;
+    buyXGetYDiscount += (originalGetPrice - getPrice) * getQty;
+
+    adjustedOrderItems.push({
+      productId: getProduct.id,
+      productName: `${getProduct.name} [Bonus: ${promo.name}]`,
+      price: getPrice,
+      quantity: getQty,
+      image: getProduct.images[0] ?? null,
+      weight: getProduct.weight ?? null,
+    });
+  }
+
+  // Recompute subtotal using adjusted prices
+  let adjustedSubtotal = 0;
+  for (const item of adjustedOrderItems) {
+    adjustedSubtotal += item.price * item.quantity;
+  }
+
+  // Apply ORDER_DISCOUNT
+  const { totalDiscount: orderPromoDiscount } = getOrderDiscountPromos(adjustedSubtotal, promotions);
+
+  // Apply FREE_SHIPPING
+  const freeShipPromos = getFreeShippingPromos(data.city, adjustedSubtotal, promotions);
+  const effectiveShippingCost = freeShipPromos.length > 0 ? 0 : shippingCost;
+
+  const totalPromoDiscount = productPromoDiscountTotal + buyXGetYDiscount + Math.round(orderPromoDiscount);
+
   // Coupon validation helper
   const validateCoupon = async (code: string, expectedType?: string) => {
     const coupon = await prisma.coupon.findUnique({ where: { code: code.toUpperCase() } });
@@ -139,7 +226,8 @@ export async function POST(req: NextRequest) {
   }
 
   const totalCouponDiscount = couponDiscount + shippingCouponDiscount;
-  const total = subtotal + shippingCost - totalCouponDiscount;
+  const total = Math.max(0, adjustedSubtotal + effectiveShippingCost - totalCouponDiscount);
+  const totalDiscount = totalCouponDiscount + totalPromoDiscount;
   const orderNumber = generateOrderNumber();
 
   // Create order in a transaction
@@ -159,27 +247,31 @@ export async function POST(req: NextRequest) {
         subdistrict: data.subdistrict,
         notes: data.notes,
         paymentMethod: data.paymentMethod,
-        subtotal,
-        shippingCost,
+        subtotal: adjustedSubtotal,
+        shippingCost: effectiveShippingCost,
         shippingMethod: data.shippingMethod,
         shippingService: data.shippingService,
         shippingCourier: data.shippingCourier,
-        discount: totalCouponDiscount,
+        discount: totalDiscount,
         couponId,
         couponCode: appliedCouponCode,
         couponType,
         shippingCouponId,
         shippingCouponCode: appliedShippingCouponCode,
         total,
-        items: { create: orderItems },
+        items: { create: adjustedOrderItems },
       },
     });
 
-    // Decrement stock
-    for (const item of data.items) {
+    // Decrement stock for ordered items (including BUY_X_GET_Y bonus)
+    const stockDecrements = new Map<string, number>();
+    for (const item of adjustedOrderItems) {
+      stockDecrements.set(item.productId, (stockDecrements.get(item.productId) ?? 0) + item.quantity);
+    }
+    for (const [productId, qty] of stockDecrements) {
       await tx.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } },
+        where: { id: productId },
+        data: { stock: { decrement: qty } },
       });
     }
 
@@ -279,18 +371,18 @@ export async function POST(req: NextRequest) {
     const confirmEmail = orderConfirmationEmail({
       orderNumber: order.orderNumber,
       customerName: data.customerName,
-      items: orderItems,
+      items: adjustedOrderItems,
       total,
       paymentMethod: data.paymentMethod,
       logoUrl,
       logoWidth,
-      shippingCost,
+      shippingCost: effectiveShippingCost,
       shippingService: data.shippingService,
       orderId: order.id,
       bankAccounts,
       qrisImageUrl,
       couponCode: appliedCouponCode ?? undefined,
-      couponDiscount: totalCouponDiscount > 0 ? totalCouponDiscount : undefined,
+      couponDiscount: totalDiscount > 0 ? totalDiscount : undefined,
     });
     await resend.emails.send({
       from: confirmEmail.from,

@@ -3,10 +3,11 @@ import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { ShopFilters } from "@/components/shop/ShopFilters";
+import type { ActivePromotion } from "@/lib/promotions";
 import type { HeroProps, Block } from "@/types/pageBlocks";
 import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
 
-export const revalidate = 1800;
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Produk Kami - Bee & Flower Brand",
@@ -36,14 +37,30 @@ export default async function TokoPage({
     ];
   }
 
-  const [products, categories, tokoPage] = await Promise.all([
+  const now = new Date();
+  const [products, categories, tokoPage, activePromos] = await Promise.all([
     prisma.product.findMany({
       where,
       orderBy: sort === "price_asc" ? { price: "asc" } : sort === "price_desc" ? { price: "desc" } : { createdAt: "desc" },
     }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
     prisma.page.findUnique({ where: { slug: "toko" } }).catch(() => null),
+    prisma.promotion.findMany({
+      where: { isActive: true, startAt: { lte: now }, endAt: { gte: now } },
+    }).catch(() => []),
   ]);
+
+  const promotions: ActivePromotion[] = activePromos.map((p) => ({
+    ...p,
+    type: p.type as ActivePromotion["type"],
+    discountMode: p.discountMode as ActivePromotion["discountMode"],
+    discountValue: p.discountValue ? Number(p.discountValue.toString()) : null,
+    minimumPurchase: p.minimumPurchase ? Number(p.minimumPurchase.toString()) : null,
+    getDiscountMode: p.getDiscountMode as ActivePromotion["getDiscountMode"],
+    getDiscountValue: p.getDiscountValue ? Number(p.getDiscountValue.toString()) : null,
+    startAt: p.startAt.toISOString(),
+    endAt: p.endAt.toISOString(),
+  }));
 
   const blocks: Block[] = ((tokoPage?.craftJson as { blocks?: Block[] })?.blocks) ?? [];
   const heroBlock = blocks.find((b) => b.type === "Hero");
@@ -84,11 +101,15 @@ export default async function TokoPage({
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6 mt-6">
             {products.map((product) => (
-              <ProductCard key={product.id} product={{
-                ...product,
-                price: product.price.toString(),
-                comparePrice: product.comparePrice?.toString() ?? null,
-              }} />
+              <ProductCard
+                key={product.id}
+                product={{
+                  ...product,
+                  price: product.price.toString(),
+                  comparePrice: product.comparePrice?.toString() ?? null,
+                }}
+                promotions={promotions}
+              />
             ))}
           </div>
         )}
