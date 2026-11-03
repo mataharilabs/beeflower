@@ -1,20 +1,9 @@
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { HeroBannerSlider } from "@/components/home/HeroBannerSlider";
-import { OurStory } from "@/components/home/OurStory";
-import { WhyBeeFlower } from "@/components/home/WhyBeeFlower";
 import { ProductHighlight } from "@/components/home/ProductHighlight";
 import { BestSellers } from "@/components/home/BestSellers";
-import { BusinessOpportunityCTA } from "@/components/home/BusinessOpportunityCTA";
-import { FAQSection } from "@/components/home/FAQSection";
-import { BottomCTA } from "@/components/home/BottomCTA";
-import type {
-  ImageTextProps,
-  FeatureIconsProps,
-  FAQSectionProps,
-  CTABannerProps,
-  Block,
-} from "@/types/pageBlocks";
+import { BlockRenderer } from "@/components/blocks/BlockRenderer";
 
 export const revalidate = 900;
 
@@ -53,20 +42,14 @@ export default async function HomePage() {
   const bannersData = Array.isArray(banners) ? banners : [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bestSellersData = (Array.isArray(bestSellerProducts) ? bestSellerProducts : []) as any[];
-
-  // Extract editable content from home page CMS blocks
   const homePageData = !Array.isArray(homePage) ? homePage : null;
-  const blocks: Block[] = ((homePageData?.craftJson as { blocks?: Block[] })?.blocks) ?? [];
-  const ourStoryBlock = blocks.find((b) => b.type === "ImageText");
-  const whyBFBlock = blocks.find((b) => b.type === "FeatureIcons");
-  const faqBlock = blocks.find((b) => b.type === "FAQSection");
-  const ctaBanners = blocks.filter((b) => b.type === "CTABanner");
 
   return (
     <>
       <HeroBannerSlider banners={bannersData} />
-      <OurStory data={ourStoryBlock?.props as ImageTextProps | undefined} />
-      <WhyBeeFlower items={(whyBFBlock?.props as FeatureIconsProps | undefined)?.items} bgProps={whyBFBlock?.props} />
+      {homePageData?.craftJson && (
+        <BlockRenderer document={homePageData.craftJson as object} />
+      )}
       {highlightProduct && !Array.isArray(highlightProduct) && (
         <ProductHighlight
           product={
@@ -75,9 +58,6 @@ export default async function HomePage() {
         />
       )}
       <BestSellers products={bestSellersData} />
-      <BusinessOpportunityCTA data={ctaBanners[0]?.props as CTABannerProps | undefined} />
-      <FAQSection items={(faqBlock?.props as FAQSectionProps | undefined)?.items} bgProps={faqBlock?.props} />
-      <BottomCTA data={ctaBanners[1]?.props as CTABannerProps | undefined} />
     </>
   );
 }
