@@ -158,10 +158,13 @@ function CTABannerBlock({ props }: { props: CTABannerProps }) {
     ...(props.buttonBgColor ? { backgroundColor: props.buttonBgColor } : {}),
     ...(props.buttonTextColor ? { color: props.buttonTextColor } : {}),
   };
+  const align = props.align ?? "center";
+  const alignClass = `text-${align}`;
+  const itemsClass = align === "left" ? "items-start" : align === "right" ? "items-end" : "items-center";
   return (
-    <section className="relative py-16 px-4 text-white text-center" style={getBlockBgStyle(props)}>
+    <section className="relative py-16 px-4 text-white" style={getBlockBgStyle(props)}>
       <BlockOverlay props={props} />
-      <div className="relative z-10 max-w-2xl mx-auto">
+      <div className={`relative z-10 max-w-2xl mx-auto flex flex-col ${itemsClass} ${alignClass}`}>
         <h2 className="text-3xl font-bold mb-3" style={props.headlineColor ? { color: props.headlineColor } : {}}>{props.headline}</h2>
         {props.subheadline && (
           <p className="text-lg text-white/90 mb-8" style={props.subheadlineColor ? { color: props.subheadlineColor } : {}}>{props.subheadline}</p>
@@ -191,8 +194,21 @@ async function ProductGridBlock({ props }: { props: ProductGridProps }) {
     <section className="relative py-16 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
       <div className="relative z-10 max-w-6xl mx-auto">
-        {props.headline && (
-          <h2 className="text-3xl font-bold text-brand-brown text-center mb-10">{props.headline}</h2>
+        {(props.subHeadline || props.headline) && (
+          <div className="text-center mb-10">
+            {props.subHeadline && (
+              <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-2"
+                style={(props as any).subHeadlineColor ? { color: (props as any).subHeadlineColor } : {}}>
+                {props.subHeadline}
+              </p>
+            )}
+            {props.headline && (
+              <h2 className="text-3xl font-bold text-brand-brown"
+                style={(props as any).headlineColor ? { color: (props as any).headlineColor } : {}}>
+                {props.headline}
+              </h2>
+            )}
+          </div>
         )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           {products.map((product) => (
@@ -259,8 +275,21 @@ function FeatureIconsBlock({ props }: { props: FeatureIconsProps }) {
     <section className="relative py-16 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
       <div className="relative z-10 max-w-5xl mx-auto">
-        {props.headline && (
-          <h2 className="text-3xl font-bold text-brand-brown text-center mb-10" style={props.headlineColor ? { color: props.headlineColor } : {}}>{props.headline}</h2>
+        {(props.subHeadline || props.headline) && (
+          <div className="text-center mb-10">
+            {props.subHeadline && (
+              <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-2"
+                style={props.subHeadlineColor ? { color: props.subHeadlineColor } : {}}>
+                {props.subHeadline}
+              </p>
+            )}
+            {props.headline && (
+              <h2 className="text-3xl font-bold text-brand-brown"
+                style={props.headlineColor ? { color: props.headlineColor } : {}}>
+                {props.headline}
+              </h2>
+            )}
+          </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {(props.items ?? []).map((item, i) => (
@@ -290,20 +319,41 @@ function SpacerBlock({ props }: { props: SpacerProps }) {
 
 function ImageGridBlock({ props }: { props: ImageGridProps }) {
   const hasBg = props.bgType !== undefined;
-  const colClass = props.columns === 1 ? "grid-cols-1" : props.columns === 2 ? "grid-cols-2" : "grid-cols-3";
+  const colClass = props.columns === 1 ? "grid-cols-1" : props.columns === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3";
   const filled = (props.items ?? []).filter((item) => item.url);
   if (filled.length === 0) return null;
+  const hasAnyText = filled.some((item) => item.subHeadline || item.headline || item.buttonText);
   return (
     <section className="relative py-12 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
       <div className={`relative z-10 max-w-5xl mx-auto grid ${colClass} gap-4`}>
         {filled.map((item, i) => (
-          <div key={i} className="overflow-hidden rounded-xl">
+          <div key={i} className={`overflow-hidden rounded-xl ${hasAnyText ? "bg-white shadow-sm" : ""}`}>
             <img
               src={item.url}
-              alt={item.alt ?? ""}
-              className="w-full h-full object-cover"
+              alt={item.alt ?? item.headline ?? ""}
+              className="w-full object-cover"
             />
+            {(item.subHeadline || item.headline || item.buttonText) && (
+              <div className="p-4">
+                {item.subHeadline && (
+                  <p className="text-brand-gold font-semibold text-xs tracking-widest uppercase mb-1">
+                    {item.subHeadline}
+                  </p>
+                )}
+                {item.headline && (
+                  <h3 className="font-bold text-brand-brown text-base mb-2">{item.headline}</h3>
+                )}
+                {item.buttonText && (
+                  <Link
+                    href={item.buttonLink || "/"}
+                    className="inline-block px-4 py-1.5 bg-brand-gold text-white text-sm rounded-full font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    {item.buttonText}
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>

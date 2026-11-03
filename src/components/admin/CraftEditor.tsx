@@ -496,6 +496,21 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           {field("subheadline", "Sub Judul")}
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Posisi Teks</label>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+              {([
+                { value: "left", label: "Kiri" },
+                { value: "center", label: "Tengah" },
+                { value: "right", label: "Kanan" },
+              ] as const).map(({ value, label }) => (
+                <button key={value} onClick={() => onUpdate({ align: value })}
+                  className={`flex-1 py-1.5 text-xs font-medium transition-colors ${(p.align ?? "center") === value ? "bg-brand-gold text-white" : "text-gray-600 hover:bg-gray-50"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <TextColorSection props={p} onUpdate={onUpdate} fields={[
             { key: "headlineColor", label: "Warna Judul" },
             { key: "subheadlineColor", label: "Warna Sub Judul" },
@@ -507,6 +522,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
 
       {block.type === "ProductGrid" && (
         <>
+          {field("subHeadline", "Sub Judul (kecil, emas)")}
           {field("headline", "Judul Section")}
           {field("categorySlug", "Slug Kategori (kosongkan = semua)")}
           <div>
@@ -514,6 +530,10 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
             <input type="number" min={1} max={12} value={p.count ?? 4} onChange={(e) => onUpdate({ count: parseInt(e.target.value) })}
               className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-brand-gold" />
           </div>
+          <TextColorSection props={p} onUpdate={onUpdate} fields={[
+            { key: "subHeadlineColor", label: "Warna Sub Judul" },
+            { key: "headlineColor", label: "Warna Judul" },
+          ]} />
           <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
@@ -558,8 +578,10 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
 
       {block.type === "FeatureIcons" && (
         <>
+          {field("subHeadline", "Sub Judul (kecil, emas)")}
           {field("headline", "Judul Section")}
           <TextColorSection props={p} onUpdate={onUpdate} fields={[
+            { key: "subHeadlineColor", label: "Warna Sub Judul" },
             { key: "headlineColor", label: "Warna Judul Section" },
             { key: "itemTitleColor", label: "Warna Judul Item" },
             { key: "itemDescColor", label: "Warna Deskripsi Item" },
@@ -648,16 +670,27 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
                     }}
                     folder="beeflower/pages"
                   />
-                  <input
-                    value={item.alt ?? ""}
-                    placeholder="Alt text (opsional)"
-                    onChange={(e) => {
-                      const items = [...(p.items ?? [])];
-                      items[i] = { ...items[i], alt: e.target.value };
-                      onUpdate({ items });
-                    }}
-                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:border-brand-gold"
-                  />
+                  {(
+                    [
+                      { key: "alt", placeholder: "Alt text (opsional)" },
+                      { key: "subHeadline", placeholder: "Sub Judul (opsional)" },
+                      { key: "headline", placeholder: "Judul (opsional)" },
+                      { key: "buttonText", placeholder: "Teks Tombol (opsional)" },
+                      { key: "buttonLink", placeholder: "Link Tombol (opsional)" },
+                    ] as const
+                  ).map(({ key, placeholder }) => (
+                    <input
+                      key={key}
+                      value={item[key] ?? ""}
+                      placeholder={placeholder}
+                      onChange={(e) => {
+                        const items = [...(p.items ?? [])];
+                        items[i] = { ...items[i], [key]: e.target.value };
+                        onUpdate({ items });
+                      }}
+                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:border-brand-gold"
+                    />
+                  ))}
                   <button
                     onClick={() => {
                       const items = (p.items ?? []).filter((_: any, j: number) => j !== i);

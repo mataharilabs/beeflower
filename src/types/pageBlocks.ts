@@ -62,6 +62,7 @@ export interface CTABannerProps extends BackgroundProps {
   subheadline: string;
   buttonText: string;
   buttonLink: string;
+  align?: "left" | "center" | "right";
   headlineColor?: string;
   subheadlineColor?: string;
   buttonBgColor?: string;
@@ -69,9 +70,12 @@ export interface CTABannerProps extends BackgroundProps {
 }
 
 export interface ProductGridProps extends BackgroundProps {
+  subHeadline?: string;
   headline: string;
   categorySlug: string;
   count: number;
+  subHeadlineColor?: string;
+  headlineColor?: string;
 }
 
 export interface FAQItem {
@@ -92,8 +96,10 @@ export interface FeatureIconItem {
 }
 
 export interface FeatureIconsProps extends BackgroundProps {
+  subHeadline?: string;
   headline: string;
   items: FeatureIconItem[];
+  subHeadlineColor?: string;
   headlineColor?: string;
   itemTitleColor?: string;
   itemDescColor?: string;
@@ -106,6 +112,10 @@ export interface SpacerProps {
 export interface ImageGridItem {
   url: string;
   alt?: string;
+  subHeadline?: string;
+  headline?: string;
+  buttonText?: string;
+  buttonLink?: string;
 }
 
 export interface ImageGridProps extends BackgroundProps {
