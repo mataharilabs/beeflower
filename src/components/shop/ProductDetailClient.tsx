@@ -25,6 +25,7 @@ interface Product {
   categoryId?: string | null;
   images: string[];
   stock: number;
+  tags?: string[];
   category: { name: string } | null;
   weight?: number | null;
   cartEnabled: boolean;
@@ -421,6 +422,24 @@ export function ProductDetailClient({ product, relatedProducts, promotions = [] 
                 <p className="text-brand-brown/70 text-sm leading-relaxed whitespace-pre-line">
                   {product.description}
                 </p>
+              </div>
+            )}
+
+            {/* Tags */}
+            {product.tags && product.tags.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-brand-beige/30">
+                <div className="flex items-center flex-wrap gap-2">
+                  <Tag className="w-3.5 h-3.5 text-brand-beige flex-shrink-0" />
+                  {product.tags.map((tag) => (
+                    <Link
+                      key={tag}
+                      href={`/toko?tags=${encodeURIComponent(tag)}`}
+                      className="px-3 py-1 text-xs rounded-full border border-brand-beige/50 text-brand-brown hover:border-brand-gold hover:text-brand-gold transition-colors"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>
