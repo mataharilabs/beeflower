@@ -1,8 +1,6 @@
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { HeroBannerSlider } from "@/components/home/HeroBannerSlider";
-import { ProductHighlight } from "@/components/home/ProductHighlight";
-import { BestSellers } from "@/components/home/BestSellers";
 import { BlockRenderer } from "@/components/blocks/BlockRenderer";
 
 export const revalidate = 900;
@@ -24,24 +22,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [banners, homePage, bestSellerProducts, highlightProduct] =
-    await Promise.all([
-      prisma.banner.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
-      prisma.page.findUnique({ where: { slug: "home" } }),
-      prisma.product.findMany({
-        where: { isActive: true, isBestSeller: true },
-        orderBy: { createdAt: "desc" },
-        take: 4,
-      }),
-      prisma.product.findFirst({
-        where: { isActive: true, isFeatured: true },
-        orderBy: { createdAt: "desc" },
-      }),
-    ]).catch(() => [[], null, [], null]);
+  const [banners, homePage] = await Promise.all([
+    prisma.banner.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
+    prisma.page.findUnique({ where: { slug: "home" } }),
+  ]).catch(() => [[], null]);
 
   const bannersData = Array.isArray(banners) ? banners : [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const bestSellersData = (Array.isArray(bestSellerProducts) ? bestSellerProducts : []) as any[];
   const homePageData = !Array.isArray(homePage) ? homePage : null;
 
   return (
@@ -50,14 +36,6 @@ export default async function HomePage() {
       {homePageData?.craftJson && (
         <BlockRenderer document={homePageData.craftJson as object} />
       )}
-      {highlightProduct && !Array.isArray(highlightProduct) && (
-        <ProductHighlight
-          product={
-            highlightProduct as { name: string; slug: string; shortDesc: string | null; images: string[] }
-          }
-        />
-      )}
-      <BestSellers products={bestSellersData} />
     </>
   );
 }

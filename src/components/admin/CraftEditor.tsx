@@ -569,6 +569,16 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
             <div className="space-y-3">
               {(p.items ?? []).map((item: any, i: number) => (
                 <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-medium text-gray-500">Icon / Gambar</p>
+                  <ImageUploader
+                    value={item.imageUrl ?? ""}
+                    onChange={(url) => {
+                      const items = [...(p.items ?? [])];
+                      items[i] = { ...items[i], imageUrl: url };
+                      onUpdate({ items });
+                    }}
+                    folder="beeflower/icons"
+                  />
                   <input value={item.title} placeholder="Judul"
                     onChange={(e) => {
                       const items = [...(p.items ?? [])];
@@ -590,7 +600,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
                 </div>
               ))}
             </div>
-            <button onClick={() => onUpdate({ items: [...(p.items ?? []), { icon: "Star", title: "", description: "" }] })}
+            <button onClick={() => onUpdate({ items: [...(p.items ?? []), { icon: "Star", imageUrl: "", title: "", description: "" }] })}
               className="mt-2 flex items-center gap-1 text-xs text-brand-gold hover:text-brand-brown">
               <Plus className="w-3 h-3" /> Tambah Item
             </button>

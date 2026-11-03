@@ -265,8 +265,14 @@ function FeatureIconsBlock({ props }: { props: FeatureIconsProps }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {(props.items ?? []).map((item, i) => (
             <div key={i} className="text-center p-6 bg-brand-cream rounded-xl">
-              <div className="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-brand-gold text-xl">✦</span>
+              <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt={item.title} className="w-full h-full object-contain" />
+                ) : (
+                  <div className="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                    <span className="text-brand-gold text-xl">✦</span>
+                  </div>
+                )}
               </div>
               <h3 className="font-bold text-gray-900 mb-2" style={props.itemTitleColor ? { color: props.itemTitleColor } : {}}>{item.title}</h3>
               <p className="text-gray-600 text-sm" style={props.itemDescColor ? { color: props.itemDescColor } : {}}>{item.description}</p>
