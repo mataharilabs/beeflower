@@ -5,16 +5,18 @@ import { formatPrice } from "@/lib/utils";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 import { ProofUploadSection } from "@/components/shop/ProofUploadSection";
 import { XenditPaymentModal } from "@/components/shop/XenditPaymentModal";
+import { CancelOrderButton } from "@/components/shop/CancelOrderButton";
 import { auth } from "@/lib/auth";
 import { MemberSidebar } from "@/components/member/MemberSidebar";
 
 const STATUS_INFO: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  PENDING: { label: "Menunggu Pembayaran", icon: <Clock className="w-12 h-12" />, color: "text-yellow-500" },
-  PAID: { label: "Pembayaran Diterima", icon: <CheckCircle className="w-12 h-12" />, color: "text-green-500" },
-  PROCESSING: { label: "Sedang Diproses", icon: <Clock className="w-12 h-12" />, color: "text-blue-500" },
-  SHIPPED: { label: "Sedang Dikirim", icon: <CheckCircle className="w-12 h-12" />, color: "text-cyan-500" },
-  DELIVERED: { label: "Pesanan Diterima", icon: <CheckCircle className="w-12 h-12" />, color: "text-green-600" },
-  CANCELLED: { label: "Pesanan Dibatalkan", icon: <XCircle className="w-12 h-12" />, color: "text-red-500" },
+  PENDING:              { label: "Menunggu Pembayaran",  icon: <Clock className="w-12 h-12" />,       color: "text-yellow-500" },
+  PAYMENT_CONFIRMATION: { label: "Konfirmasi Pembayaran",icon: <Clock className="w-12 h-12" />,       color: "text-orange-500" },
+  PAID:                 { label: "Pembayaran Diterima",  icon: <CheckCircle className="w-12 h-12" />, color: "text-green-500" },
+  PROCESSING:           { label: "Sedang Diproses",      icon: <Clock className="w-12 h-12" />,       color: "text-blue-500" },
+  SHIPPED:              { label: "Sedang Dikirim",       icon: <CheckCircle className="w-12 h-12" />, color: "text-cyan-500" },
+  DELIVERED:            { label: "Pesanan Diterima",     icon: <CheckCircle className="w-12 h-12" />, color: "text-green-600" },
+  CANCELLED:            { label: "Pesanan Dibatalkan",   icon: <XCircle className="w-12 h-12" />,     color: "text-red-500" },
 };
 
 export default async function OrderPage({
@@ -41,7 +43,7 @@ export default async function OrderPage({
 
   const needsProof =
     order.paymentMethod === "MANUAL_TRANSFER" || order.paymentMethod === "QRIS";
-  const showProofUpload = needsProof && order.status === "PENDING";
+  const showProofUpload = needsProof && (order.status === "PENDING" || order.status === "PAYMENT_CONFIRMATION");
 
   const [bankAccounts, existingProof] = showProofUpload
     ? await Promise.all([
@@ -117,7 +119,7 @@ export default async function OrderPage({
                   : "Upload Bukti Transfer"
                 : "Bukti Pembayaran"}
             </h2>
-            {order.status === "PENDING" ? (
+            {(order.status === "PENDING" || order.status === "PAYMENT_CONFIRMATION") ? (
               <ProofUploadSection
                 orderId={id}
                 bankAccounts={
@@ -205,6 +207,12 @@ export default async function OrderPage({
             <p>{order.address}, {order.city}, {order.province} {order.postalCode}</p>
           </div>
         </div>
+
+        {order.status === "PENDING" && session && (
+          <div className="mb-4">
+            <CancelOrderButton orderId={order.id} />
+          </div>
+        )}
 
         <div className="flex gap-3">
           <Link

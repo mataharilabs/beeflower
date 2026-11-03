@@ -1,21 +1,46 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma, OrderStatus } from "@prisma/client";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
+import { Suspense } from "react";
+import { MemberOrderFilters } from "@/components/member/MemberOrderFilters";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Menunggu Pembayaran", color: "bg-yellow-100 text-yellow-700" },
-  PAID: { label: "Pembayaran Diterima", color: "bg-blue-100 text-blue-700" },
-  PROCESSING: { label: "Diproses", color: "bg-purple-100 text-purple-700" },
-  SHIPPED: { label: "Dikirim", color: "bg-indigo-100 text-indigo-700" },
-  DELIVERED: { label: "Diterima", color: "bg-green-100 text-green-700" },
-  CANCELLED: { label: "Dibatalkan", color: "bg-red-100 text-red-700" },
+  PENDING:              { label: "Menunggu Pembayaran",  color: "bg-yellow-100 text-yellow-700" },
+  PAYMENT_CONFIRMATION: { label: "Konfirmasi Pembayaran", color: "bg-orange-100 text-orange-700" },
+  PAID:                 { label: "Pembayaran Diterima",  color: "bg-blue-100 text-blue-700" },
+  PROCESSING:           { label: "Diproses",             color: "bg-purple-100 text-purple-700" },
+  SHIPPED:              { label: "Dikirim",              color: "bg-indigo-100 text-indigo-700" },
+  DELIVERED:            { label: "Diterima",             color: "bg-green-100 text-green-700" },
+  CANCELLED:            { label: "Dibatalkan",           color: "bg-red-100 text-red-700" },
 };
 
-export default async function MemberOrdersPage() {
+export default async function MemberOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string; status?: string }>;
+}) {
+  const { search = "", status = "" } = await searchParams;
+  const trimmedSearch = search.trim();
+
   const session = await auth();
+
+  const where: Prisma.OrderWhereInput = { userId: session!.user.id };
+
+  if (trimmedSearch) {
+    where.OR = [
+      { orderNumber: { contains: trimmedSearch, mode: "insensitive" } },
+      { items: { some: { productName: { contains: trimmedSearch, mode: "insensitive" } } } },
+    ];
+  }
+
+  if (status && Object.values(OrderStatus).includes(status as OrderStatus)) {
+    where.status = status as OrderStatus;
+  }
+
   const orders = await prisma.order.findMany({
-    where: { userId: session!.user.id },
+    where,
     orderBy: { createdAt: "desc" },
     include: {
       items: { select: { productName: true, quantity: true, price: true, image: true } },
@@ -36,16 +61,26 @@ export default async function MemberOrdersPage() {
         </Link>
       </div>
 
+      <Suspense fallback={null}>
+        <MemberOrderFilters initialSearch={trimmedSearch} initialStatus={status} />
+      </Suspense>
+
       {orders.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
-          <p className="text-brand-beige mb-2">Belum ada pesanan</p>
-          <p className="text-sm text-brand-beige mb-6">Mulai belanja produk Bee &amp; Flower Brand</p>
-          <Link
-            href="/toko"
-            className="inline-block px-6 py-2.5 bg-brand-gold text-white rounded-lg font-semibold text-sm hover:bg-brand-brown transition-colors"
-          >
-            Ke Toko
-          </Link>
+          {trimmedSearch || status ? (
+            <p className="text-brand-beige">Tidak ada pesanan yang sesuai filter</p>
+          ) : (
+            <>
+              <p className="text-brand-beige mb-2">Belum ada pesanan</p>
+              <p className="text-sm text-brand-beige mb-6">Mulai belanja produk Bee &amp; Flower Brand</p>
+              <Link
+                href="/toko"
+                className="inline-block px-6 py-2.5 bg-brand-gold text-white rounded-lg font-semibold text-sm hover:bg-brand-brown transition-colors"
+              >
+                Ke Toko
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

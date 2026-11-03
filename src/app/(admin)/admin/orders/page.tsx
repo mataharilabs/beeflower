@@ -51,7 +51,7 @@ export default async function OrdersPage({
     prisma.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      include: { items: { select: { quantity: true } } },
+      include: { items: { select: { quantity: true, image: true, productName: true } } },
     }),
     prisma.order.count(),
   ]);
@@ -88,6 +88,7 @@ export default async function OrdersPage({
             <tr className="border-b border-gray-100 text-gray-500 text-xs uppercase tracking-wider">
               <th className="text-left px-4 py-3 font-medium">No. Pesanan</th>
               <th className="text-left px-4 py-3 font-medium">Pelanggan</th>
+              <th className="text-left px-4 py-3 font-medium">Produk</th>
               <th className="text-left px-4 py-3 font-medium">Total</th>
               <th className="text-left px-4 py-3 font-medium">Pembayaran</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
@@ -98,7 +99,7 @@ export default async function OrdersPage({
           <tbody className="divide-y divide-gray-50">
             {orders.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
                   {trimmedSearch || status || payment
                     ? "Tidak ada pesanan yang sesuai filter"
                     : "Belum ada pesanan"}
@@ -120,6 +121,28 @@ export default async function OrdersPage({
                   <td className="px-4 py-3">
                     <p className="font-medium text-gray-900">{order.customerName}</p>
                     <p className="text-gray-400 text-xs">{order.customerEmail}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      {order.items.slice(0, 3).map((item, i) =>
+                        item.image ? (
+                          <img
+                            key={i}
+                            src={item.image}
+                            alt={item.productName}
+                            title={item.productName}
+                            className="w-9 h-9 rounded-lg object-cover border border-gray-100 shrink-0"
+                          />
+                        ) : null
+                      )}
+                      {order.items.length > 3 && (
+                        <span className="text-xs text-gray-400">+{order.items.length - 3}</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[140px]">
+                      {order.items[0]?.productName}
+                      {order.items.length > 1 ? ` +${order.items.length - 1}` : ""}
+                    </p>
                   </td>
                   <td className="px-4 py-3 font-semibold text-gray-900">
                     {formatPrice(Number(order.total))}
