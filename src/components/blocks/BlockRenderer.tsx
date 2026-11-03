@@ -161,10 +161,11 @@ function CTABannerBlock({ props }: { props: CTABannerProps }) {
   const align = props.align ?? "center";
   const alignClass = `text-${align}`;
   const itemsClass = align === "left" ? "items-start" : align === "right" ? "items-end" : "items-center";
+  const maxWClass = align === "center" ? "max-w-2xl mx-auto" : "max-w-5xl mx-auto";
   return (
     <section className="relative py-16 px-4 text-white" style={getBlockBgStyle(props)}>
       <BlockOverlay props={props} />
-      <div className={`relative z-10 max-w-2xl mx-auto flex flex-col ${itemsClass} ${alignClass}`}>
+      <div className={`relative z-10 ${maxWClass} flex flex-col ${itemsClass} ${alignClass}`}>
         <h2 className="text-3xl font-bold mb-3" style={props.headlineColor ? { color: props.headlineColor } : {}}>{props.headline}</h2>
         {props.subheadline && (
           <p className="text-lg text-white/90 mb-8" style={props.subheadlineColor ? { color: props.subheadlineColor } : {}}>{props.subheadline}</p>
