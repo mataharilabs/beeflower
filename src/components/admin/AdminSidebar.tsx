@@ -21,6 +21,7 @@ import {
   Ticket,
   Megaphone,
   BadgePercent,
+  BookOpen,
   X,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -35,6 +36,7 @@ const navItems = [
   { href: "/admin/categories", icon: Tag, label: "Kategori" },
   { href: "/admin/products", icon: Package, label: "Products" },
   { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
+  { href: "/admin/artikel", icon: BookOpen, label: "Artikel" },
   { href: "/admin/promotions", icon: BadgePercent, label: "Promosi" },
   { href: "/admin/coupons", icon: Ticket, label: "Kupon" },
   { href: "/admin/popups", icon: Megaphone, label: "Popup Ads" },

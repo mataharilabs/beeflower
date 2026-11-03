@@ -37,9 +37,11 @@ const SIZE_PRESETS = ["25%", "50%", "75%", "100%"];
 interface Props {
   content: string;
   onChange: (html: string) => void;
+  uploadFolder?: string;
+  minHeight?: string;
 }
 
-export function PopupEditor({ content, onChange }: Props) {
+export function PopupEditor({ content, onChange, uploadFolder = "beeflower/popups", minHeight = "200px" }: Props) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +58,8 @@ export function PopupEditor({ content, onChange }: Props) {
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none min-h-[200px] px-4 py-3 focus:outline-none",
+        class: `prose prose-sm max-w-none px-4 py-3 focus:outline-none`,
+        style: `min-height: ${minHeight}`,
       },
     },
   });
@@ -90,7 +93,7 @@ export function PopupEditor({ content, onChange }: Props) {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("folder", "beeflower/popups");
+      formData.append("folder", uploadFolder);
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Upload gagal");
       const { url } = await res.json();
