@@ -82,7 +82,7 @@ export default async function OrdersPage({
         </p>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 text-gray-500 text-xs uppercase tracking-wider">
@@ -123,7 +123,7 @@ export default async function OrdersPage({
                     <p className="text-gray-400 text-xs">{order.customerEmail}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       {order.items.slice(0, 3).map((item, i) =>
                         item.image ? (
                           <img
@@ -131,7 +131,7 @@ export default async function OrdersPage({
                             src={item.image}
                             alt={item.productName}
                             title={item.productName}
-                            className="w-9 h-9 rounded-lg object-cover border border-gray-100 shrink-0"
+                            className="w-8 h-8 rounded-md object-cover border border-gray-100 shrink-0"
                           />
                         ) : null
                       )}
@@ -139,10 +139,6 @@ export default async function OrdersPage({
                         <span className="text-xs text-gray-400">+{order.items.length - 3}</span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[140px]">
-                      {order.items[0]?.productName}
-                      {order.items.length > 1 ? ` +${order.items.length - 1}` : ""}
-                    </p>
                   </td>
                   <td className="px-4 py-3 font-semibold text-gray-900">
                     {formatPrice(Number(order.total))}
