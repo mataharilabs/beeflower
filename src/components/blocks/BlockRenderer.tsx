@@ -330,11 +330,21 @@ function ImageGridBlock({ props }: { props: ImageGridProps }) {
       <div className={`relative z-10 max-w-5xl mx-auto grid ${colClass} gap-4`}>
         {filled.map((item, i) => (
           <div key={i} className={`overflow-hidden rounded-xl ${hasAnyText ? "bg-white shadow-sm" : ""}`}>
-            <img
-              src={item.url}
-              alt={item.alt ?? item.headline ?? ""}
-              className="w-full object-cover"
-            />
+            {item.buttonLink ? (
+              <Link href={item.buttonLink} className="block">
+                <img
+                  src={item.url}
+                  alt={item.alt ?? item.headline ?? ""}
+                  className="w-full object-cover hover:opacity-90 transition-opacity"
+                />
+              </Link>
+            ) : (
+              <img
+                src={item.url}
+                alt={item.alt ?? item.headline ?? ""}
+                className="w-full object-cover"
+              />
+            )}
             {(item.subHeadline || item.headline || item.buttonText) && (
               <div className="p-4">
                 {item.subHeadline && (
