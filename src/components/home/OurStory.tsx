@@ -4,6 +4,7 @@ import { isExternalUrl } from "@/lib/utils";
 import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
 
 interface OurStoryData {
+  subHeadline?: string;
   headline?: string;
   content?: string;
   imageUrl?: string;
@@ -15,6 +16,7 @@ interface OurStoryData {
   overlayEnabled?: boolean;
   overlayColor?: string;
   overlayOpacity?: number;
+  subHeadlineColor?: string;
   headlineColor?: string;
   contentColor?: string;
   buttonBgColor?: string;
@@ -49,11 +51,14 @@ export function OurStory({ data }: { data?: OurStoryData }) {
         <div className="absolute inset-0 pointer-events-none" style={overlayStyle} />
       )}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className={`grid grid-cols-1 ${isExternalUrl(imageUrl) ? "lg:grid-cols-2" : ""} gap-12 lg:gap-16 items-center`}>
           {/* Text */}
           <div>
-            <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-3">
-              Our Story
+            <p
+              className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-3"
+              style={data?.subHeadlineColor ? { color: data.subHeadlineColor } : {}}
+            >
+              {data?.subHeadline || "Our Story"}
             </p>
             <h2
               className="text-3xl lg:text-4xl font-bold text-brand-brown leading-tight mb-6"
@@ -76,21 +81,14 @@ export function OurStory({ data }: { data?: OurStoryData }) {
             </Link>
           </div>
 
-          {/* Image */}
-          <div className="relative">
-            <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-brand-cream flex items-center justify-center">
-              {isExternalUrl(imageUrl) ? (
+          {/* Image — only rendered when a valid external URL is set */}
+          {isExternalUrl(imageUrl) && (
+            <div className="relative">
+              <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-brand-cream">
                 <Image src={imageUrl!} alt={headline} fill className="object-cover" />
-              ) : (
-                <div className="text-center select-none">
-                  <p className="text-[80px] font-bold text-brand-gold/20 leading-none">.B&F</p>
-                  <p className="text-brand-beige text-sm mt-2 tracking-widest uppercase">
-                    Bee &amp; Flower Brand
-                  </p>
-                </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </section>

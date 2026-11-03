@@ -21,7 +21,7 @@ import {
   GripVertical, Trash2, Plus, ChevronDown, ChevronUp,
   Image as ImageIcon, AlignLeft, Grid, HelpCircle, Zap, LayoutGrid, Minus,
 } from "lucide-react";
-import { Block, BlockType, PageDocument, defaultProps, HeroProps, TextBlockProps, ImageTextProps, CTABannerProps, FAQSectionProps, FeatureIconsProps, SpacerProps, ProductGridProps } from "@/types/pageBlocks";
+import { Block, BlockType, PageDocument, defaultProps, HeroProps, TextBlockProps, ImageTextProps, CTABannerProps, FAQSectionProps, FeatureIconsProps, SpacerProps, ProductGridProps, ImageGridProps } from "@/types/pageBlocks";
 import { ImageUploader } from "./ImageUploader";
 
 const BLOCK_TYPES: { type: BlockType; label: string; icon: React.ReactNode }[] = [
@@ -33,6 +33,7 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: React.ReactNode }[] =
   { type: "FAQSection", label: "FAQ", icon: <HelpCircle className="w-4 h-4" /> },
   { type: "FeatureIcons", label: "Feature Icons", icon: <LayoutGrid className="w-4 h-4" /> },
   { type: "Spacer", label: "Spacer", icon: <Minus className="w-4 h-4" /> },
+  { type: "ImageGrid", label: "Grid Gambar", icon: <Grid className="w-4 h-4" /> },
 ];
 
 interface Props {
@@ -159,7 +160,7 @@ function SortableBlock({
   const BLOCK_LABELS: Record<BlockType, string> = {
     Hero: "Hero Banner", TextBlock: "Teks", ImageText: "Gambar + Teks",
     CTABanner: "CTA Banner", ProductGrid: "Grid Produk", FAQSection: "FAQ",
-    FeatureIcons: "Feature Icons", Spacer: "Spacer",
+    FeatureIcons: "Feature Icons", Spacer: "Spacer", ImageGrid: "Grid Gambar",
   };
 
   return (
@@ -442,6 +443,8 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
 
       {block.type === "TextBlock" && (
         <>
+          {field("subHeadline", "Sub Judul (kecil, emas)")}
+          {field("headline", "Judul")}
           {field("content", "Konten", "textarea")}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Alignment</label>
@@ -452,13 +455,18 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
               <option value="right">Kanan</option>
             </select>
           </div>
-          <TextColorSection props={p} onUpdate={onUpdate} fields={[{ key: "contentColor", label: "Warna Konten" }]} />
+          <TextColorSection props={p} onUpdate={onUpdate} fields={[
+            { key: "subHeadlineColor", label: "Warna Sub Judul" },
+            { key: "headlineColor", label: "Warna Judul" },
+            { key: "contentColor", label: "Warna Konten" },
+          ]} />
           <BackgroundSection props={p} onUpdate={onUpdate} />
         </>
       )}
 
       {block.type === "ImageText" && (
         <>
+          {field("subHeadline", "Sub Judul (kecil, emas)")}
           {field("headline", "Judul")}
           {field("content", "Konten", "textarea")}
           {imageField("imageUrl", "Gambar")}
@@ -473,6 +481,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
           <TextColorSection props={p} onUpdate={onUpdate} fields={[
+            { key: "subHeadlineColor", label: "Warna Sub Judul" },
             { key: "headlineColor", label: "Warna Judul" },
             { key: "contentColor", label: "Warna Konten" },
           ]} />
@@ -597,6 +606,69 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
             onChange={(e) => onUpdate({ height: parseInt(e.target.value) })}
             className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-brand-gold" />
         </div>
+      )}
+
+      {block.type === "ImageGrid" && (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Jumlah Kolom</label>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+              {([1, 2, 3] as const).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => onUpdate({ columns: n })}
+                  className={`flex-1 py-1.5 text-xs font-medium transition-colors ${(p.columns ?? 3) === n ? "bg-brand-gold text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-2">Gambar</label>
+            <div className="space-y-3">
+              {(p.items ?? []).map((item: any, i: number) => (
+                <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2">
+                  <ImageUploader
+                    value={item.url ?? ""}
+                    onChange={(url) => {
+                      const items = [...(p.items ?? [])];
+                      items[i] = { ...items[i], url };
+                      onUpdate({ items });
+                    }}
+                    folder="beeflower/pages"
+                  />
+                  <input
+                    value={item.alt ?? ""}
+                    placeholder="Alt text (opsional)"
+                    onChange={(e) => {
+                      const items = [...(p.items ?? [])];
+                      items[i] = { ...items[i], alt: e.target.value };
+                      onUpdate({ items });
+                    }}
+                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:border-brand-gold"
+                  />
+                  <button
+                    onClick={() => {
+                      const items = (p.items ?? []).filter((_: any, j: number) => j !== i);
+                      onUpdate({ items });
+                    }}
+                    className="text-xs text-red-400 hover:text-red-600"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => onUpdate({ items: [...(p.items ?? []), { url: "", alt: "" }] })}
+              className="mt-2 flex items-center gap-1 text-xs text-brand-gold hover:text-brand-brown"
+            >
+              <Plus className="w-3 h-3" /> Tambah Gambar
+            </button>
+          </div>
+          <BackgroundSection props={p} onUpdate={onUpdate} />
+        </>
       )}
     </div>
   );

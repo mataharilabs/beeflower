@@ -2,7 +2,6 @@ import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { HeroBannerSlider } from "@/components/home/HeroBannerSlider";
 import { OurStory } from "@/components/home/OurStory";
-import { OurCollection } from "@/components/home/OurCollection";
 import { WhyBeeFlower } from "@/components/home/WhyBeeFlower";
 import { ProductHighlight } from "@/components/home/ProductHighlight";
 import { BestSellers } from "@/components/home/BestSellers";
@@ -36,15 +35,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [banners, homePage, featuredProducts, bestSellerProducts, highlightProduct] =
+  const [banners, homePage, bestSellerProducts, highlightProduct] =
     await Promise.all([
       prisma.banner.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
       prisma.page.findUnique({ where: { slug: "home" } }),
-      prisma.product.findMany({
-        where: { isActive: true, isFeatured: true },
-        orderBy: { createdAt: "desc" },
-        take: 4,
-      }),
       prisma.product.findMany({
         where: { isActive: true, isBestSeller: true },
         orderBy: { createdAt: "desc" },
@@ -54,11 +48,9 @@ export default async function HomePage() {
         where: { isActive: true, isFeatured: true },
         orderBy: { createdAt: "desc" },
       }),
-    ]).catch(() => [[], null, [], [], null]);
+    ]).catch(() => [[], null, [], null]);
 
   const bannersData = Array.isArray(banners) ? banners : [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const featuredData = (Array.isArray(featuredProducts) ? featuredProducts : []) as any[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bestSellersData = (Array.isArray(bestSellerProducts) ? bestSellerProducts : []) as any[];
 
@@ -74,7 +66,6 @@ export default async function HomePage() {
     <>
       <HeroBannerSlider banners={bannersData} />
       <OurStory data={ourStoryBlock?.props as ImageTextProps | undefined} />
-      <OurCollection products={featuredData} />
       <WhyBeeFlower items={(whyBFBlock?.props as FeatureIconsProps | undefined)?.items} bgProps={whyBFBlock?.props} />
       {highlightProduct && !Array.isArray(highlightProduct) && (
         <ProductHighlight

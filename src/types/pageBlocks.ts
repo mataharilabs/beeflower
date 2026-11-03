@@ -6,7 +6,8 @@ export type BlockType =
   | "ProductGrid"
   | "FAQSection"
   | "FeatureIcons"
-  | "Spacer";
+  | "Spacer"
+  | "ImageGrid";
 
 export interface BackgroundProps {
   bgType: "image" | "color";
@@ -32,18 +33,24 @@ export interface HeroProps extends BackgroundProps {
 }
 
 export interface TextBlockProps extends BackgroundProps {
+  subHeadline?: string;
+  headline?: string;
   content: string;
   align: "left" | "center" | "right";
+  subHeadlineColor?: string;
+  headlineColor?: string;
   contentColor?: string;
 }
 
 export interface ImageTextProps extends BackgroundProps {
+  subHeadline?: string;
   headline: string;
   content: string;
   imageUrl: string;
   imagePosition: "left" | "right";
   buttonText: string;
   buttonLink: string;
+  subHeadlineColor?: string;
   headlineColor?: string;
   contentColor?: string;
   buttonBgColor?: string;
@@ -95,6 +102,16 @@ export interface SpacerProps {
   height: number;
 }
 
+export interface ImageGridItem {
+  url: string;
+  alt?: string;
+}
+
+export interface ImageGridProps extends BackgroundProps {
+  columns: 1 | 2 | 3;
+  items: ImageGridItem[];
+}
+
 export type BlockProps =
   | HeroProps
   | TextBlockProps
@@ -103,7 +120,8 @@ export type BlockProps =
   | ProductGridProps
   | FAQSectionProps
   | FeatureIconsProps
-  | SpacerProps;
+  | SpacerProps
+  | ImageGridProps;
 
 export interface Block {
   id: string;
@@ -187,4 +205,9 @@ export const defaultProps: Record<BlockType, BlockProps> = {
   Spacer: {
     height: 40,
   } as SpacerProps,
+  ImageGrid: {
+    columns: 3,
+    items: [{ url: "", alt: "" }],
+    ...defaultBg,
+  } as ImageGridProps,
 };

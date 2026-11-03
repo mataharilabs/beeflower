@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Block, PageDocument, HeroProps, TextBlockProps, ImageTextProps, CTABannerProps, ProductGridProps, FAQSectionProps, FeatureIconsProps, SpacerProps } from "@/types/pageBlocks";
+import { Block, PageDocument, HeroProps, TextBlockProps, ImageTextProps, CTABannerProps, ProductGridProps, FAQSectionProps, FeatureIconsProps, SpacerProps, ImageGridProps } from "@/types/pageBlocks";
 import { formatPrice } from "@/lib/utils";
 import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
 
@@ -37,6 +37,8 @@ function BlockItem({ block }: { block: Block }) {
       return <FeatureIconsBlock props={block.props as FeatureIconsProps} />;
     case "Spacer":
       return <SpacerBlock props={block.props as SpacerProps} />;
+    case "ImageGrid":
+      return <ImageGridBlock props={block.props as ImageGridProps} />;
     default:
       return null;
   }
@@ -78,14 +80,35 @@ function HeroBlock({ props }: { props: HeroProps }) {
 
 function TextBlock({ props }: { props: TextBlockProps }) {
   const hasBg = props.bgType !== undefined;
+  const alignClass = `text-${props.align ?? "left"}`;
   return (
     <section className="relative py-12 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
-      <div
-        className={`relative z-10 max-w-3xl mx-auto text-gray-700 leading-relaxed whitespace-pre-wrap text-${props.align ?? "left"}`}
-        style={props.contentColor ? { color: props.contentColor } : {}}
-      >
-        {props.content}
+      <div className={`relative z-10 max-w-3xl mx-auto ${alignClass}`}>
+        {props.subHeadline && (
+          <p
+            className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-2"
+            style={props.subHeadlineColor ? { color: props.subHeadlineColor } : {}}
+          >
+            {props.subHeadline}
+          </p>
+        )}
+        {props.headline && (
+          <h2
+            className="text-3xl font-bold text-brand-brown mb-4"
+            style={props.headlineColor ? { color: props.headlineColor } : {}}
+          >
+            {props.headline}
+          </h2>
+        )}
+        {props.content && (
+          <div
+            className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+            style={props.contentColor ? { color: props.contentColor } : {}}
+          >
+            {props.content}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -94,6 +117,7 @@ function TextBlock({ props }: { props: TextBlockProps }) {
 function ImageTextBlock({ props }: { props: ImageTextProps }) {
   const isLeft = props.imagePosition !== "right";
   const hasBg = props.bgType !== undefined;
+  const hasImage = !!props.imageUrl;
   const btnStyle = {
     ...(props.buttonBgColor ? { backgroundColor: props.buttonBgColor } : {}),
     ...(props.buttonTextColor ? { color: props.buttonTextColor } : {}),
@@ -101,13 +125,21 @@ function ImageTextBlock({ props }: { props: ImageTextProps }) {
   return (
     <section className="relative py-16 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
       {hasBg && <BlockOverlay props={props} />}
-      <div className={`relative z-10 max-w-5xl mx-auto flex flex-col ${isLeft ? "md:flex-row" : "md:flex-row-reverse"} gap-10 items-center`}>
-        {props.imageUrl && (
+      <div className={`relative z-10 max-w-5xl mx-auto flex flex-col ${hasImage ? (isLeft ? "md:flex-row" : "md:flex-row-reverse") : ""} gap-10 items-center`}>
+        {hasImage && (
           <div className="w-full md:w-1/2 rounded-2xl overflow-hidden">
             <img src={props.imageUrl} alt={props.headline} className="w-full h-80 object-cover" />
           </div>
         )}
-        <div className="w-full md:w-1/2">
+        <div className={`w-full ${hasImage ? "md:w-1/2" : ""}`}>
+          {props.subHeadline && (
+            <p
+              className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-2"
+              style={props.subHeadlineColor ? { color: props.subHeadlineColor } : {}}
+            >
+              {props.subHeadline}
+            </p>
+          )}
           <h2 className="text-3xl font-bold text-brand-brown mb-4" style={props.headlineColor ? { color: props.headlineColor } : {}}>{props.headline}</h2>
           <p className="text-gray-600 leading-relaxed mb-6" style={props.contentColor ? { color: props.contentColor } : {}}>{props.content}</p>
           {props.buttonText && (
@@ -248,4 +280,27 @@ function FeatureIconsBlock({ props }: { props: FeatureIconsProps }) {
 
 function SpacerBlock({ props }: { props: SpacerProps }) {
   return <div style={{ height: `${props.height ?? 40}px` }} />;
+}
+
+function ImageGridBlock({ props }: { props: ImageGridProps }) {
+  const hasBg = props.bgType !== undefined;
+  const colClass = props.columns === 1 ? "grid-cols-1" : props.columns === 2 ? "grid-cols-2" : "grid-cols-3";
+  const filled = (props.items ?? []).filter((item) => item.url);
+  if (filled.length === 0) return null;
+  return (
+    <section className="relative py-12 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
+      {hasBg && <BlockOverlay props={props} />}
+      <div className={`relative z-10 max-w-5xl mx-auto grid ${colClass} gap-4`}>
+        {filled.map((item, i) => (
+          <div key={i} className="overflow-hidden rounded-xl">
+            <img
+              src={item.url}
+              alt={item.alt ?? ""}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
