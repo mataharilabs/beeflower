@@ -73,19 +73,9 @@ export default async function OrdersPage({
     where.paymentMethod = payment as PaymentMethod;
   }
 
-  const statusKeys: OrderStatus[] = [
-    OrderStatus.PENDING,
-    OrderStatus.PAYMENT_CONFIRMATION,
-    OrderStatus.PAID,
-    OrderStatus.PROCESSING,
-    OrderStatus.SHIPPED,
-    OrderStatus.DELIVERED,
-    OrderStatus.CANCELLED,
-  ];
-
-  // Run main data queries first, then status counts separately to avoid
-  // Neon HTTP adapter enum serialization issues when batching too many queries
-  const [orders, filteredCount] = await Promise.all([
+  // Use $queryRaw for status counts — prisma.order.count() with enum where
+  // fails on Neon HTTP adapter (P2010 InvalidArg bug in Prisma 6.x)
+  const [orders, filteredCount, statusCountRows] = await Promise.all([
     prisma.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -94,11 +84,10 @@ export default async function OrdersPage({
       include: { items: { select: { quantity: true, image: true, productName: true } } },
     }),
     prisma.order.count({ where }),
+    prisma.$queryRaw<Array<{ status: string; cnt: bigint }>>`
+      SELECT status::text, COUNT(*)::bigint AS cnt FROM "orders" GROUP BY status
+    `,
   ]);
-
-  const perStatusCounts = await Promise.all(
-    statusKeys.map((s) => prisma.order.count({ where: { status: s } }))
-  );
 
   const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
   const safePage = Math.min(pageNum, totalPages);
@@ -107,9 +96,9 @@ export default async function OrdersPage({
   const pageNumbers = getPageNumbers(safePage, totalPages);
 
   const countByStatus: Record<string, number> = Object.fromEntries(
-    statusKeys.map((k, i) => [k, perStatusCounts[i]])
+    statusCountRows.map((r) => [r.status, Number(r.cnt)])
   );
-  const totalCount = perStatusCounts.reduce((sum, c) => sum + c, 0);
+  const totalCount = statusCountRows.reduce((sum, r) => sum + Number(r.cnt), 0);
 
   const buildHref = (overrides: Record<string, string | undefined>) => {
     const base = {
