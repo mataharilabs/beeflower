@@ -4,17 +4,6 @@ import { useState, useEffect, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, X, Loader2 } from "lucide-react";
 
-const STATUS_OPTIONS = [
-  { value: "", label: "Semua Status" },
-  { value: "PENDING", label: "Menunggu" },
-  { value: "PAYMENT_CONFIRMATION", label: "Konfirmasi Pembayaran" },
-  { value: "PAID", label: "Dibayar" },
-  { value: "PROCESSING", label: "Diproses" },
-  { value: "SHIPPED", label: "Dikirim" },
-  { value: "DELIVERED", label: "Diterima" },
-  { value: "CANCELLED", label: "Dibatalkan" },
-];
-
 const PAYMENT_OPTIONS = [
   { value: "", label: "Semua Pembayaran" },
   { value: "XENDIT", label: "Xendit Online" },
@@ -24,11 +13,10 @@ const PAYMENT_OPTIONS = [
 
 interface Props {
   initialSearch: string;
-  initialStatus: string;
   initialPayment: string;
 }
 
-export function OrderFilters({ initialSearch, initialStatus, initialPayment }: Props) {
+export function OrderFilters({ initialSearch, initialPayment }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -41,21 +29,23 @@ export function OrderFilters({ initialSearch, initialStatus, initialPayment }: P
       const trimmed = value.trim();
       if (trimmed) params.set("search", trimmed);
       else params.delete("search");
+      params.delete("page");
       startTransition(() => router.push(`${pathname}?${params.toString()}`));
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  const handleFilter = (key: string, val: string) => {
+  const handlePayment = (val: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (val) params.set(key, val);
-    else params.delete(key);
+    if (val) params.set("payment", val);
+    else params.delete("payment");
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   };
 
   return (
-    <div className="flex items-center gap-3 flex-wrap mb-4">
+    <div className="flex items-center gap-3 flex-wrap">
       {/* Search */}
       <div className="relative flex-1 min-w-[220px] max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -76,21 +66,10 @@ export function OrderFilters({ initialSearch, initialStatus, initialPayment }: P
         </div>
       </div>
 
-      {/* Status filter */}
-      <select
-        value={initialStatus}
-        onChange={(e) => handleFilter("status", e.target.value)}
-        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold text-gray-600 bg-white"
-      >
-        {STATUS_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-
       {/* Payment filter */}
       <select
         value={initialPayment}
-        onChange={(e) => handleFilter("payment", e.target.value)}
+        onChange={(e) => handlePayment(e.target.value)}
         className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold text-gray-600 bg-white"
       >
         {PAYMENT_OPTIONS.map((o) => (

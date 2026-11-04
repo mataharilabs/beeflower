@@ -3,17 +3,31 @@ import { Suspense } from "react";
 import { Prisma, OrderStatus, PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DeleteOrderButton } from "@/components/admin/DeleteOrderButton";
 import { OrderFilters } from "@/components/admin/OrderFilters";
 
+const PAGE_SIZE = 20;
+
+const STATUS_TABS = [
+  { value: "",                     label: "Semua" },
+  { value: "PENDING",              label: "Menunggu Pembayaran" },
+  { value: "PAYMENT_CONFIRMATION", label: "Konfirmasi Pembayaran" },
+  { value: "PAID",                 label: "Dibayar" },
+  { value: "PROCESSING",           label: "Diproses" },
+  { value: "SHIPPED",              label: "Dikirim" },
+  { value: "DELIVERED",            label: "Diterima" },
+  { value: "CANCELLED",            label: "Dibatalkan" },
+] as const;
+
 const statusLabel: Record<string, { label: string; color: string }> = {
-  PENDING:              { label: "Menunggu",             color: "bg-yellow-50 text-yellow-700" },
-  PAYMENT_CONFIRMATION: { label: "Konfirmasi Pembayaran",color: "bg-orange-50 text-orange-700" },
-  PAID:                 { label: "Dibayar",              color: "bg-blue-50 text-blue-700" },
-  PROCESSING:           { label: "Diproses",             color: "bg-purple-50 text-purple-700" },
-  SHIPPED:              { label: "Dikirim",              color: "bg-cyan-50 text-cyan-700" },
-  DELIVERED:            { label: "Diterima",             color: "bg-green-50 text-green-700" },
-  CANCELLED:            { label: "Dibatalkan",           color: "bg-red-50 text-red-700" },
+  PENDING:              { label: "Menunggu",              color: "bg-yellow-50 text-yellow-700" },
+  PAYMENT_CONFIRMATION: { label: "Konfirmasi Pembayaran", color: "bg-orange-50 text-orange-700" },
+  PAID:                 { label: "Dibayar",               color: "bg-blue-50 text-blue-700" },
+  PROCESSING:           { label: "Diproses",              color: "bg-purple-50 text-purple-700" },
+  SHIPPED:              { label: "Dikirim",               color: "bg-cyan-50 text-cyan-700" },
+  DELIVERED:            { label: "Diterima",              color: "bg-green-50 text-green-700" },
+  CANCELLED:            { label: "Dibatalkan",            color: "bg-red-50 text-red-700" },
 };
 
 const paymentLabel: Record<string, string> = {
@@ -22,13 +36,25 @@ const paymentLabel: Record<string, string> = {
   QRIS:            "QRIS",
 };
 
+function getPageNumbers(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "…")[] = [1];
+  if (current > 3) pages.push("…");
+  for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+  if (current < total - 2) pages.push("…");
+  pages.push(total);
+  return pages;
+}
+
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string; payment?: string }>;
+  searchParams: Promise<{ search?: string; status?: string; payment?: string; page?: string }>;
 }) {
-  const { search = "", status = "", payment = "" } = await searchParams;
+  const { search = "", status = "", payment = "", page = "1" } = await searchParams;
   const trimmedSearch = search.trim();
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const skip = (pageNum - 1) * PAGE_SIZE;
 
   const where: Prisma.OrderWhereInput = {};
 
@@ -47,41 +73,93 @@ export default async function OrdersPage({
     where.paymentMethod = payment as PaymentMethod;
   }
 
-  const [orders, total] = await Promise.all([
+  const [orders, filteredCount, statusCounts] = await Promise.all([
     prisma.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
+      skip,
+      take: PAGE_SIZE,
       include: { items: { select: { quantity: true, image: true, productName: true } } },
     }),
-    prisma.order.count(),
+    prisma.order.count({ where }),
+    prisma.order.groupBy({ by: ["status"], _count: { _all: true } }),
   ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
+  const safePage = Math.min(pageNum, totalPages);
+  const from = filteredCount === 0 ? 0 : skip + 1;
+  const to = Math.min(skip + PAGE_SIZE, filteredCount);
+  const pageNumbers = getPageNumbers(safePage, totalPages);
+
+  const countByStatus: Record<string, number> = Object.fromEntries(
+    statusCounts.map((s) => [s.status, s._count._all])
+  );
+  const totalCount = statusCounts.reduce((sum, s) => sum + s._count._all, 0);
+
+  const buildHref = (overrides: Record<string, string | undefined>) => {
+    const base = {
+      status:  status  || undefined,
+      search:  trimmedSearch || undefined,
+      payment: payment || undefined,
+    };
+    const merged = { ...base, ...overrides };
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(merged)) if (v) params.set(k, v);
+    const qs = params.toString();
+    return `/admin/orders${qs ? `?${qs}` : ""}`;
+  };
 
   return (
     <div>
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Total {total} pesanan</p>
+          <p className="text-sm text-gray-500 mt-0.5">Total {totalCount} pesanan</p>
         </div>
       </div>
 
-      <Suspense fallback={null}>
-        <OrderFilters
-          initialSearch={trimmedSearch}
-          initialStatus={status}
-          initialPayment={payment}
-        />
-      </Suspense>
+      {/* Status tab bar */}
+      <div className="flex items-center border-b border-gray-100 mb-4 overflow-x-auto">
+        {STATUS_TABS.map((tab) => {
+          const count = tab.value ? (countByStatus[tab.value] ?? 0) : totalCount;
+          const isActive = status === tab.value;
+          return (
+            <Link
+              key={tab.value}
+              href={buildHref({ status: tab.value || undefined, page: undefined })}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0 ${
+                isActive
+                  ? "border-brand-gold text-brand-gold"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {tab.label}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full font-normal ${
+                isActive ? "bg-brand-gold/10 text-brand-gold" : "bg-gray-100 text-gray-500"
+              }`}>
+                {count}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
 
-      {(trimmedSearch || status || payment) && (
-        <p className="text-xs text-gray-400 mb-3">
-          {orders.length} hasil
-          {trimmedSearch && ` untuk "${trimmedSearch}"`}
-          {status && ` · ${statusLabel[status]?.label ?? status}`}
-          {payment && ` · ${paymentLabel[payment] ?? payment}`}
-        </p>
-      )}
+      {/* Search + payment filter + result count */}
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <Suspense fallback={null}>
+          <OrderFilters initialSearch={trimmedSearch} initialPayment={payment} />
+        </Suspense>
+        {filteredCount > 0 && (
+          <p className="text-xs text-gray-400 whitespace-nowrap shrink-0">
+            {trimmedSearch
+              ? `${filteredCount} hasil untuk "${trimmedSearch}"`
+              : `${from}–${to} dari ${filteredCount}`}
+          </p>
+        )}
+      </div>
 
+      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -171,6 +249,48 @@ export default async function OrdersPage({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-xs text-gray-500">Halaman {safePage} dari {totalPages}</p>
+          <div className="flex items-center gap-1">
+            {safePage > 1 ? (
+              <Link href={buildHref({ page: String(safePage - 1) })} className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">
+                <ChevronLeft className="w-3.5 h-3.5" /> Prev
+              </Link>
+            ) : (
+              <span className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-100 rounded-lg text-gray-300 cursor-not-allowed">
+                <ChevronLeft className="w-3.5 h-3.5" /> Prev
+              </span>
+            )}
+            {pageNumbers.map((p, i) =>
+              p === "…" ? (
+                <span key={`e${i}`} className="px-2 py-1.5 text-xs text-gray-400">…</span>
+              ) : (
+                <Link
+                  key={p}
+                  href={buildHref({ page: p === 1 ? undefined : String(p) })}
+                  className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                    p === safePage ? "bg-brand-gold text-white font-medium" : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {p}
+                </Link>
+              )
+            )}
+            {safePage < totalPages ? (
+              <Link href={buildHref({ page: String(safePage + 1) })} className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">
+                Next <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            ) : (
+              <span className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-100 rounded-lg text-gray-300 cursor-not-allowed">
+                Next <ChevronRight className="w-3.5 h-3.5" />
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
