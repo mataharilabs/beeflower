@@ -3,7 +3,7 @@ import { Plus, Globe } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DeletePageButton } from "@/components/admin/DeletePageButton";
 
-const SYSTEM_SLUGS = ["home", "reseller", "contact", "toko"] as const;
+const SYSTEM_SLUGS = ["home", "reseller", "contact", "toko", "toko-reseller"] as const;
 
 const SYSTEM_PAGE_DEFAULTS: Record<
   (typeof SYSTEM_SLUGS)[number],
@@ -181,6 +181,28 @@ const SYSTEM_PAGE_DEFAULTS: Record<
       ],
     },
   },
+  "toko-reseller": {
+    title: "Halaman Toko Reseller",
+    craftJson: {
+      blocks: [
+        {
+          id: "toko-reseller-hero",
+          type: "Hero",
+          props: {
+            headline: "Toko Reseller Bee & Flower Brand",
+            subheadline: "Temukan reseller Bee & Flower Brand terdekat di kotamu. Cari berdasarkan provinsi atau kota untuk menemukan produk asli berkualitas.",
+            buttonText: "",
+            buttonLink: "",
+            bgType: "color",
+            bgColor: "#3A2D1D",
+            overlayEnabled: false,
+            overlayColor: "#000000",
+            overlayOpacity: 40,
+          },
+        },
+      ],
+    },
+  },
   toko: {
     title: "Halaman Toko / Produk",
     craftJson: {
@@ -227,8 +249,9 @@ export default async function PagesAdminPage() {
 
   const pages = await prisma.page.findMany({ orderBy: { createdAt: "asc" } });
 
-  const systemPages = pages.filter((p) =>
-    (SYSTEM_SLUGS as readonly string[]).includes(p.slug)
+  const tokoResellerPage = pages.find((p) => p.slug === "toko-reseller");
+  const systemPages = pages.filter(
+    (p) => (SYSTEM_SLUGS as readonly string[]).includes(p.slug) && p.slug !== "toko-reseller"
   );
   const customPages = pages.filter(
     (p) => !(SYSTEM_SLUGS as readonly string[]).includes(p.slug)
@@ -277,12 +300,22 @@ export default async function PagesAdminPage() {
               </td>
               <td className="px-4 py-3 text-gray-400 text-xs">—</td>
               <td className="px-4 py-3">
-                <Link
-                  href="/admin/reseller-stores"
-                  className="text-brand-gold hover:text-brand-brown text-xs font-medium"
-                >
-                  Kelola Toko
-                </Link>
+                <div className="flex items-center gap-3">
+                  {tokoResellerPage && (
+                    <Link
+                      href={`/admin/pages/${tokoResellerPage.id}`}
+                      className="text-brand-gold hover:text-brand-brown text-xs font-medium"
+                    >
+                      Edit
+                    </Link>
+                  )}
+                  <Link
+                    href="/admin/reseller-stores"
+                    className="text-brand-gold hover:text-brand-brown text-xs font-medium"
+                  >
+                    Kelola Toko
+                  </Link>
+                </div>
               </td>
             </tr>
 
