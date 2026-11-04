@@ -58,7 +58,7 @@ function BannerSlide({ banner }: { banner: Banner }) {
       </div>
 
       {/* Content */}
-      <div className={`relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full min-h-[520px] lg:min-h-[620px] flex items-center ${contentJustify}`}>
+      <div className={`relative ${align === "left" ? "max-w-5xl" : "max-w-7xl"} mx-auto px-4 ${align !== "left" ? "sm:px-6 lg:px-8" : ""} h-full min-h-[520px] lg:min-h-[620px] flex items-center ${contentJustify}`}>
         <div className={`max-w-xl py-16 ${textAlignClass}`}>
           {banner.headline && (
             <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-brand-brown leading-tight mb-4">
