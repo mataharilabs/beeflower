@@ -20,14 +20,18 @@ interface Product {
   manualButtonEnabled?: boolean | null;
   manualButtonText?: string | null;
   manualButtonUrl?: string | null;
+  waButtonEnabled?: boolean | null;
+  waButtonText?: string | null;
 }
 
 export function ProductCard({
   product,
   promotions,
+  whatsappNumber,
 }: {
   product: Product;
   promotions?: ActivePromotion[];
+  whatsappNumber?: string | null;
 }) {
   const { addItem } = useCartStore();
   const price = Number(product.price.toString());
@@ -40,8 +44,10 @@ export function ProductCard({
 
   const showCart = product.cartEnabled !== false;
   const showManual = !!(product.manualButtonEnabled && product.manualButtonUrl);
+  const showWa = !!(product.waButtonEnabled && whatsappNumber);
   const cartLabel = (product.cartButtonText?.trim() || "BELI").toUpperCase();
   const manualLabel = (product.manualButtonText?.trim() || "Hubungi Kami").toUpperCase();
+  const waLabel = (product.waButtonText?.trim() || "Chat WhatsApp").toUpperCase();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -58,6 +64,12 @@ export function ProductCard({
   const handleManualClick = (e: React.MouseEvent) => {
     e.preventDefault();
     window.open(product.manualButtonUrl!, "_blank", "noopener,noreferrer");
+  };
+
+  const handleWaClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const text = encodeURIComponent(`Saya ingin tanya produk ${product.name}\n${window.location.origin}/toko/${product.slug}`);
+    window.open(`https://wa.me/${whatsappNumber}?text=${text}`, "_blank", "noopener,noreferrer");
   };
 
   const displayPrice = promoDiscount ? Math.round(promoDiscount.discountedPrice) : price;
@@ -132,10 +144,19 @@ export function ProductCard({
           </button>
         )}
 
-        {!showCart && !showManual && (
+        {!showCart && !showManual && !showWa && (
           <div className="py-2 text-xs text-center text-gray-400">
             {product.stock === 0 ? "Stok Habis" : "—"}
           </div>
+        )}
+
+        {showWa && product.stock > 0 && (
+          <button
+            onClick={handleWaClick}
+            className="w-full py-1.5 text-xs font-medium tracking-wide text-green-700 hover:text-white hover:bg-green-600 transition-colors border border-green-500/50 rounded"
+          >
+            {waLabel}
+          </button>
         )}
       </div>
     </div>

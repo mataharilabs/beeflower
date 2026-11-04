@@ -53,7 +53,7 @@ export default async function TokoPage({
   }
 
   const now = new Date();
-  const [products, categories, tokoPage, activePromos, productsWithTags] = await Promise.all([
+  const [products, categories, tokoPage, activePromos, productsWithTags, settings] = await Promise.all([
     prisma.product.findMany({
       where,
       orderBy:
@@ -74,6 +74,7 @@ export default async function TokoPage({
       where: { isActive: true },
       select: { tags: true },
     }),
+    prisma.siteSettings.findUnique({ where: { id: "singleton" } }).catch(() => null),
   ]);
 
   const allTags = [...new Set(productsWithTags.flatMap((p) => p.tags))].sort();
@@ -164,6 +165,7 @@ export default async function TokoPage({
                       comparePrice: product.comparePrice?.toString() ?? null,
                     }}
                     promotions={promotions}
+                    whatsappNumber={settings?.whatsapp ?? null}
                   />
                 ))}
               </div>
