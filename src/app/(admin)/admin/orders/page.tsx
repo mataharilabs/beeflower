@@ -73,7 +73,9 @@ export default async function OrdersPage({
     where.paymentMethod = payment as PaymentMethod;
   }
 
-  const [orders, filteredCount, statusCounts] = await Promise.all([
+  const STATUS_KEYS = ["PENDING", "PAYMENT_CONFIRMATION", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
+
+  const [orders, filteredCount, ...perStatusCounts] = await Promise.all([
     prisma.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -82,7 +84,7 @@ export default async function OrdersPage({
       include: { items: { select: { quantity: true, image: true, productName: true } } },
     }),
     prisma.order.count({ where }),
-    prisma.order.groupBy({ by: ["status"], _count: { _all: true } }),
+    ...STATUS_KEYS.map((s) => prisma.order.count({ where: { status: s } })),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
@@ -92,9 +94,9 @@ export default async function OrdersPage({
   const pageNumbers = getPageNumbers(safePage, totalPages);
 
   const countByStatus: Record<string, number> = Object.fromEntries(
-    statusCounts.map((s) => [s.status, s._count._all])
+    STATUS_KEYS.map((k, i) => [k, perStatusCounts[i]])
   );
-  const totalCount = statusCounts.reduce((sum, s) => sum + s._count._all, 0);
+  const totalCount = perStatusCounts.reduce((sum, c) => sum + c, 0);
 
   const buildHref = (overrides: Record<string, string | undefined>) => {
     const base = {
@@ -120,7 +122,7 @@ export default async function OrdersPage({
       </div>
 
       {/* Status tab bar */}
-      <div className="flex items-center border-b border-gray-100 mb-4 overflow-x-auto">
+      <div className="flex flex-wrap gap-2 mb-4">
         {STATUS_TABS.map((tab) => {
           const count = tab.value ? (countByStatus[tab.value] ?? 0) : totalCount;
           const isActive = status === tab.value;
@@ -128,15 +130,15 @@ export default async function OrdersPage({
             <Link
               key={tab.value}
               href={buildHref({ status: tab.value || undefined, page: undefined })}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full border transition-colors whitespace-nowrap ${
                 isActive
-                  ? "border-brand-gold text-brand-gold"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "border-brand-gold bg-brand-gold/10 text-brand-gold"
+                  : "border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300 bg-white"
               }`}
             >
               {tab.label}
               <span className={`text-xs px-1.5 py-0.5 rounded-full font-normal ${
-                isActive ? "bg-brand-gold/10 text-brand-gold" : "bg-gray-100 text-gray-500"
+                isActive ? "bg-brand-gold/20 text-brand-gold" : "bg-gray-100 text-gray-500"
               }`}>
                 {count}
               </span>
