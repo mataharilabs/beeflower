@@ -90,6 +90,7 @@ export interface FAQSectionProps extends BackgroundProps {
 
 export interface FeatureIconItem {
   icon: string;
+  iconName?: string;
   imageUrl?: string;
   title: string;
   description: string;

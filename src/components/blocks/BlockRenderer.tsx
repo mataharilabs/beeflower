@@ -3,6 +3,21 @@ import { prisma } from "@/lib/prisma";
 import { Block, PageDocument, HeroProps, TextBlockProps, ImageTextProps, CTABannerProps, ProductGridProps, FAQSectionProps, FeatureIconsProps, SpacerProps, ImageGridProps } from "@/types/pageBlocks";
 import { formatPrice } from "@/lib/utils";
 import { getBlockBgStyle, shouldShowOverlay, getOverlayStyle } from "@/lib/blockBackground";
+import {
+  Leaf, Droplets, Sun, Moon, Wind, Flame, Feather,
+  Heart, Star, Sparkles, Shield, CheckCircle, Award, Crown,
+  ThumbsUp, Smile, Users, Globe, Lock, Eye,
+  Package, Gift, ShoppingBag, Tag, Truck, RefreshCw, Clock, Zap,
+  Layers, Palette, Scissors, Camera, Coffee, Bell, Bookmark, Gem,
+} from "lucide-react";
+
+const FEATURE_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Leaf, Droplets, Sun, Moon, Wind, Flame, Feather,
+  Heart, Star, Sparkles, Shield, CheckCircle, Award, Crown,
+  ThumbsUp, Smile, Users, Globe, Lock, Eye,
+  Package, Gift, ShoppingBag, Tag, Truck, RefreshCw, Clock, Zap,
+  Layers, Palette, Scissors, Camera, Coffee, Bell, Bookmark, Gem,
+};
 
 export function BlockRenderer({ document }: { document: object }) {
   const doc = document as PageDocument;
@@ -298,6 +313,8 @@ function FeatureIconsBlock({ props }: { props: FeatureIconsProps }) {
               <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 {item.imageUrl ? (
                   <img src={item.imageUrl} alt={item.title} className="w-full h-full object-contain" />
+                ) : item.iconName && FEATURE_ICON_MAP[item.iconName] ? (
+                  (() => { const Icon = FEATURE_ICON_MAP[item.iconName!]; return <Icon className="w-10 h-10 text-brand-gold" />; })()
                 ) : (
                   <div className="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
                     <span className="text-brand-gold text-xl">✦</span>

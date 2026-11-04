@@ -20,7 +20,21 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   GripVertical, Trash2, Plus, ChevronDown, ChevronUp,
   Image as ImageIcon, AlignLeft, Grid, HelpCircle, Zap, LayoutGrid, Minus,
+  Leaf, Droplets, Sun, Moon, Wind, Flame, Feather,
+  Heart, Star, Sparkles, Shield, CheckCircle, Award, Crown,
+  ThumbsUp, Smile, Users, Globe, Lock, Eye,
+  Package, Gift, ShoppingBag, Tag, Truck, RefreshCw, Clock,
+  Layers, Palette, Scissors, Camera, Coffee, Bell, Bookmark, Gem,
 } from "lucide-react";
+import { FEATURE_ICON_LIST } from "@/lib/featureIcons";
+
+const FEATURE_ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Leaf, Droplets, Sun, Moon, Wind, Flame, Feather,
+  Heart, Star, Sparkles, Shield, CheckCircle, Award, Crown,
+  ThumbsUp, Smile, Users, Globe, Lock, Eye,
+  Package, Gift, ShoppingBag, Tag, Truck, RefreshCw, Clock, Zap,
+  Layers, Palette, Scissors, Camera, Coffee, Bell, Bookmark, Gem,
+};
 import { Block, BlockType, PageDocument, defaultProps, HeroProps, TextBlockProps, ImageTextProps, CTABannerProps, FAQSectionProps, FeatureIconsProps, SpacerProps, ProductGridProps, ImageGridProps } from "@/types/pageBlocks";
 import { ImageUploader } from "./ImageUploader";
 
@@ -589,38 +603,72 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-2">Item</label>
             <div className="space-y-3">
-              {(p.items ?? []).map((item: any, i: number) => (
-                <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2">
-                  <p className="text-xs font-medium text-gray-500">Icon / Gambar</p>
-                  <ImageUploader
-                    value={item.imageUrl ?? ""}
-                    onChange={(url) => {
-                      const items = [...(p.items ?? [])];
-                      items[i] = { ...items[i], imageUrl: url };
+              {(p.items ?? []).map((item: any, i: number) => {
+                const isIconMode = !item.imageUrl;
+                const updateItem = (patch: object) => {
+                  const items = [...(p.items ?? [])];
+                  items[i] = { ...items[i], ...patch };
+                  onUpdate({ items });
+                };
+                return (
+                  <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2">
+                    {/* Mode toggle */}
+                    <div className="flex rounded border border-gray-200 overflow-hidden text-xs">
+                      <button type="button"
+                        onClick={() => updateItem({ imageUrl: "", iconName: item.iconName || "Star" })}
+                        className={`flex-1 py-1.5 font-medium transition-colors ${isIconMode ? "bg-brand-gold text-white" : "text-gray-500 hover:bg-gray-50"}`}
+                      >
+                        Pilih Icon
+                      </button>
+                      <button type="button"
+                        onClick={() => updateItem({ iconName: "" })}
+                        className={`flex-1 py-1.5 font-medium transition-colors ${!isIconMode ? "bg-brand-gold text-white" : "text-gray-500 hover:bg-gray-50"}`}
+                      >
+                        Upload Gambar
+                      </button>
+                    </div>
+
+                    {/* Icon picker grid */}
+                    {isIconMode ? (
+                      <div className="grid grid-cols-6 gap-1 p-1 bg-gray-50 rounded">
+                        {FEATURE_ICON_LIST.map(({ name, label }) => {
+                          const Icon = FEATURE_ICON_COMPONENTS[name];
+                          if (!Icon) return null;
+                          return (
+                            <button key={name} type="button" title={label}
+                              onClick={() => updateItem({ iconName: name })}
+                              className={`flex items-center justify-center p-1.5 rounded transition-colors ${
+                                item.iconName === name
+                                  ? "bg-brand-gold text-white"
+                                  : "text-gray-500 hover:bg-gray-200"
+                              }`}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <ImageUploader
+                        value={item.imageUrl ?? ""}
+                        onChange={(url) => updateItem({ imageUrl: url })}
+                        folder="beeflower/icons"
+                      />
+                    )}
+
+                    <input value={item.title} placeholder="Judul"
+                      onChange={(e) => updateItem({ title: e.target.value })}
+                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:border-brand-gold" />
+                    <textarea value={item.description} placeholder="Deskripsi" rows={2}
+                      onChange={(e) => updateItem({ description: e.target.value })}
+                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:border-brand-gold resize-none" />
+                    <button onClick={() => {
+                      const items = (p.items ?? []).filter((_: any, j: number) => j !== i);
                       onUpdate({ items });
-                    }}
-                    folder="beeflower/icons"
-                  />
-                  <input value={item.title} placeholder="Judul"
-                    onChange={(e) => {
-                      const items = [...(p.items ?? [])];
-                      items[i] = { ...items[i], title: e.target.value };
-                      onUpdate({ items });
-                    }}
-                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:border-brand-gold" />
-                  <textarea value={item.description} placeholder="Deskripsi" rows={2}
-                    onChange={(e) => {
-                      const items = [...(p.items ?? [])];
-                      items[i] = { ...items[i], description: e.target.value };
-                      onUpdate({ items });
-                    }}
-                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:border-brand-gold resize-none" />
-                  <button onClick={() => {
-                    const items = (p.items ?? []).filter((_: any, j: number) => j !== i);
-                    onUpdate({ items });
-                  }} className="text-xs text-red-400 hover:text-red-600">Hapus</button>
-                </div>
-              ))}
+                    }} className="text-xs text-red-400 hover:text-red-600">Hapus</button>
+                  </div>
+                );
+              })}
             </div>
             <button onClick={() => onUpdate({ items: [...(p.items ?? []), { icon: "Star", imageUrl: "", title: "", description: "" }] })}
               className="mt-2 flex items-center gap-1 text-xs text-brand-gold hover:text-brand-brown">
