@@ -56,6 +56,7 @@ export function ProductForm({ product, categories, whatsappNumber }: Props) {
   const router = useRouter();
   const isEdit = !!product;
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const [form, setForm] = useState({
     name: product?.name ?? "",
@@ -167,8 +168,14 @@ export function ProductForm({ product, categories, whatsappNumber }: Props) {
         alert(data.error || "Gagal menyimpan produk");
         return;
       }
-      router.push("/admin/products");
-      router.refresh();
+      if (isEdit) {
+        router.refresh();
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3500);
+      } else {
+        router.push("/admin/products");
+        router.refresh();
+      }
     } catch {
       alert("Gagal menyimpan produk");
     } finally {
@@ -541,7 +548,7 @@ export function ProductForm({ product, categories, whatsappNumber }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={saving}
@@ -557,6 +564,14 @@ export function ProductForm({ product, categories, whatsappNumber }: Props) {
         >
           Batal
         </button>
+        {saved && (
+          <span className="flex items-center gap-1.5 text-sm font-medium text-green-600 animate-pulse">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Produk berhasil diperbarui
+          </span>
+        )}
       </div>
     </form>
   );
