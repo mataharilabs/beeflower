@@ -115,6 +115,7 @@ const SYSTEM_PAGE_DEFAULTS: Record<
             headline: "Bangun Bisnis Bersama Bee & Flower",
             subheadline:
               "Produk yang telah dipercaya pelanggan, didukung sistem pemesanan yang mudah dan materi promosi yang siap digunakan.",
+            subSubheadline: "Bergabunglah Bersama Kami",
             buttonText: "GABUNG MENJADI RESELLER",
             buttonLink:
               "https://wa.me/6285175273181?text=Halo,%20saya%20ingin%20menjadi%20reseller%20Bee%20%26%20Flower",

@@ -66,9 +66,11 @@ export default async function ResellerPage() {
         )}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="max-w-2xl">
-            <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-4">
-              Bergabunglah Bersama Kami
-            </p>
+            {heroProps?.subSubheadline && (
+              <p className="text-brand-gold font-semibold text-sm tracking-widest uppercase mb-4" style={heroProps.subSubheadlineColor ? { color: heroProps.subSubheadlineColor } : {}}>
+                {heroProps.subSubheadline}
+              </p>
+            )}
             <h1 className="text-3xl lg:text-5xl font-bold text-white leading-tight mb-4" style={heroProps?.headlineColor ? { color: heroProps.headlineColor } : {}}>
               {heroHeadline}
             </h1>
