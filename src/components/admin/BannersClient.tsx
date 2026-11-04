@@ -12,6 +12,7 @@ interface Banner {
   subheadline: string | null;
   buttonText: string | null;
   buttonLink: string | null;
+  textAlign: string | null;
   order: number;
   isActive: boolean;
 }
@@ -26,6 +27,7 @@ const emptyForm: FormState = {
   subheadline: "",
   buttonText: "",
   buttonLink: "",
+  textAlign: "left",
   isActive: true,
 };
 
@@ -49,6 +51,7 @@ export function BannersClient({ initialBanners }: { initialBanners: Banner[] }) 
       subheadline: banner.subheadline ?? "",
       buttonText: banner.buttonText ?? "",
       buttonLink: banner.buttonLink ?? "",
+      textAlign: banner.textAlign ?? "left",
       isActive: banner.isActive,
     });
     setEditing(banner.id);
@@ -151,6 +154,32 @@ export function BannersClient({ initialBanners }: { initialBanners: Banner[] }) 
               placeholder="Deskripsi singkat"
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Posisi Teks
+            </label>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+              {([
+                { value: "left", label: "Kiri" },
+                { value: "center", label: "Tengah" },
+                { value: "right", label: "Kanan" },
+              ] as const).map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setForm({ ...form, textAlign: value })}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                    (form.textAlign ?? "left") === value
+                      ? "bg-brand-gold text-white"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -14,10 +14,82 @@ interface Banner {
   subheadline: string | null;
   buttonText: string | null;
   buttonLink: string | null;
+  textAlign: string | null;
 }
 
 interface HeroBannerSliderProps {
   banners: Banner[];
+}
+
+function BannerSlide({ banner }: { banner: Banner }) {
+  const align = banner.textAlign ?? "left";
+
+  const gradientClass =
+    align === "right"
+      ? "bg-gradient-to-l from-white/80 via-white/50 to-transparent"
+      : align === "center"
+      ? "bg-gradient-to-b from-white/60 via-white/40 to-transparent"
+      : "bg-gradient-to-r from-white/80 via-white/50 to-transparent";
+
+  const contentJustify =
+    align === "right" ? "justify-end" : align === "center" ? "justify-center" : "justify-start";
+
+  const textAlignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
+
+  const buttonsJustify =
+    align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start";
+
+  return (
+    <div className="relative flex-none w-full min-h-[520px] lg:min-h-[620px]">
+      {/* Background image */}
+      <div className="absolute inset-0">
+        {isExternalUrl(banner.image) ? (
+          <Image
+            src={banner.image}
+            alt={banner.headline || "Bee & Flower Brand"}
+            fill
+            className="object-cover"
+            priority
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-brand-cream via-brand-beige/40 to-brand-cream" />
+        )}
+        <div className={`absolute inset-0 ${gradientClass}`} />
+      </div>
+
+      {/* Content */}
+      <div className={`relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full min-h-[520px] lg:min-h-[620px] flex items-center ${contentJustify}`}>
+        <div className={`max-w-xl py-16 ${textAlignClass}`}>
+          {banner.headline && (
+            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-brand-brown leading-tight mb-4">
+              {banner.headline}
+            </h1>
+          )}
+          {banner.subheadline && (
+            <p className="text-base lg:text-lg text-brand-brown/70 leading-relaxed mb-8 max-w-sm">
+              {banner.subheadline}
+            </p>
+          )}
+          <div className={`flex items-center gap-3 flex-wrap ${buttonsJustify}`}>
+            {banner.buttonText && banner.buttonLink && (
+              <Link
+                href={banner.buttonLink}
+                className="inline-flex items-center px-6 py-3 bg-brand-gold text-white font-semibold text-sm rounded tracking-wide hover:bg-brand-brown transition-colors"
+              >
+                {banner.buttonText}
+              </Link>
+            )}
+            <Link
+              href="/toko"
+              className="inline-flex items-center px-6 py-3 border-2 border-brand-brown text-brand-brown font-semibold text-sm rounded tracking-wide hover:bg-brand-brown hover:text-white transition-colors"
+            >
+              JELAJAHI AROMA
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function HeroBannerSlider({ banners }: HeroBannerSliderProps) {
@@ -37,55 +109,7 @@ export function HeroBannerSlider({ banners }: HeroBannerSliderProps) {
       <div ref={emblaRef} className="overflow-hidden">
         <div className="flex">
           {banners.map((banner) => (
-            <div key={banner.id} className="relative flex-none w-full min-h-[520px] lg:min-h-[620px]">
-              {/* Background image */}
-              <div className="absolute inset-0">
-                {isExternalUrl(banner.image) ? (
-                  <Image
-                    src={banner.image}
-                    alt={banner.headline || "Bee & Flower Brand"}
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-brand-cream via-brand-beige/40 to-brand-cream" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/50 to-transparent" />
-              </div>
-
-              {/* Content */}
-              <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full min-h-[520px] lg:min-h-[620px] flex items-center">
-                <div className="max-w-xl py-16">
-                  {banner.headline && (
-                    <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-brand-brown leading-tight mb-4">
-                      {banner.headline}
-                    </h1>
-                  )}
-                  {banner.subheadline && (
-                    <p className="text-base lg:text-lg text-brand-brown/70 leading-relaxed mb-8 max-w-sm">
-                      {banner.subheadline}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-3 flex-wrap">
-                    {banner.buttonText && banner.buttonLink && (
-                      <Link
-                        href={banner.buttonLink}
-                        className="inline-flex items-center px-6 py-3 bg-brand-gold text-white font-semibold text-sm rounded tracking-wide hover:bg-brand-brown transition-colors"
-                      >
-                        {banner.buttonText}
-                      </Link>
-                    )}
-                    <Link
-                      href="/toko"
-                      className="inline-flex items-center px-6 py-3 border-2 border-brand-brown text-brand-brown font-semibold text-sm rounded tracking-wide hover:bg-brand-brown hover:text-white transition-colors"
-                    >
-                      JELAJAHI AROMA
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <BannerSlide key={banner.id} banner={banner} />
           ))}
         </div>
       </div>

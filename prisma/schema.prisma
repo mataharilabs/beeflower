@@ -382,6 +382,7 @@ model Banner {
   subheadline String?
   buttonText  String?
   buttonLink  String?
+  textAlign   String?  @default("left") @map("text_align")
   order       Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
