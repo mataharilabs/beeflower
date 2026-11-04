@@ -58,24 +58,34 @@ export default async function OrdersPage({
 
   const where: Prisma.OrderWhereInput = {};
 
+  // Build raw SQL conditions in parallel — prisma.order.count() with an enum
+  // value in WHERE fails on Neon HTTP adapter (P2010 InvalidArg bug, Prisma 6.x)
+  const rawConditions: Prisma.Sql[] = [];
+
   if (trimmedSearch) {
+    const p = `%${trimmedSearch}%`;
     where.OR = [
       { customerName: { contains: trimmedSearch, mode: "insensitive" } },
       { orderNumber:  { contains: trimmedSearch, mode: "insensitive" } },
     ];
+    rawConditions.push(Prisma.sql`("customerName" ILIKE ${p} OR "orderNumber" ILIKE ${p})`);
   }
 
   if (status && Object.values(OrderStatus).includes(status as OrderStatus)) {
     where.status = status as OrderStatus;
+    rawConditions.push(Prisma.sql`status::text = ${status}`);
   }
 
   if (payment && Object.values(PaymentMethod).includes(payment as PaymentMethod)) {
     where.paymentMethod = payment as PaymentMethod;
+    rawConditions.push(Prisma.sql`"paymentMethod"::text = ${payment}`);
   }
 
-  // Use $queryRaw for status counts — prisma.order.count() with enum where
-  // fails on Neon HTTP adapter (P2010 InvalidArg bug in Prisma 6.x)
-  const [orders, filteredCount, statusCountRows] = await Promise.all([
+  const rawWhere = rawConditions.length > 0
+    ? Prisma.sql`WHERE ${Prisma.join(rawConditions, " AND ")}`
+    : Prisma.empty;
+
+  const [orders, [filteredCountRow], statusCountRows] = await Promise.all([
     prisma.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -83,11 +93,13 @@ export default async function OrdersPage({
       take: PAGE_SIZE,
       include: { items: { select: { quantity: true, image: true, productName: true } } },
     }),
-    prisma.order.count({ where }),
+    prisma.$queryRaw<[{ cnt: bigint }]>`SELECT COUNT(*)::bigint AS cnt FROM "orders" ${rawWhere}`,
     prisma.$queryRaw<Array<{ status: string; cnt: bigint }>>`
       SELECT status::text, COUNT(*)::bigint AS cnt FROM "orders" GROUP BY status
     `,
   ]);
+
+  const filteredCount = Number(filteredCountRow.cnt);
 
   const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
   const safePage = Math.min(pageNum, totalPages);
