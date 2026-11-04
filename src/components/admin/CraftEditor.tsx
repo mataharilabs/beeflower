@@ -444,11 +444,32 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
         <>
           {field("headline", "Judul")}
           {field("subheadline", "Sub Judul", "textarea")}
+          {field("subSubheadline", "Sub Sub Judul", "textarea")}
           {field("buttonText", "Teks Tombol")}
           {field("buttonLink", "Link Tombol", "url")}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Posisi Teks</label>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+              {([
+                { value: "left", label: "Kiri" },
+                { value: "center", label: "Tengah" },
+                { value: "right", label: "Kanan" },
+              ] as const).map(({ value, label }) => (
+                <button key={value} type="button"
+                  onClick={() => onUpdate({ textAlign: value })}
+                  className={`flex-1 py-1.5 text-xs font-medium transition-colors ${
+                    (p.textAlign ?? "center") === value ? "bg-brand-gold text-white" : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <TextColorSection props={p} onUpdate={onUpdate} fields={[
             { key: "headlineColor", label: "Warna Judul" },
             { key: "subheadlineColor", label: "Warna Sub Judul" },
+            { key: "subSubheadlineColor", label: "Warna Sub Sub Judul" },
           ]} />
           <ButtonColorSection props={p} onUpdate={onUpdate} />
           <BackgroundSection props={p} onUpdate={onUpdate} />

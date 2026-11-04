@@ -70,6 +70,10 @@ function BlockOverlay({ props }: { props: any }) {
 }
 
 function HeroBlock({ props }: { props: HeroProps }) {
+  const align = props.textAlign ?? "center";
+  const textAlignClass = align === "left" ? "text-left" : align === "right" ? "text-right" : "text-center";
+  const itemsClass = align === "left" ? "items-start" : align === "right" ? "items-end" : "items-center";
+  const maxWClass = align === "center" ? "max-w-2xl mx-auto" : "max-w-5xl mx-auto";
   const btnStyle = {
     ...(props.buttonBgColor ? { backgroundColor: props.buttonBgColor } : {}),
     ...(props.buttonTextColor ? { color: props.buttonTextColor } : {}),
@@ -80,9 +84,14 @@ function HeroBlock({ props }: { props: HeroProps }) {
       style={getBlockBgStyle(props)}
     >
       <BlockOverlay props={props} />
-      <div className="relative z-10 text-center px-4 max-w-2xl mx-auto">
+      <div className={`relative z-10 ${maxWClass} px-4 flex flex-col ${itemsClass} ${textAlignClass}`}>
         <h1 className="text-4xl md:text-5xl font-bold mb-4" style={props.headlineColor ? { color: props.headlineColor } : {}}>{props.headline}</h1>
-        {props.subheadline && <p className="text-lg text-white/90 mb-8" style={props.subheadlineColor ? { color: props.subheadlineColor } : {}}>{props.subheadline}</p>}
+        {props.subheadline && (
+          <p className="text-lg text-white/90 mb-4" style={props.subheadlineColor ? { color: props.subheadlineColor } : {}}>{props.subheadline}</p>
+        )}
+        {props.subSubheadline && (
+          <p className="text-sm text-white/70 mb-8" style={props.subSubheadlineColor ? { color: props.subSubheadlineColor } : {}}>{props.subSubheadline}</p>
+        )}
         {props.buttonText && (
           <Link href={props.buttonLink || "/"} style={btnStyle} className="inline-block px-8 py-3 bg-brand-gold text-white rounded-full font-semibold hover:opacity-90 transition-opacity">
             {props.buttonText}

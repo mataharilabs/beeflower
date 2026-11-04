@@ -23,11 +23,14 @@ export interface BackgroundProps {
 export interface HeroProps extends BackgroundProps {
   headline: string;
   subheadline: string;
+  subSubheadline?: string;
   buttonText: string;
   buttonLink: string;
+  textAlign?: "left" | "center" | "right";
   overlay?: boolean; // backward compat
   headlineColor?: string;
   subheadlineColor?: string;
+  subSubheadlineColor?: string;
   buttonBgColor?: string;
   buttonTextColor?: string;
 }
