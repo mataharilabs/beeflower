@@ -172,6 +172,8 @@ model Product {
   manualButtonEnabled Boolean @default(false)
   manualButtonText    String?
   manualButtonUrl     String?
+  waButtonEnabled     Boolean @default(false) @map("wa_button_enabled")
+  waButtonText        String? @map("wa_button_text")
 
   variantsEnabled         Boolean @default(false)
   variantWeightPerVariant Boolean @default(false)

@@ -33,6 +33,8 @@ interface Product {
   manualButtonEnabled: boolean;
   manualButtonText: string | null;
   manualButtonUrl: string | null;
+  waButtonEnabled?: boolean;
+  waButtonText?: string | null;
   variantsEnabled?: boolean;
   variantWeightPerVariant?: boolean;
   variantGroups?: unknown;
@@ -43,6 +45,7 @@ interface Props {
   product: Product;
   relatedProducts: Product[];
   promotions?: ActivePromotion[];
+  whatsappNumber?: string | null;
 }
 
 function CountdownTimer({ endAt }: { endAt: string }) {
@@ -74,7 +77,7 @@ function CountdownTimer({ endAt }: { endAt: string }) {
   );
 }
 
-export function ProductDetailClient({ product, relatedProducts, promotions = [] }: Props) {
+export function ProductDetailClient({ product, relatedProducts, promotions = [], whatsappNumber }: Props) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
@@ -411,6 +414,16 @@ export function ProductDetailClient({ product, relatedProducts, promotions = [] 
                   className="flex items-center justify-center gap-2 w-full px-8 py-4 bg-brand-brown text-white font-semibold rounded-lg tracking-wide hover:bg-black/80 transition-colors"
                 >
                   {(product.manualButtonText?.trim() || "HUBUNGI KAMI").toUpperCase()}
+                </a>
+              )}
+              {product.waButtonEnabled && whatsappNumber && (
+                <a
+                  href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Saya ingin tanya produk ${product.name}\n${typeof window !== "undefined" ? window.location.href : `https://www.beeflowerbrand.co.id/toko/${product.slug}`}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full px-8 py-4 bg-green-600 text-white font-semibold rounded-lg tracking-wide hover:bg-green-700 transition-colors"
+                >
+                  {(product.waButtonText?.trim() || "CHAT VIA WHATSAPP").toUpperCase()}
                 </a>
               )}
             </div>

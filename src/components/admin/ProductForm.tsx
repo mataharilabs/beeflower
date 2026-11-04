@@ -37,6 +37,8 @@ interface Product {
   manualButtonEnabled: boolean;
   manualButtonText: string | null;
   manualButtonUrl: string | null;
+  waButtonEnabled?: boolean;
+  waButtonText?: string | null;
   variantsEnabled?: boolean;
   variantWeightPerVariant?: boolean;
   variantGroups?: unknown;
@@ -47,9 +49,10 @@ interface Product {
 interface Props {
   product?: Product;
   categories: Category[];
+  whatsappNumber?: string | null;
 }
 
-export function ProductForm({ product, categories }: Props) {
+export function ProductForm({ product, categories, whatsappNumber }: Props) {
   const router = useRouter();
   const isEdit = !!product;
   const [saving, setSaving] = useState(false);
@@ -77,6 +80,8 @@ export function ProductForm({ product, categories }: Props) {
     manualButtonEnabled: product?.manualButtonEnabled ?? false,
     manualButtonText: product?.manualButtonText ?? "",
     manualButtonUrl: product?.manualButtonUrl ?? "",
+    waButtonEnabled: product?.waButtonEnabled ?? false,
+    waButtonText: product?.waButtonText ?? "",
     variantsEnabled: product?.variantsEnabled ?? false,
     variantWeightPerVariant: product?.variantWeightPerVariant ?? false,
     variantGroups: (product?.variantGroups ?? []) as VariantGroup[],
@@ -456,6 +461,47 @@ export function ProductForm({ product, categories }: Props) {
                   placeholder="https://wa.me/628xxx atau URL lain"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
                 />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* WA button toggle */}
+        <div className={`border rounded-xl p-4 transition-colors ${form.waButtonEnabled ? "border-green-500 bg-green-50/50" : "border-gray-200"}`}>
+          <label className="flex items-center justify-between gap-3 cursor-pointer">
+            <div>
+              <p className="font-medium text-sm text-gray-900">Tombol WA (WhatsApp)</p>
+              <p className="text-xs text-gray-400 mt-0.5">Tombol chat WhatsApp dengan pre-text otomatis nama & link produk</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, waButtonEnabled: !f.waButtonEnabled }))}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${form.waButtonEnabled ? "bg-green-500" : "bg-gray-200"}`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${form.waButtonEnabled ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </label>
+          {form.waButtonEnabled && (
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Teks Tombol</label>
+                <input
+                  value={form.waButtonText}
+                  onChange={(e) => setForm({ ...form, waButtonText: e.target.value })}
+                  placeholder="Chat via WhatsApp"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">URL Tujuan <span className="text-gray-400 font-normal">(otomatis, tidak bisa diedit)</span></label>
+                <div className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs text-gray-400 bg-gray-50 font-mono break-all select-all">
+                  {whatsappNumber
+                    ? `https://wa.me/${whatsappNumber}?text=Saya+ingin+tanya+produk+${encodeURIComponent(form.name || "[nama produk]")}+%0Ahttps://www.beeflowerbrand.co.id/toko/${form.slug || "[slug-produk]"}`
+                    : "Nomor WhatsApp belum diatur di /admin/settings"}
+                </div>
+                {!whatsappNumber && (
+                  <p className="text-xs text-orange-500 mt-1">Atur nomor WhatsApp di <strong>Admin → Pengaturan → Informasi Kontak</strong> terlebih dahulu.</p>
+                )}
               </div>
             </div>
           )}

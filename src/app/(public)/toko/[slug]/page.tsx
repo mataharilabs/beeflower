@@ -42,7 +42,7 @@ export default async function ProductDetailPage({
   const { slug } = await params;
 
   const now = new Date();
-  const [product, activePromos] = await Promise.all([
+  const [product, activePromos, settings] = await Promise.all([
     prisma.product.findUnique({
       where: { slug, isActive: true },
       include: { category: true },
@@ -50,6 +50,7 @@ export default async function ProductDetailPage({
     prisma.promotion.findMany({
       where: { isActive: true, startAt: { lte: now }, endAt: { gte: now } },
     }).catch(() => []),
+    prisma.siteSettings.findUnique({ where: { id: "singleton" } }).catch(() => null),
   ]);
 
   if (!product) notFound();
@@ -102,6 +103,7 @@ export default async function ProductDetailPage({
       product={product}
       relatedProducts={relatedProducts}
       promotions={promotions}
+      whatsappNumber={settings?.whatsapp ?? null}
     />
   );
 }
