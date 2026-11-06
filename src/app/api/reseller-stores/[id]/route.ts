@@ -30,6 +30,8 @@ export async function PATCH(
       city: body.city,
       isActive: body.isActive,
       order: body.order,
+      latitude: body.latitude ?? null,
+      longitude: body.longitude ?? null,
     },
   });
   return NextResponse.json(store);

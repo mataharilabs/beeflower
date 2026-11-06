@@ -576,6 +576,8 @@ model ResellerStore {
   city      String
   isActive  Boolean  @default(true)
   order     Int      @default(0)
+  latitude  Float?
+  longitude Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

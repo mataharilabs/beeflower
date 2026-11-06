@@ -1,7 +1,20 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, MapPin, Phone, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Search, MapPin, Phone, ChevronDown, ChevronUp, MessageCircle, List, Map } from "lucide-react";
+
+const ResellerMap = dynamic(
+  () => import("./ResellerMap").then((m) => ({ default: m.ResellerMap })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[520px] flex items-center justify-center bg-white rounded-2xl border border-gray-200 shadow-sm">
+        <p className="text-gray-400 text-sm">Memuat peta...</p>
+      </div>
+    ),
+  }
+);
 
 type Store = {
   id: string;
@@ -16,6 +29,8 @@ type Store = {
   tokopedia: string | null;
   province: string;
   city: string;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 function getWhatsAppLink(store: Store) {
@@ -52,10 +67,10 @@ function StoreCard({ store }: { store: Store }) {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <h3 className="font-bold text-brand-brown truncate">{store.name}</h3>
-            <span title="Reseller Terverifikasi">
-              <svg className="w-4 h-4 text-green-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <div className="flex items-start gap-1.5">
+            <h3 className="font-bold text-brand-brown leading-snug">{store.name}</h3>
+            <span title="Reseller Terverifikasi" className="flex-shrink-0 mt-0.5">
+              <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
             </span>
@@ -180,6 +195,7 @@ function groupStores(stores: Store[]): ProvinceGroup[] {
 }
 
 export function ResellerSearch({ stores }: { stores: Store[] }) {
+  const [activeTab, setActiveTab] = useState<"list" | "map">("list");
   const [query, setQuery] = useState("");
   const [openProvinces, setOpenProvinces] = useState<Set<string>>(new Set());
   const [openCities, setOpenCities] = useState<Set<string>>(new Set());
@@ -196,11 +212,8 @@ export function ResellerSearch({ stores }: { stores: Store[] }) {
     return groupStores(matchingStores);
   }, [stores, query]);
 
-  // Auto-expand when searching
   const expandedProvinces = useMemo(() => {
-    if (query.trim()) {
-      return new Set(filtered.map((g) => g.province));
-    }
+    if (query.trim()) return new Set(filtered.map((g) => g.province));
     return openProvinces;
   }, [query, filtered, openProvinces]);
 
@@ -233,113 +246,179 @@ export function ResellerSearch({ stores }: { stores: Store[] }) {
     });
   }
 
+  const pinStores = stores.filter(
+    (s): s is Store & { latitude: number; longitude: number } =>
+      s.latitude !== null && s.longitude !== null
+  );
+
+  const noPinCount = stores.length - pinStores.length;
+
   return (
     <div>
-      {/* Search */}
-      <div className="relative max-w-xl mx-auto mb-8">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari provinsi, kota, atau nama toko..."
-          className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-2xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 bg-white"
-        />
-        {query && (
-          <button
-            onClick={() => setQuery("")}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            ×
-          </button>
-        )}
+      {/* Tab bar */}
+      <div className="flex items-center gap-2 mb-6">
+        <button
+          onClick={() => setActiveTab("list")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border transition-colors ${
+            activeTab === "list"
+              ? "bg-brand-brown text-white border-brand-brown"
+              : "bg-white text-gray-600 border-gray-200 hover:border-brand-brown/40"
+          }`}
+        >
+          <List className="w-4 h-4" />
+          Daftar Reseller
+          <span className={`text-xs px-1.5 py-0.5 rounded-full font-normal ${activeTab === "list" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+            {stores.length}
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab("map")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border transition-colors ${
+            activeTab === "map"
+              ? "bg-brand-brown text-white border-brand-brown"
+              : "bg-white text-gray-600 border-gray-200 hover:border-brand-brown/40"
+          }`}
+        >
+          <Map className="w-4 h-4" />
+          Lihat Map Reseller
+          <span className={`text-xs px-1.5 py-0.5 rounded-full font-normal ${activeTab === "map" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+            {pinStores.length}
+          </span>
+        </button>
       </div>
 
-      {/* Count */}
-      <p className="text-sm text-gray-500 mb-4">
-        {query
-          ? `${stores.filter((s) => s.province.toLowerCase().includes(query.toLowerCase()) || s.city.toLowerCase().includes(query.toLowerCase()) || s.name.toLowerCase().includes(query.toLowerCase())).length} toko ditemukan`
-          : `${stores.length} toko reseller di ${filtered.length} provinsi`}
-      </p>
-
-      {/* Accordion */}
-      {filtered.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p>Tidak ada toko yang cocok dengan pencarian &quot;{query}&quot;</p>
+      {/* ── MAP TAB ── */}
+      {activeTab === "map" && (
+        <div>
+          {pinStores.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+              <Map className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+              <p className="text-gray-500 font-medium">Belum ada toko dengan data koordinat</p>
+              <p className="text-gray-400 text-sm mt-1">Admin perlu mengisi koordinat (latitude &amp; longitude) di setiap toko.</p>
+            </div>
+          ) : (
+            <>
+              <ResellerMap stores={pinStores} />
+              {noPinCount > 0 && (
+                <p className="text-xs text-gray-400 text-center mt-3">
+                  {noPinCount} toko tidak tampil di peta karena koordinat belum diisi
+                </p>
+              )}
+            </>
+          )}
         </div>
       )}
 
-      <div className="space-y-3">
-        {filtered.map((group) => {
-          const isProvinceOpen = expandedProvinces.has(group.province);
-          return (
-            <div key={group.province} className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
-              {/* Province header */}
+      {/* ── LIST TAB ── */}
+      {activeTab === "list" && (
+        <>
+          {/* Search */}
+          <div className="relative max-w-xl mx-auto mb-6">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cari provinsi, kota, atau nama toko..."
+              className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-2xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 bg-white"
+            />
+            {query && (
               <button
-                onClick={() => toggleProvince(group.province)}
-                className="w-full flex items-center justify-between px-5 py-4 bg-brand-brown text-white hover:bg-brand-brown/90 transition-colors text-left"
+                onClick={() => setQuery("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <div className="flex items-center gap-3">
-                  <MapPin className="w-4 h-4 text-brand-gold flex-shrink-0" />
-                  <span className="font-bold tracking-wide uppercase text-sm">{group.province}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs bg-brand-gold/20 text-brand-gold px-2 py-0.5 rounded-full font-medium">
-                    {group.totalStores} toko
-                  </span>
-                  {isProvinceOpen ? (
-                    <ChevronUp className="w-4 h-4 text-brand-beige" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-brand-beige" />
-                  )}
-                </div>
+                ×
               </button>
+            )}
+          </div>
 
-              {/* Cities */}
-              {isProvinceOpen && (
-                <div className="bg-gray-50">
-                  {group.cities.map((cityGroup) => {
-                    const cityKey = `${group.province}::${cityGroup.city}`;
-                    const isCityOpen = expandedCities.has(cityKey);
-                    return (
-                      <div key={cityKey} className="border-t border-gray-100">
-                        {/* City header */}
-                        <button
-                          onClick={() => toggleCity(cityKey)}
-                          className="w-full flex items-center justify-between px-5 py-3.5 bg-brand-gold/5 hover:bg-brand-gold/10 transition-colors text-left"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-brand-gold flex-shrink-0" />
-                            <span className="font-semibold text-brand-brown text-sm">{cityGroup.city}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-brand-beige">{cityGroup.stores.length} toko</span>
-                            {isCityOpen ? (
-                              <ChevronUp className="w-3.5 h-3.5 text-brand-beige" />
-                            ) : (
-                              <ChevronDown className="w-3.5 h-3.5 text-brand-beige" />
+          {/* Count */}
+          <p className="text-sm text-gray-500 mb-4">
+            {query
+              ? `${stores.filter((s) => s.province.toLowerCase().includes(query.toLowerCase()) || s.city.toLowerCase().includes(query.toLowerCase()) || s.name.toLowerCase().includes(query.toLowerCase())).length} toko ditemukan`
+              : `${stores.length} toko reseller di ${filtered.length} provinsi`}
+          </p>
+
+          {/* Accordion */}
+          {filtered.length === 0 && (
+            <div className="text-center py-16 text-gray-400">
+              <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p>Tidak ada toko yang cocok dengan pencarian &quot;{query}&quot;</p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {filtered.map((group) => {
+              const isProvinceOpen = expandedProvinces.has(group.province);
+              return (
+                <div key={group.province} className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+                  {/* Province header */}
+                  <button
+                    onClick={() => toggleProvince(group.province)}
+                    className="w-full flex items-center justify-between px-5 py-4 bg-brand-brown text-white hover:bg-brand-brown/90 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-4 h-4 text-brand-gold flex-shrink-0" />
+                      <span className="font-bold tracking-wide uppercase text-sm">{group.province}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-brand-gold/20 text-brand-gold px-2 py-0.5 rounded-full font-medium">
+                        {group.totalStores} toko
+                      </span>
+                      {isProvinceOpen ? (
+                        <ChevronUp className="w-4 h-4 text-brand-beige" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-brand-beige" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Cities */}
+                  {isProvinceOpen && (
+                    <div className="bg-gray-50">
+                      {group.cities.map((cityGroup) => {
+                        const cityKey = `${group.province}::${cityGroup.city}`;
+                        const isCityOpen = expandedCities.has(cityKey);
+                        return (
+                          <div key={cityKey} className="border-t border-gray-100">
+                            {/* City header */}
+                            <button
+                              onClick={() => toggleCity(cityKey)}
+                              className="w-full flex items-center justify-between px-5 py-3.5 bg-brand-gold/5 hover:bg-brand-gold/10 transition-colors text-left"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-brand-gold flex-shrink-0" />
+                                <span className="font-semibold text-brand-brown text-sm">{cityGroup.city}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-brand-beige">{cityGroup.stores.length} toko</span>
+                                {isCityOpen ? (
+                                  <ChevronUp className="w-3.5 h-3.5 text-brand-beige" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5 text-brand-beige" />
+                                )}
+                              </div>
+                            </button>
+
+                            {/* Stores grid */}
+                            {isCityOpen && (
+                              <div className="px-4 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {cityGroup.stores.map((store) => (
+                                  <StoreCard key={store.id} store={store} />
+                                ))}
+                              </div>
                             )}
                           </div>
-                        </button>
-
-                        {/* Stores grid */}
-                        {isCityOpen && (
-                          <div className="px-4 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {cityGroup.stores.map((store) => (
-                              <StoreCard key={store.id} store={store} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

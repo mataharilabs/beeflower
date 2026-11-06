@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Pencil, Trash2, Store, MapPin, Phone } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Store, MapPin, Phone, LocateFixed } from "lucide-react";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { PROVINCES, getCitiesForProvince } from "@/lib/indonesia-regions";
 
@@ -20,6 +20,8 @@ type ResellerStore = {
   city: string;
   isActive: boolean;
   order: number;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 const EMPTY_FORM: Omit<ResellerStore, "id"> = {
@@ -36,6 +38,8 @@ const EMPTY_FORM: Omit<ResellerStore, "id"> = {
   city: "",
   isActive: true,
   order: 0,
+  latitude: null,
+  longitude: null,
 };
 
 export function ResellerStoresClient() {
@@ -47,6 +51,8 @@ export function ResellerStoresClient() {
   const [form, setForm] = useState<Omit<ResellerStore, "id">>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [mapQuery, setMapQuery] = useState("");
+  const [geocodingLoading, setGeocodingLoading] = useState(false);
 
   async function loadStores() {
     setLoading(true);
@@ -58,9 +64,19 @@ export function ResellerStoresClient() {
 
   useEffect(() => { loadStores(); }, []);
 
+  // Debounce address/city/province changes → update map preview
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const parts = [form.address, form.city, form.province, "Indonesia"].filter(Boolean);
+      setMapQuery(parts.join(", "));
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [form.address, form.city, form.province]);
+
   function openAdd() {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setMapQuery([PROVINCES[0], "Indonesia"].join(", "));
     setShowModal(true);
   }
 
@@ -80,8 +96,33 @@ export function ResellerStoresClient() {
       city: store.city,
       isActive: store.isActive,
       order: store.order,
+      latitude: store.latitude,
+      longitude: store.longitude,
     });
+    const parts = [store.address, store.city, store.province, "Indonesia"].filter(Boolean);
+    setMapQuery(parts.join(", "));
     setShowModal(true);
+  }
+
+  async function detectCoordinates() {
+    const q = [form.address, form.city, form.province, "Indonesia"].filter(Boolean).join(", ");
+    if (!q.trim()) return;
+    setGeocodingLoading(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=id&limit=1`,
+        { headers: { Accept: "application/json" } }
+      );
+      const data = await res.json();
+      if (data[0]) {
+        setForm((f) => ({
+          ...f,
+          latitude: parseFloat(data[0].lat),
+          longitude: parseFloat(data[0].lon),
+        }));
+      }
+    } catch {}
+    setGeocodingLoading(false);
   }
 
   async function handleSave() {
@@ -97,6 +138,8 @@ export function ResellerStoresClient() {
       tiktok: form.tiktok || null,
       shopee: form.shopee || null,
       tokopedia: form.tokopedia || null,
+      latitude: form.latitude ?? null,
+      longitude: form.longitude ?? null,
     };
     if (editingId) {
       await fetch(`/api/reseller-stores/${editingId}`, {
@@ -162,6 +205,7 @@ export function ResellerStoresClient() {
               <th className="text-left px-4 py-3 font-medium">Toko</th>
               <th className="text-left px-4 py-3 font-medium">Lokasi</th>
               <th className="text-left px-4 py-3 font-medium">Kontak</th>
+              <th className="text-left px-4 py-3 font-medium">Peta</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
               <th className="text-left px-4 py-3 font-medium">Aksi</th>
             </tr>
@@ -169,14 +213,14 @@ export function ResellerStoresClient() {
           <tbody className="divide-y divide-gray-50">
             {loading && (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
                   Memuat...
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
                   Belum ada toko reseller
                 </td>
               </tr>
@@ -214,6 +258,15 @@ export function ResellerStoresClient() {
                       <Phone className="w-3 h-3" />
                       {store.phone}
                     </div>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {store.latitude && store.longitude ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                      <LocateFixed className="w-3 h-3" /> Ada
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -271,7 +324,7 @@ export function ResellerStoresClient() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">
                 {editingId ? "Edit Toko" : "Tambah Toko Reseller"}
@@ -347,6 +400,84 @@ export function ResellerStoresClient() {
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 resize-none"
                   placeholder="Alamat lengkap toko"
                 />
+                {/* Google Maps Preview */}
+                {mapQuery && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> Preview lokasi (Google Maps)
+                    </p>
+                    <iframe
+                      key={mapQuery}
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`}
+                      width="100%"
+                      height="220"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      className="rounded-lg"
+                      title="Lokasi toko"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Koordinat untuk peta */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Koordinat Peta</p>
+                    <p className="text-xs text-gray-400">Digunakan untuk menampilkan pin toko di Map Reseller</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={detectCoordinates}
+                    disabled={geocodingLoading}
+                    className="flex items-center gap-1.5 text-xs text-brand-gold hover:text-brand-brown font-medium disabled:opacity-50 transition-colors"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5" />
+                    {geocodingLoading ? "Mendeteksi..." : "Auto-deteksi"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={form.latitude ?? ""}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, latitude: e.target.value ? parseFloat(e.target.value) : null }))
+                      }
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 bg-white"
+                      placeholder="-6.200"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={form.longitude ?? ""}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, longitude: e.target.value ? parseFloat(e.target.value) : null }))
+                      }
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30 bg-white"
+                      placeholder="106.816"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Klik <strong>Auto-deteksi</strong> untuk isi otomatis, atau{" "}
+                  <a
+                    href="https://maps.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-gold hover:underline"
+                  >
+                    buka Google Maps
+                  </a>
+                  {" "}→ klik kanan lokasi → salin koordinat.
+                </p>
               </div>
 
               {/* Telepon & WhatsApp */}

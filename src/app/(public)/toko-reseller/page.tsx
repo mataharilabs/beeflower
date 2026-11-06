@@ -27,6 +27,8 @@ export default async function TokoResellerPage() {
         tokopedia: true,
         province: true,
         city: true,
+        latitude: true,
+        longitude: true,
       },
     }),
     prisma.page.findUnique({ where: { slug: "toko-reseller" } }),

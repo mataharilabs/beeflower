@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
       city: body.city,
       isActive: body.isActive ?? true,
       order: body.order ?? 0,
+      latitude: body.latitude ?? null,
+      longitude: body.longitude ?? null,
     },
   });
   return NextResponse.json(store, { status: 201 });
