@@ -41,6 +41,17 @@ function getWhatsAppLink(store: Store) {
   return `https://wa.me/${normalized}`;
 }
 
+function getMapsLink(store: Store): string | null {
+  if (store.latitude !== null && store.longitude !== null) {
+    return `https://www.google.com/maps?q=${store.latitude},${store.longitude}`;
+  }
+  if (store.address) {
+    const q = [store.address, store.city, store.province, "Indonesia"].filter(Boolean).join(", ");
+    return `https://maps.google.com/maps?q=${encodeURIComponent(q)}`;
+  }
+  return null;
+}
+
 function StoreCard({ store }: { store: Store }) {
   const initials = store.name
     .split(" ")
@@ -50,6 +61,7 @@ function StoreCard({ store }: { store: Store }) {
     .toUpperCase();
 
   const waLink = getWhatsAppLink(store);
+  const mapsLink = getMapsLink(store);
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
@@ -82,10 +94,22 @@ function StoreCard({ store }: { store: Store }) {
       {/* Info */}
       <div className="space-y-1.5 mb-4">
         {store.address && (
-          <div className="flex items-start gap-2 text-xs text-gray-600">
-            <MapPin className="w-3.5 h-3.5 text-brand-gold mt-0.5 flex-shrink-0" />
-            <span className="leading-relaxed">{store.address}</span>
-          </div>
+          mapsLink ? (
+            <a
+              href={mapsLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-start gap-2 text-xs text-gray-600 hover:text-brand-gold transition-colors group"
+            >
+              <MapPin className="w-3.5 h-3.5 text-brand-gold mt-0.5 flex-shrink-0" />
+              <span className="leading-relaxed group-hover:underline">{store.address}</span>
+            </a>
+          ) : (
+            <div className="flex items-start gap-2 text-xs text-gray-600">
+              <MapPin className="w-3.5 h-3.5 text-brand-gold mt-0.5 flex-shrink-0" />
+              <span className="leading-relaxed">{store.address}</span>
+            </div>
+          )
         )}
         {store.phone && (
           <div className="flex items-center gap-2 text-xs text-gray-600">
