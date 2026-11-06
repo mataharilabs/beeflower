@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Globe, Trash2 } from "lucide-react";
+import { Plus, Globe, Trash2, Copy, Check, ExternalLink } from "lucide-react";
 import { DeletePageButton } from "@/components/admin/DeletePageButton";
 
 type Page = {
@@ -25,6 +25,44 @@ function slugify(str: string): string {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .trim();
+}
+
+function UrlCell({ path }: { path: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    const full = `${window.location.origin}${path}`;
+    navigator.clipboard.writeText(full).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-gray-500 font-mono text-xs">{path}</span>
+      <button
+        onClick={handleCopy}
+        title="Salin URL lengkap"
+        className="text-gray-300 hover:text-gray-500 transition-colors flex-shrink-0"
+      >
+        {copied ? (
+          <Check className="w-3 h-3 text-green-500" />
+        ) : (
+          <Copy className="w-3 h-3" />
+        )}
+      </button>
+      <a
+        href={path}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Buka halaman"
+        className="text-gray-300 hover:text-brand-gold transition-colors flex-shrink-0"
+      >
+        <ExternalLink className="w-3 h-3" />
+      </a>
+    </div>
+  );
 }
 
 export function PagesClient({
@@ -195,7 +233,7 @@ export function PagesClient({
                   Halaman Toko Reseller
                 </div>
               </td>
-              <td className="px-4 py-3 text-gray-500 font-mono text-xs">/toko-reseller</td>
+              <td className="px-4 py-3"><UrlCell path="/toko-reseller" /></td>
               <td className="px-4 py-3">
                 <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
                   Published
@@ -260,7 +298,7 @@ export function PagesClient({
                       {page.title}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">{publicUrl}</td>
+                  <td className="px-4 py-3"><UrlCell path={publicUrl} /></td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
