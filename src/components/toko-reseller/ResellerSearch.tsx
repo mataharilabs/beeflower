@@ -179,17 +179,30 @@ function StoreCard({ store }: { store: Store }) {
       )}
 
       {/* CTA */}
-      {waLink && (
-        <a
-          href={waLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-colors"
-        >
-          <MessageCircle className="w-4 h-4" />
-          KLIK UNTUK PESAN
-        </a>
-      )}
+      <div className="space-y-2">
+        {mapsLink && (
+          <a
+            href={mapsLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition-colors border border-gray-200"
+          >
+            <MapPin className="w-4 h-4 text-brand-gold" />
+            Google Maps
+          </a>
+        )}
+        {waLink && (
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            <MessageCircle className="w-4 h-4" />
+            KLIK UNTUK PESAN
+          </a>
+        )}
+      </div>
     </div>
   );
 }
