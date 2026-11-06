@@ -1,7 +1,5 @@
-import Link from "next/link";
-import { Plus, Globe } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { DeletePageButton } from "@/components/admin/DeletePageButton";
+import { PagesClient } from "@/components/admin/PagesClient";
 
 const SYSTEM_SLUGS = ["home", "reseller", "contact", "toko", "toko-reseller"] as const;
 
@@ -248,140 +246,23 @@ async function ensureSystemPages() {
 export default async function PagesAdminPage() {
   await ensureSystemPages();
 
-  const pages = await prisma.page.findMany({ orderBy: { createdAt: "asc" } });
+  const pages = await prisma.page.findMany({
+    orderBy: { createdAt: "asc" },
+    select: { id: true, title: true, slug: true, isPublished: true, updatedAt: true },
+  });
 
   const tokoResellerPage = pages.find((p) => p.slug === "toko-reseller");
-  const systemPages = pages.filter(
-    (p) => (SYSTEM_SLUGS as readonly string[]).includes(p.slug) && p.slug !== "toko-reseller"
-  );
-  const customPages = pages.filter(
-    (p) => !(SYSTEM_SLUGS as readonly string[]).includes(p.slug)
-  );
-  const orderedPages = [...systemPages, ...customPages];
+
+  // Serialize dates for client component
+  const serialized = pages.map((p) => ({
+    ...p,
+    updatedAt: p.updatedAt.toISOString(),
+  }));
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Halaman CMS</h1>
-        <Link
-          href="/admin/pages/new"
-          className="flex items-center gap-2 px-4 py-2 bg-brand-gold text-white rounded-lg text-sm font-medium hover:bg-brand-brown transition-colors"
-        >
-          <Plus className="w-4 h-4" /> Tambah Halaman
-        </Link>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 text-gray-500 text-xs uppercase tracking-wider">
-              <th className="text-left px-4 py-3 font-medium">Judul</th>
-              <th className="text-left px-4 py-3 font-medium">URL</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="text-left px-4 py-3 font-medium">Diperbarui</th>
-              <th className="text-left px-4 py-3 font-medium">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {/* Hardcoded Toko Reseller system entry */}
-            <tr className="bg-amber-50/30 hover:bg-amber-50/50 transition-colors">
-              <td className="px-4 py-3 font-medium text-gray-900">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                    <Globe className="w-2.5 h-2.5" /> Sistem
-                  </span>
-                  Halaman Toko Reseller
-                </div>
-              </td>
-              <td className="px-4 py-3 text-gray-500 font-mono text-xs">/toko-reseller</td>
-              <td className="px-4 py-3">
-                <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
-                  Published
-                </span>
-              </td>
-              <td className="px-4 py-3 text-gray-400 text-xs">—</td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-3">
-                  {tokoResellerPage && (
-                    <Link
-                      href={`/admin/pages/${tokoResellerPage.id}`}
-                      className="text-brand-gold hover:text-brand-brown text-xs font-medium"
-                    >
-                      Edit
-                    </Link>
-                  )}
-                  <Link
-                    href="/admin/reseller-stores"
-                    className="text-brand-gold hover:text-brand-brown text-xs font-medium"
-                  >
-                    Kelola Toko
-                  </Link>
-                </div>
-              </td>
-            </tr>
-
-            {orderedPages.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
-                  Belum ada halaman
-                </td>
-              </tr>
-            )}
-            {orderedPages.map((page) => {
-              const isSystem = (SYSTEM_SLUGS as readonly string[]).includes(page.slug);
-              const publicUrl = page.slug === "home" ? "/" : isSystem ? `/${page.slug}` : `/p/${page.slug}`;
-              return (
-                <tr key={page.id} className={`hover:bg-gray-50/50 transition-colors ${isSystem ? "bg-amber-50/30" : ""}`}>
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    <div className="flex items-center gap-2">
-                      {isSystem && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                          <Globe className="w-2.5 h-2.5" /> Sistem
-                        </span>
-                      )}
-                      {page.title}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">{publicUrl}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                        page.isPublished
-                          ? "bg-green-50 text-green-700"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {page.isPublished ? "Published" : "Draft"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 text-xs">
-                    {new Date(page.updatedAt).toLocaleDateString("id-ID")}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center">
-                      <Link
-                        href={`/admin/pages/${page.id}`}
-                        className="text-brand-gold hover:text-brand-brown text-xs font-medium"
-                      >
-                        Edit
-                      </Link>
-                      {!isSystem && (
-                        <DeletePageButton id={page.id} title={page.title} />
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <p className="mt-4 text-xs text-gray-400">
-        <span className="inline-flex items-center gap-1 text-amber-600"><Globe className="w-3 h-3" /> Sistem</span>
-        {" "}= Halaman utama website yang dirender di URL tetap (/, /reseller, /contact).
-        Perubahan langsung terlihat di website publik.
-      </p>
-    </div>
+    <PagesClient
+      pages={serialized}
+      tokoResellerPageId={tokoResellerPage?.id ?? null}
+    />
   );
 }
