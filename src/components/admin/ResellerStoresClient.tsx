@@ -53,6 +53,7 @@ export function ResellerStoresClient() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [mapQuery, setMapQuery] = useState("");
   const [geocodingLoading, setGeocodingLoading] = useState(false);
+  const [geocodingStatus, setGeocodingStatus] = useState<null | "found" | "not_found" | "error">(null);
 
   async function loadStores() {
     setLoading(true);
@@ -105,24 +106,44 @@ export function ResellerStoresClient() {
   }
 
   async function detectCoordinates() {
-    const q = [form.address, form.city, form.province, "Indonesia"].filter(Boolean).join(", ");
-    if (!q.trim()) return;
     setGeocodingLoading(true);
-    try {
+    setGeocodingStatus(null);
+
+    async function nominatimSearch(query: string): Promise<{ lat: string; lon: string } | null> {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=id&limit=1`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=id&limit=1`,
         { headers: { Accept: "application/json" } }
       );
       const data = await res.json();
-      if (data[0]) {
+      return data[0] ?? null;
+    }
+
+    try {
+      const fullQuery = [form.address, form.city, form.province, "Indonesia"].filter(Boolean).join(", ");
+      const fallbackQuery = [form.city, form.province, "Indonesia"].filter(Boolean).join(", ");
+
+      let result = fullQuery.trim() ? await nominatimSearch(fullQuery) : null;
+
+      if (!result && fallbackQuery.trim()) {
+        result = await nominatimSearch(fallbackQuery);
+      }
+
+      if (result) {
         setForm((f) => ({
           ...f,
-          latitude: parseFloat(data[0].lat),
-          longitude: parseFloat(data[0].lon),
+          latitude: parseFloat(result!.lat),
+          longitude: parseFloat(result!.lon),
         }));
+        setGeocodingStatus("found");
+      } else {
+        setGeocodingStatus("not_found");
       }
-    } catch {}
+    } catch {
+      setGeocodingStatus("error");
+    }
+
     setGeocodingLoading(false);
+    setTimeout(() => setGeocodingStatus(null), 4000);
   }
 
   async function handleSave() {
@@ -428,15 +449,26 @@ export function ResellerStoresClient() {
                     <p className="text-sm font-medium text-gray-700">Koordinat Peta</p>
                     <p className="text-xs text-gray-400">Digunakan untuk menampilkan pin toko di Map Reseller</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={detectCoordinates}
-                    disabled={geocodingLoading}
-                    className="flex items-center gap-1.5 text-xs text-brand-gold hover:text-brand-brown font-medium disabled:opacity-50 transition-colors"
-                  >
-                    <LocateFixed className="w-3.5 h-3.5" />
-                    {geocodingLoading ? "Mendeteksi..." : "Auto-deteksi"}
-                  </button>
+                  <div className="flex flex-col items-end gap-1">
+                    <button
+                      type="button"
+                      onClick={detectCoordinates}
+                      disabled={geocodingLoading}
+                      className="flex items-center gap-1.5 text-xs text-brand-gold hover:text-brand-brown font-medium disabled:opacity-50 transition-colors"
+                    >
+                      <LocateFixed className="w-3.5 h-3.5" />
+                      {geocodingLoading ? "Mendeteksi..." : "Auto-deteksi"}
+                    </button>
+                    {geocodingStatus === "found" && (
+                      <span className="text-xs text-green-600 font-medium">✓ Koordinat ditemukan</span>
+                    )}
+                    {geocodingStatus === "not_found" && (
+                      <span className="text-xs text-amber-600 font-medium">Tidak ditemukan, isi koordinat manual</span>
+                    )}
+                    {geocodingStatus === "error" && (
+                      <span className="text-xs text-red-500 font-medium">Error, coba lagi</span>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
