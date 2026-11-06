@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Search, Plus, Edit2, Trash2, X, Loader2, User2 } from "lucide-react";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface User {
   id: string;
@@ -23,6 +24,8 @@ export function UsersClient({ initialUsers }: Props) {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<"add" | "edit" | null>(null);
   const [selected, setSelected] = useState<User | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", role: "USER" as "USER" | "ADMIN" });
   const [formError, setFormError] = useState("");
 
@@ -109,10 +112,16 @@ export function UsersClient({ initialUsers }: Props) {
     }
   };
 
-  const handleDelete = async (user: User) => {
-    if (!confirm(`Hapus pengguna ${user.name ?? user.email}? Tindakan ini tidak dapat dibatalkan.`)) return;
-    await fetch(`/api/users/${user.id}`, { method: "DELETE" });
-    setUsers(users.filter((u) => u.id !== user.id));
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await fetch(`/api/users/${deleteTarget.id}`, { method: "DELETE" });
+      setUsers(users.filter((u) => u.id !== deleteTarget.id));
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -202,7 +211,7 @@ export function UsersClient({ initialUsers }: Props) {
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(user)}
+                          onClick={() => setDeleteTarget(user)}
                           className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
                           title="Hapus"
                         >
@@ -318,6 +327,14 @@ export function UsersClient({ initialUsers }: Props) {
           </div>
         </div>
       )}
+      <ConfirmModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Hapus Pengguna?"
+        description={`Pengguna ${deleteTarget?.name ?? deleteTarget?.email} akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
+        loading={deleteLoading}
+      />
     </>
   );
 }

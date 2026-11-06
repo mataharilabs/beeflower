@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff } from "lucide-react";
 import { ImageUploader } from "./ImageUploader";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface Banner {
   id: string;
@@ -37,6 +38,8 @@ export function BannersClient({ initialBanners }: { initialBanners: Banner[] }) 
   const [isAdding, setIsAdding] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const openAdd = () => {
     setForm(emptyForm);
@@ -85,10 +88,16 @@ export function BannersClient({ initialBanners }: { initialBanners: Banner[] }) 
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Hapus banner ini?")) return;
-    await fetch(`/api/banners/${id}`, { method: "DELETE" });
-    setBanners(banners.filter((b) => b.id !== id));
+  const handleDelete = async () => {
+    if (!deletingId) return;
+    setDeleteLoading(true);
+    try {
+      await fetch(`/api/banners/${deletingId}`, { method: "DELETE" });
+      setBanners(banners.filter((b) => b.id !== deletingId));
+    } finally {
+      setDeleteLoading(false);
+      setDeletingId(null);
+    }
   };
 
   const toggleActive = async (banner: Banner) => {
@@ -289,7 +298,7 @@ export function BannersClient({ initialBanners }: { initialBanners: Banner[] }) 
                 <Pencil className="w-4 h-4" />
               </button>
               <button
-                onClick={() => handleDelete(banner.id)}
+                onClick={() => setDeletingId(banner.id)}
                 className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
@@ -298,6 +307,14 @@ export function BannersClient({ initialBanners }: { initialBanners: Banner[] }) 
           </div>
         ))}
       </div>
+      <ConfirmModal
+        open={deletingId !== null}
+        onClose={() => setDeletingId(null)}
+        onConfirm={handleDelete}
+        title="Hapus Banner?"
+        description="Banner ini akan dihapus permanen."
+        loading={deleteLoading}
+      />
     </div>
   );
 }

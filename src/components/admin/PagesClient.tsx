@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Globe, Trash2, Copy, Check, ExternalLink } from "lucide-react";
 import { DeletePageButton } from "@/components/admin/DeletePageButton";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 type Page = {
   id: string;
@@ -76,6 +77,7 @@ export function PagesClient({
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -117,16 +119,23 @@ export function PagesClient({
 
   async function handleBulkDelete() {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Hapus ${selectedIds.size} halaman yang dipilih? Tindakan ini tidak dapat dibatalkan.`)) return;
+    setShowBulkDeleteConfirm(true);
+  }
+
+  async function confirmBulkDelete() {
     setBulkDeleting(true);
-    await fetch("/api/pages/bulk-delete", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: [...selectedIds] }),
-    });
-    setSelectedIds(new Set());
-    setBulkDeleting(false);
-    router.refresh();
+    try {
+      await fetch("/api/pages/bulk-delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [...selectedIds] }),
+      });
+      setSelectedIds(new Set());
+    } finally {
+      setBulkDeleting(false);
+      setShowBulkDeleteConfirm(false);
+      router.refresh();
+    }
   }
 
   function openAdd() {
@@ -336,6 +345,15 @@ export function PagesClient({
         = Halaman utama website yang dirender di URL tetap (/, /reseller, /contact). Perubahan
         langsung terlihat di website publik.
       </p>
+
+      <ConfirmModal
+        open={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={confirmBulkDelete}
+        title={`Hapus ${selectedIds.size} Halaman?`}
+        description="Halaman yang dipilih akan dihapus permanen. Tindakan ini tidak dapat dibatalkan."
+        loading={bulkDeleting}
+      />
 
       {/* Add Page Modal */}
       {showAddModal && (

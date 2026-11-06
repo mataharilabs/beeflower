@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, GripVertical, X, Check, ChevronDown } from "lucide-react";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 type NavLocation = "HEADER_NAV" | "HEADER_CTA" | "FOOTER_MAIN" | "FOOTER_INFO";
 
@@ -149,6 +150,7 @@ export function MenusClient({ initialItems }: { initialItems: NavItem[] }) {
   const [submenuForm, setSubmenuForm] = useState<FormState>(EMPTY_FORM);
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
 
   const tabItems = items.filter((i) => i.location === activeTab && !i.parentId);
   const activeTabInfo = TABS.find((t) => t.key === activeTab)!;
@@ -189,15 +191,18 @@ export function MenusClient({ initialItems }: { initialItems: NavItem[] }) {
     } finally { setLoading(false); }
   };
 
-  const deleteItem = async (id: string, label: string) => {
-    if (!confirm(`Hapus "${label}"? ${getChildren(id).length > 0 ? "Submenu di dalamnya juga akan dihapus." : ""}`)) return;
+  const deleteItem = async () => {
+    if (!deleteTarget) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/menus/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/menus/${deleteTarget.id}`, { method: "DELETE" });
       if (res.ok) {
-        setItems((prev) => prev.filter((i) => i.id !== id && i.parentId !== id));
+        setItems((prev) => prev.filter((i) => i.id !== deleteTarget.id && i.parentId !== deleteTarget.id));
       }
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+      setDeleteTarget(null);
+    }
   };
 
   const toggleActive = async (item: NavItem) => {
@@ -348,7 +353,7 @@ export function MenusClient({ initialItems }: { initialItems: NavItem[] }) {
                           total={sortedTabItems.length}
                           loading={loading}
                           onEdit={() => startEdit(item)}
-                          onDelete={() => deleteItem(item.id, item.label)}
+                          onDelete={() => setDeleteTarget({ id: item.id, label: item.label })}
                           onToggleActive={() => toggleActive(item)}
                           onMoveUp={() => moveItem(item, sortedTabItems, "up")}
                           onMoveDown={() => moveItem(item, sortedTabItems, "down")}
@@ -392,7 +397,7 @@ export function MenusClient({ initialItems }: { initialItems: NavItem[] }) {
                                 loading={loading}
                                 isSubmenu
                                 onEdit={() => startEdit(child)}
-                                onDelete={() => deleteItem(child.id, child.label)}
+                                onDelete={() => setDeleteTarget({ id: child.id, label: child.label })}
                                 onToggleActive={() => toggleActive(child)}
                                 onMoveUp={() => moveItem(child, children, "up")}
                                 onMoveDown={() => moveItem(child, children, "down")}
@@ -513,6 +518,18 @@ export function MenusClient({ initialItems }: { initialItems: NavItem[] }) {
           </button>
         )}
       </div>
+      <ConfirmModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={deleteItem}
+        title={`Hapus "${deleteTarget?.label}"?`}
+        description={
+          deleteTarget && getChildren(deleteTarget.id).length > 0
+            ? "Submenu di dalamnya juga akan dihapus."
+            : "Item menu ini akan dihapus permanen."
+        }
+        loading={loading}
+      />
     </div>
   );
 }
