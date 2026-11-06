@@ -541,23 +541,24 @@ export function ResellerStoresClient() {
                 <p className="text-sm font-medium text-gray-700 mb-2">Sosial Media</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { key: "instagram", label: "Instagram (username)" },
-                    { key: "tiktok", label: "TikTok (username)" },
-                    { key: "shopee", label: "Shopee (username)" },
-                    { key: "tokopedia", label: "Tokopedia (username)" },
-                  ].map(({ key, label }) => (
+                    { key: "instagram", label: "Instagram (username)", type: "text", placeholder: "namatoko" },
+                    { key: "tiktok", label: "TikTok (username)", type: "text", placeholder: "namatoko" },
+                    { key: "shopee", label: "Shopee (URL toko)", type: "url", placeholder: "https://shopee.co.id/namatoko" },
+                    { key: "tokopedia", label: "Tokopedia (URL toko)", type: "url", placeholder: "https://tokopedia.com/namatoko" },
+                  ].map(({ key, label, type, placeholder }) => (
                     <div key={key}>
                       <label className="block text-xs text-gray-500 mb-1">{label}</label>
                       <input
-                        type="text"
+                        type={type}
                         value={(form as Record<string, unknown>)[key] as string ?? ""}
                         onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/30"
-                        placeholder={key}
+                        placeholder={placeholder}
                       />
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-gray-400 mt-2">Instagram &amp; TikTok: isi username saja. Shopee &amp; Tokopedia: isi URL lengkap toko.</p>
               </div>
 
               {/* Order & Active */}

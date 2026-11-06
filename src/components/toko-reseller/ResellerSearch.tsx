@@ -119,67 +119,70 @@ function StoreCard({ store }: { store: Store }) {
         )}
       </div>
 
-      {/* Social icons */}
-      {(store.instagram || store.tiktok || store.shopee || store.tokopedia) && (
-        <div className="flex items-center gap-2 mb-4">
-          {store.instagram && (
-            <a
-              href={`https://instagram.com/${store.instagram}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-7 h-7 rounded-full bg-pink-50 flex items-center justify-center hover:bg-pink-100 transition-colors"
-              title="Instagram"
-            >
-              <svg className="w-3.5 h-3.5 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-              </svg>
-            </a>
-          )}
-          {store.tiktok && (
-            <a
-              href={`https://tiktok.com/@${store.tiktok}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-              title="TikTok"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.79a4.85 4.85 0 01-1.01-.1z"/>
-              </svg>
-            </a>
-          )}
-          {store.shopee && (
-            <a
-              href={`https://shopee.co.id/${store.shopee}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-7 h-7 rounded-full bg-orange-50 flex items-center justify-center hover:bg-orange-100 transition-colors overflow-hidden"
-              title="Shopee"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="https://zonalogo.com/assets/logo-shopee.webp?asset=1002" alt="Shopee" className="w-4 h-4 object-contain rounded" loading="lazy" />
-            </a>
-          )}
-          {store.tokopedia && (
-            <a
-              href={`https://tokopedia.com/${store.tokopedia}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-7 h-7 rounded-full bg-green-50 flex items-center justify-center hover:bg-green-100 transition-colors"
-              title="Tokopedia"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 192 192" fill="none">
-                <path fill="#03AC0E" fillRule="evenodd" d="M96 28c-9.504 0-17.78 5.307-22.008 13.127C82.736 42.123 88.89 44 96 47.332c7.11-3.332 13.264-5.209 22.008-6.205C113.781 33.31 105.506 28 96 28Zm0-12c-15.973 0-29.568 10.117-34.754 24.28C52.932 40 42.462 40 28.53 40H28a6 6 0 0 0-6 6v124a6 6 0 0 0 6 6h92c27.614 0 50-22.386 50-50V46a6 6 0 0 0-6-6h-.531c-13.931 0-24.401 0-32.715.28C125.566 26.113 111.97 16 96 16ZM34 52.001V164h86c20.987 0 38-17.013 38-38V52.001c-18.502.009-29.622.098-37.872.966-8.692.915-13.999 2.677-21.445 6.4a6 6 0 0 1-5.366 0c-7.446-3.723-12.753-5.485-21.445-6.4-8.25-.868-19.37-.957-37.872-.966ZM50 96c0-9.941 8.059-18 18-18s18 8.059 18 18-8.059 18-18 18-18-8.059-18-18Zm18-30c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30 1.126 0 2.238-.062 3.332-.183l20.425 20.426a6 6 0 0 0 8.486 0l20.425-20.426c1.094.121 2.206.183 3.332.183 16.569 0 30-13.431 30-30 0-16.569-13.431-30-30-30-12.764 0-23.666 7.971-28 19.207C91.666 73.971 80.764 66 68 66Zm40.082 55.433A30.1 30.1 0 0 1 96 106.793a30.101 30.101 0 0 1-12.082 14.64L96 133.515l12.082-12.082ZM124 78c-9.941 0-18 8.059-18 18s8.059 18 18 18 18-8.059 18-18-8.059-18-18-18ZM76 96a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm48 8a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" clipRule="evenodd"/>
-              </svg>
-            </a>
-          )}
-        </div>
-      )}
-
       {/* CTA */}
       <div className="space-y-2">
+        {/* Social visit buttons */}
+        {(store.instagram || store.tiktok) && (
+          <div className="grid grid-cols-2 gap-2">
+            {store.instagram && (
+              <a
+                href={`https://instagram.com/${store.instagram}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2 bg-white hover:bg-pink-50 text-gray-700 text-xs font-semibold rounded-xl border border-gray-200 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5 text-pink-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                </svg>
+                Instagram
+              </a>
+            )}
+            {store.tiktok && (
+              <a
+                href={`https://tiktok.com/@${store.tiktok}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-xl border border-gray-200 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.79a4.85 4.85 0 01-1.01-.1z"/>
+                </svg>
+                TikTok
+              </a>
+            )}
+          </div>
+        )}
+        {(store.shopee || store.tokopedia) && (
+          <div className="grid grid-cols-2 gap-2">
+            {store.shopee && (
+              <a
+                href={store.shopee}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2 bg-white hover:bg-orange-50 text-gray-700 text-xs font-semibold rounded-xl border border-gray-200 transition-colors overflow-hidden"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="https://zonalogo.com/assets/logo-shopee.webp?asset=1002" alt="" className="w-3.5 h-3.5 object-contain flex-shrink-0" loading="lazy" />
+                Shopee
+              </a>
+            )}
+            {store.tokopedia && (
+              <a
+                href={store.tokopedia}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 py-2 bg-white hover:bg-green-50 text-gray-700 text-xs font-semibold rounded-xl border border-gray-200 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 192 192" fill="none">
+                  <path fill="#03AC0E" fillRule="evenodd" d="M96 28c-9.504 0-17.78 5.307-22.008 13.127C82.736 42.123 88.89 44 96 47.332c7.11-3.332 13.264-5.209 22.008-6.205C113.781 33.31 105.506 28 96 28Zm0-12c-15.973 0-29.568 10.117-34.754 24.28C52.932 40 42.462 40 28.53 40H28a6 6 0 0 0-6 6v124a6 6 0 0 0 6 6h92c27.614 0 50-22.386 50-50V46a6 6 0 0 0-6-6h-.531c-13.931 0-24.401 0-32.715.28C125.566 26.113 111.97 16 96 16ZM34 52.001V164h86c20.987 0 38-17.013 38-38V52.001c-18.502.009-29.622.098-37.872.966-8.692.915-13.999 2.677-21.445 6.4a6 6 0 0 1-5.366 0c-7.446-3.723-12.753-5.485-21.445-6.4-8.25-.868-19.37-.957-37.872-.966ZM50 96c0-9.941 8.059-18 18-18s18 8.059 18 18-8.059 18-18 18-18-8.059-18-18Zm18-30c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30 1.126 0 2.238-.062 3.332-.183l20.425 20.426a6 6 0 0 0 8.486 0l20.425-20.426c1.094.121 2.206.183 3.332.183 16.569 0 30-13.431 30-30 0-16.569-13.431-30-30-30-12.764 0-23.666 7.971-28 19.207C91.666 73.971 80.764 66 68 66Zm40.082 55.433A30.1 30.1 0 0 1 96 106.793a30.101 30.101 0 0 1-12.082 14.64L96 133.515l12.082-12.082ZM124 78c-9.941 0-18 8.059-18 18s8.059 18 18 18 18-8.059 18-18-8.059-18-18-18ZM76 96a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm48 8a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" clipRule="evenodd"/>
+                </svg>
+                Tokopedia
+              </a>
+            )}
+          </div>
+        )}
         {mapsLink && (
           <a
             href={mapsLink}
