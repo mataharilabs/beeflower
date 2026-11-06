@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Search, MapPin, Phone, ChevronDown, ChevronUp, MessageCircle, List, Map } from "lucide-react";
+import { Search, MapPin, Phone, ChevronDown, ChevronUp, MessageCircle, List, Map as MapIcon } from "lucide-react";
 
 const ResellerMap = dynamic(
   () => import("./ResellerMap").then((m) => ({ default: m.ResellerMap })),
@@ -279,7 +279,7 @@ export function ResellerSearch({ stores }: { stores: Store[] }) {
               : "bg-white text-gray-600 border-gray-200 hover:border-brand-brown/40"
           }`}
         >
-          <Map className="w-4 h-4" />
+          <MapIcon className="w-4 h-4" />
           Lihat Map Reseller
           <span className={`text-xs px-1.5 py-0.5 rounded-full font-normal ${activeTab === "map" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
             {pinStores.length}
@@ -292,7 +292,7 @@ export function ResellerSearch({ stores }: { stores: Store[] }) {
         <div>
           {pinStores.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-              <Map className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+              <MapIcon className="w-10 h-10 mx-auto mb-3 text-gray-300" />
               <p className="text-gray-500 font-medium">Belum ada toko dengan data koordinat</p>
               <p className="text-gray-400 text-sm mt-1">Admin perlu mengisi koordinat (latitude &amp; longitude) di setiap toko.</p>
             </div>
