@@ -90,34 +90,39 @@ export default async function ResellerPage() {
         </div>
       </section>
 
-      {/* Benefits */}
-      <section className="py-16 lg:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="font-bold text-xl lg:text-2xl text-brand-brown tracking-widest uppercase mb-3">
-              {benefitsProps?.headline || "Mengapa Menjadi Reseller"}
-            </h2>
-            <p className="text-brand-brown/60 max-w-2xl mx-auto text-sm leading-relaxed">
-              Bee & Flower merupakan produk dengan karakter aroma yang telah dikenal luas
-              sehingga memiliki peluang repeat order yang baik.
-            </p>
-          </div>
+      {/* Benefits — dirender dengan BlockRenderer agar tampilan FeatureIcons
+          (ikon, judul, deskripsi) konsisten dengan halaman lain */}
+      {benefitsBlock ? (
+        <BlockRenderer document={{ blocks: [benefitsBlock] }} />
+      ) : (
+        <section className="py-16 lg:py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="font-bold text-xl lg:text-2xl text-brand-brown tracking-widest uppercase mb-3">
+                Mengapa Menjadi Reseller
+              </h2>
+              <p className="text-brand-brown/60 max-w-2xl mx-auto text-sm leading-relaxed">
+                Bee & Flower merupakan produk dengan karakter aroma yang telah dikenal luas
+                sehingga memiliki peluang repeat order yang baik.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {benefitItems.map((benefit, i) => (
-              <div
-                key={i}
-                className="flex flex-col items-center text-center p-4 border border-brand-beige/30 rounded-xl hover:border-brand-gold/40 transition-colors"
-              >
-                <div className="w-14 h-14 rounded-full border-2 border-brand-gold/30 flex items-center justify-center mb-3 bg-brand-cream">
-                  <span className="text-brand-gold font-bold text-lg select-none">✦</span>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+              {benefitItems.map((benefit, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col items-center text-center p-4 border border-brand-beige/30 rounded-xl hover:border-brand-gold/40 transition-colors"
+                >
+                  <div className="w-14 h-14 rounded-full border-2 border-brand-gold/30 flex items-center justify-center mb-3 bg-brand-cream">
+                    <span className="text-brand-gold font-bold text-lg select-none">✦</span>
+                  </div>
+                  <h3 className="font-bold text-brand-brown text-xs leading-tight">{benefit.title}</h3>
                 </div>
-                <h3 className="font-bold text-brand-brown text-xs leading-tight">{benefit.title}</h3>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CMS middle blocks (ProductGrid, CTABanner, etc.) — set via /admin/pages */}
       {middleBlocks.length > 0 && (
