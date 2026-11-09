@@ -112,7 +112,7 @@ export default async function OrderDetailPage({
             <div>
               <p className="text-gray-400 text-xs mb-0.5">Metode Pembayaran</p>
               <p className="text-gray-900">
-                {order.paymentMethod === "XENDIT" ? "Bayar Online (Xendit)" : order.paymentMethod === "QRIS" ? "QRIS" : "Transfer Bank Manual"}
+                {order.paymentMethod === "XENDIT" ? "Bayar Online (Xendit)" : order.paymentMethod === "MIDTRANS" ? "Bayar Online (Midtrans)" : order.paymentMethod === "QRIS" ? "QRIS" : "Transfer Bank Manual"}
               </p>
             </div>
             <div className="col-span-2">

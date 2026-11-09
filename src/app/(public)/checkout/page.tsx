@@ -17,6 +17,7 @@ import {
 
 interface PaymentConfig {
   xenditEnabled: boolean;
+  midtransEnabled: boolean;
   manualTransferEnabled: boolean;
   qrisEnabled: boolean;
   qrisImageUrl: string | null;
@@ -82,7 +83,7 @@ export default function CheckoutPage() {
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
   const [createdOrderId, setCreatedOrderId] = useState("");
-  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({ xenditEnabled: false, manualTransferEnabled: true, qrisEnabled: false, qrisImageUrl: null });
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({ xenditEnabled: false, midtransEnabled: false, manualTransferEnabled: true, qrisEnabled: false, qrisImageUrl: null });
   const [isNewUser, setIsNewUser] = useState(false);
   const [newAccountInfo, setNewAccountInfo] = useState<{ email: string; password: string } | null>(null);
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
@@ -91,7 +92,7 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({
     customerName: "", customerEmail: "", customerPhone: "",
     address: "", city: "", province: "", postalCode: "",
-    notes: "", paymentMethod: "" as "XENDIT" | "MANUAL_TRANSFER" | "QRIS" | "",
+    notes: "", paymentMethod: "" as "XENDIT" | "MIDTRANS" | "MANUAL_TRANSFER" | "QRIS" | "",
   });
 
   const [activeProvider, setActiveProvider] = useState<"kiriminaja" | "rajaongkir" | null>(null);
@@ -155,6 +156,7 @@ export default function CheckoutPage() {
 
       setPaymentConfig(config);
       if (config.xenditEnabled) setForm((f) => ({ ...f, paymentMethod: "XENDIT" }));
+      else if (config.midtransEnabled) setForm((f) => ({ ...f, paymentMethod: "MIDTRANS" }));
       else if (config.manualTransferEnabled) setForm((f) => ({ ...f, paymentMethod: "MANUAL_TRANSFER" }));
       else if (config.qrisEnabled) setForm((f) => ({ ...f, paymentMethod: "QRIS" }));
 
@@ -477,7 +479,7 @@ export default function CheckoutPage() {
       setOrderNumber(data.orderNumber);
       setCreatedOrderId(data.orderId ?? "");
 
-      if (form.paymentMethod === "XENDIT" && data.paymentUrl) {
+      if ((form.paymentMethod === "XENDIT" || form.paymentMethod === "MIDTRANS") && data.paymentUrl) {
         setPaymentUrl(data.paymentUrl);
         setStep("payment");
       } else {
@@ -958,14 +960,15 @@ export default function CheckoutPage() {
             {/* Payment Method */}
             <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
               <h2 className="font-semibold text-gray-900">Metode Pembayaran</h2>
-              {!paymentConfig.xenditEnabled && !paymentConfig.manualTransferEnabled && !paymentConfig.qrisEnabled && (
+              {!paymentConfig.xenditEnabled && !paymentConfig.midtransEnabled && !paymentConfig.manualTransferEnabled && !paymentConfig.qrisEnabled && (
                 <p className="text-sm text-red-500">Tidak ada metode pembayaran aktif. Hubungi admin.</p>
               )}
 
               {/* Konfirmasi Otomatis */}
-              {paymentConfig.xenditEnabled && (
+              {(paymentConfig.xenditEnabled || paymentConfig.midtransEnabled) && (
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Konfirmasi Otomatis</p>
+                  {paymentConfig.xenditEnabled && (
                   <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.paymentMethod === "XENDIT" ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
                     <input type="radio" name="payment" value="XENDIT" checked={form.paymentMethod === "XENDIT"}
                       onChange={() => setForm({ ...form, paymentMethod: "XENDIT" })} className="sr-only" />
@@ -977,6 +980,20 @@ export default function CheckoutPage() {
                       <p className="text-xs text-gray-400">QRIS dinamis, Virtual Account, Kartu Kredit, dll</p>
                     </div>
                   </label>
+                  )}
+                  {paymentConfig.midtransEnabled && (
+                  <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.paymentMethod === "MIDTRANS" ? "border-brand-gold bg-brand-cream" : "border-gray-200"}`}>
+                    <input type="radio" name="payment" value="MIDTRANS" checked={form.paymentMethod === "MIDTRANS"}
+                      onChange={() => setForm({ ...form, paymentMethod: "MIDTRANS" })} className="sr-only" />
+                    <div className={`w-4 h-4 rounded-full border-2 ${form.paymentMethod === "MIDTRANS" ? "border-brand-gold" : "border-gray-300"} flex items-center justify-center flex-shrink-0`}>
+                      {form.paymentMethod === "MIDTRANS" && <div className="w-2 h-2 bg-brand-gold rounded-full" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Bayar Online (Midtrans)</p>
+                      <p className="text-xs text-gray-400">Virtual Account, E-Wallet, Kartu Kredit, QRIS, dll</p>
+                    </div>
+                  </label>
+                  )}
                 </div>
               )}
 

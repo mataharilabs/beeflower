@@ -82,14 +82,20 @@ export default async function OrderPage({
           )}
         </div>
 
-        {order.paymentMethod === "XENDIT" && order.status === "PENDING" && order.xenditPaymentUrl && (
+        {((order.paymentMethod === "XENDIT" && order.xenditPaymentUrl) ||
+          (order.paymentMethod === "MIDTRANS" && order.midtransPaymentUrl)) &&
+          order.status === "PENDING" && (
           <div className="bg-white rounded-2xl p-6 shadow-sm mb-4">
             <h2 className="font-semibold text-gray-900 mb-2">Selesaikan Pembayaran</h2>
             <p className="text-sm text-gray-500 mb-4">
               Pesanan ini menunggu pembayaran. Klik tombol di bawah untuk melanjutkan.
             </p>
             <XenditPaymentModal
-              paymentUrl={order.xenditPaymentUrl}
+              paymentUrl={
+                order.paymentMethod === "MIDTRANS"
+                  ? order.midtransPaymentUrl!
+                  : order.xenditPaymentUrl!
+              }
               orderId={order.id}
               autoOpen={false}
             />

@@ -48,6 +48,10 @@ interface PaymentSettings {
   id: string;
   xenditEnabled: boolean;
   xenditSecretKey: string | null;
+  midtransEnabled: boolean;
+  midtransServerKey: string | null;
+  midtransClientKey: string | null;
+  midtransIsProduction: boolean;
   manualTransferEnabled: boolean;
   qrisEnabled: boolean;
   qrisImageUrl: string | null;
@@ -584,6 +588,55 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
                   placeholder="xnd_production_..."
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
                 />
+              </div>
+            )}
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Midtrans (Online Payment)</p>
+                <p className="text-xs text-gray-400">Snap: Virtual Account, E-Wallet, Kartu Kredit, QRIS via Midtrans</p>
+              </div>
+              <div
+                onClick={() => setPayment({ ...payment, midtransEnabled: !payment.midtransEnabled })}
+                className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${payment.midtransEnabled ? "bg-brand-gold" : "bg-gray-200"}`}
+              >
+                <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${payment.midtransEnabled ? "translate-x-4" : ""}`} />
+              </div>
+            </label>
+            {payment.midtransEnabled && (
+              <div className="space-y-3 pl-1 border-l-2 border-brand-gold/20 ml-1 pb-1">
+                <div className="pl-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Midtrans Server Key</label>
+                  <input
+                    type="password"
+                    value={payment.midtransServerKey ?? ""}
+                    onChange={(e) => setPayment({ ...payment, midtransServerKey: e.target.value })}
+                    placeholder="Mid-server-... / SB-Mid-server-..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Dashboard Midtrans → Settings → Access Keys</p>
+                </div>
+                <div className="pl-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Midtrans Client Key</label>
+                  <input
+                    type="text"
+                    value={payment.midtransClientKey ?? ""}
+                    onChange={(e) => setPayment({ ...payment, midtransClientKey: e.target.value })}
+                    placeholder="Mid-client-... / SB-Mid-client-..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold font-mono"
+                  />
+                </div>
+                <label className="flex items-center justify-between cursor-pointer pl-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Mode Production</p>
+                    <p className="text-xs text-gray-400">Nonaktif = Sandbox (testing). Aktifkan jika sudah live.</p>
+                  </div>
+                  <div
+                    onClick={() => setPayment({ ...payment, midtransIsProduction: !payment.midtransIsProduction })}
+                    className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${payment.midtransIsProduction ? "bg-brand-gold" : "bg-gray-200"}`}
+                  >
+                    <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${payment.midtransIsProduction ? "translate-x-4" : ""}`} />
+                  </div>
+                </label>
               </div>
             )}
             <label className="flex items-center justify-between cursor-pointer">

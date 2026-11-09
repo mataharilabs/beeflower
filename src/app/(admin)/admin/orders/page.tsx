@@ -32,6 +32,7 @@ const statusLabel: Record<string, { label: string; color: string }> = {
 
 const paymentLabel: Record<string, string> = {
   XENDIT:          "Xendit Online",
+  MIDTRANS:        "Midtrans Online",
   MANUAL_TRANSFER: "Transfer Bank",
   QRIS:            "QRIS",
 };

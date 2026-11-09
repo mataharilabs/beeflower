@@ -20,7 +20,7 @@ const CheckoutSchema = z.object({
   district: z.string().optional(),
   subdistrict: z.string().optional(),
   notes: z.string().optional(),
-  paymentMethod: z.enum(["XENDIT", "MANUAL_TRANSFER", "QRIS"]),
+  paymentMethod: z.enum(["XENDIT", "MIDTRANS", "MANUAL_TRANSFER", "QRIS"]),
   shippingCost: z.number().min(0).default(0),
   shippingMethod: z.string().optional(),
   shippingService: z.string().optional(),
@@ -453,6 +453,74 @@ export async function POST(req: NextRequest) {
       }
     } catch (err) {
       console.error("Xendit error:", err);
+    }
+  }
+
+  // If Midtrans, create Snap transaction
+  if (data.paymentMethod === "MIDTRANS") {
+    try {
+      const paySettings = await prisma.paymentSettings.findUnique({ where: { id: "singleton" } });
+      const serverKey = paySettings?.midtransServerKey ?? process.env.MIDTRANS_SERVER_KEY;
+      const isProduction = paySettings?.midtransIsProduction ?? false;
+
+      if (serverKey) {
+        const snapBaseUrl = isProduction
+          ? "https://app.midtrans.com/snap/v1/transactions"
+          : "https://app.sandbox.midtrans.com/snap/v1/transactions";
+
+        const response = await fetch(snapBaseUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Basic ${Buffer.from(serverKey + ":").toString("base64")}`,
+          },
+          body: JSON.stringify({
+            transaction_details: {
+              order_id: order.orderNumber,
+              gross_amount: Math.round(total),
+            },
+            customer_details: {
+              first_name: data.customerName,
+              email: data.customerEmail,
+              phone: data.customerPhone,
+              shipping_address: {
+                first_name: data.customerName,
+                address: data.address,
+                city: data.city,
+                postal_code: data.postalCode,
+                country_code: "IDN",
+              },
+            },
+            callbacks: {
+              finish: `${process.env.NEXT_PUBLIC_APP_URL}/toko/pesanan/${order.id}?status=success`,
+            },
+          }),
+        });
+
+        if (response.ok) {
+          const snap = await response.json();
+          await prisma.order.update({
+            where: { id: order.id },
+            data: {
+              midtransSnapToken: snap.token,
+              midtransPaymentUrl: snap.redirect_url,
+            },
+          });
+          return NextResponse.json({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            paymentUrl: snap.redirect_url,
+            isNewUser,
+            autoLoginEmail,
+            autoLoginPassword,
+          }, { status: 201 });
+        } else {
+          console.error("Midtrans snap error:", await response.text());
+        }
+      }
+    } catch (err) {
+      console.error("Midtrans error:", err);
     }
   }
 

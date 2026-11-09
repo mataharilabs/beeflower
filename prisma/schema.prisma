@@ -27,6 +27,7 @@ enum OrderStatus {
 
 enum PaymentMethod {
   XENDIT
+  MIDTRANS
   MANUAL_TRANSFER
   QRIS
 }
@@ -219,6 +220,8 @@ model Order {
   paymentMethod PaymentMethod?
   xenditInvoiceId String?   @unique
   xenditPaymentUrl String?
+  midtransSnapToken String?
+  midtransPaymentUrl String?
 
   customerName  String
   customerEmail String
@@ -343,6 +346,10 @@ model PaymentSettings {
   id                     String  @id @default("singleton")
   xenditEnabled          Boolean @default(false)
   xenditSecretKey        String?
+  midtransEnabled        Boolean @default(false)
+  midtransServerKey      String?
+  midtransClientKey      String?
+  midtransIsProduction   Boolean @default(false)
   manualTransferEnabled  Boolean @default(true)
   qrisEnabled            Boolean @default(false)
   qrisImageUrl           String?
