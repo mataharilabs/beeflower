@@ -59,8 +59,9 @@ export function Header({ logoUrl, logoWidth, siteName, navLinks, ctaButton, user
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [showHeaderPassword, setShowHeaderPassword] = useState(false);
-  const { totalItems, openCart } = useCartStore();
-  const cartCount = totalItems();
+  const { items: cartItems, openCart } = useCartStore();
+  // Badge menghitung jumlah produk unik, bukan akumulasi qty
+  const cartCount = cartItems.length;
 
   const links = navLinks ?? DEFAULT_NAV;
   const cta = ctaButton ?? DEFAULT_CTA;
