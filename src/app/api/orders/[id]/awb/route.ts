@@ -26,6 +26,7 @@ export async function POST(
     data: {
       awbNumber: awbNumber.trim(),
       awbCourier: awbCourier.trim(),
+      updatedBy: session.user.name ?? session.user.email ?? "Admin",
     },
   });
 

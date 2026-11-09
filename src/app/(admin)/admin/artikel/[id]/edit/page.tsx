@@ -30,6 +30,11 @@ export default async function EditArtikelPage({
           categoryId: article.categoryId,
           metaTitle: article.metaTitle,
           metaDescription: article.metaDescription,
+          publishedAt: article.publishedAt?.toISOString() ?? null,
+          createdAt: article.createdAt.toISOString(),
+          updatedAt: article.updatedAt.toISOString(),
+          createdBy: article.createdBy,
+          updatedBy: article.updatedBy,
         }}
         categories={categories}
       />

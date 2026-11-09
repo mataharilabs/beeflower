@@ -35,7 +35,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Tanggal akhir harus setelah tanggal mulai" }, { status: 400 });
   }
 
-  const promotion = await prisma.promotion.create({ data: body });
+  const actor = session.user.name ?? session.user.email ?? "Admin";
+  const promotion = await prisma.promotion.create({
+    data: { ...body, createdBy: actor, updatedBy: actor },
+  });
   revalidatePath("/admin/promotions");
   return NextResponse.json(promotion, { status: 201 });
 }

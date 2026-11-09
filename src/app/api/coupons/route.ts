@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
       applicableProductIds: body.applicableProductIds ?? [],
       applicableCities: body.applicableCities ?? [],
       isPublic: body.isPublic ?? false,
+      createdBy: session.user.name ?? session.user.email ?? "Admin",
+      updatedBy: session.user.name ?? session.user.email ?? "Admin",
     },
   });
 

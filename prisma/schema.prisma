@@ -183,6 +183,8 @@ model Product {
 
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  createdBy  String?     @map("created_by")
+  updatedBy  String?     @map("updated_by")
   orderItems OrderItem[]
   cartItems  CartItem[]
 
@@ -245,6 +247,8 @@ model Order {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
 
   couponId    String?
   coupon      Coupon? @relation(fields: [couponId], references: [id])
@@ -306,6 +310,8 @@ model Coupon {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
 
   orders Order[]
 
@@ -537,6 +543,8 @@ model Promotion {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  createdBy String?  @map("created_by")
+  updatedBy String?  @map("updated_by")
 
   @@map("promotions")
 }
@@ -643,6 +651,8 @@ model Article {
   publishedAt     DateTime?        @map("published_at")
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
+  createdBy       String?          @map("created_by")
+  updatedBy       String?          @map("updated_by")
 
   @@map("articles")
 }

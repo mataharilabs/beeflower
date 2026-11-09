@@ -124,13 +124,14 @@ export default async function CouponsPage({
               <th className="px-4 py-3 text-left font-semibold text-gray-600">Kuota</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-600">Visibilitas</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600">Dibuat / Diupdate</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-600">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {coupons.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-12 text-center text-gray-400">
                   {search ? `Tidak ada kupon yang cocok dengan "${search}"` : "Belum ada kupon."}
                   {!search && (
                     <> <Link href="/admin/coupons/new" className="text-brand-gold hover:underline">Buat yang pertama</Link></>
@@ -178,6 +179,16 @@ export default async function CouponsPage({
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[coupon.computedStatus]}`}>
                       {STATUS_LABEL[coupon.computedStatus]}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    <p title={new Date(coupon.createdAt).toLocaleString("id-ID")}>
+                      {new Date(coupon.createdAt).toLocaleDateString("id-ID")}
+                      {coupon.createdBy && <span className="text-gray-400"> · {coupon.createdBy}</span>}
+                    </p>
+                    <p className="text-gray-400" title={new Date(coupon.updatedAt).toLocaleString("id-ID")}>
+                      upd {new Date(coupon.updatedAt).toLocaleDateString("id-ID")}
+                      {coupon.updatedBy && <span> · {coupon.updatedBy}</span>}
+                    </p>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

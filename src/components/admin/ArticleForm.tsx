@@ -22,11 +22,23 @@ interface Article {
   categoryId: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
+  publishedAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
 }
 
 interface Props {
   article?: Article;
   categories: ArticleCategory[];
+}
+
+function toDatetimeLocal(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function toSlug(str: string) {
@@ -56,6 +68,7 @@ export function ArticleForm({ article, categories: initialCategories }: Props) {
     categoryId: article?.categoryId ?? "",
     metaTitle: article?.metaTitle ?? "",
     metaDescription: article?.metaDescription ?? "",
+    publishedAt: toDatetimeLocal(article?.publishedAt),
   });
 
   const [categories, setCategories] = useState(initialCategories);
@@ -244,6 +257,18 @@ export function ArticleForm({ article, categories: initialCategories }: Props) {
                 </button>
               ))}
             </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Tanggal Publish</label>
+              <input
+                type="datetime-local"
+                value={form.publishedAt}
+                onChange={(e) => setForm((f) => ({ ...f, publishedAt: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-gold"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">
+                Kosongkan untuk otomatis diisi saat artikel di-publish.
+              </p>
+            </div>
             <div className="flex gap-2 pt-2 border-t border-gray-100">
               <button
                 type="button"
@@ -263,6 +288,29 @@ export function ArticleForm({ article, categories: initialCategories }: Props) {
               </button>
             </div>
           </div>
+
+          {/* Audit info */}
+          {isEdit && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-2">
+              <h3 className="text-sm font-semibold text-gray-700">Info Artikel</h3>
+              <div className="text-xs text-gray-500 space-y-1.5">
+                <div>
+                  <p className="text-gray-400">Dibuat</p>
+                  <p>
+                    {article?.createdAt ? new Date(article.createdAt).toLocaleString("id-ID") : "—"}
+                    {article?.createdBy && <span className="text-gray-400"> · oleh {article.createdBy}</span>}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Terakhir diupdate</p>
+                  <p>
+                    {article?.updatedAt ? new Date(article.updatedAt).toLocaleString("id-ID") : "—"}
+                    {article?.updatedBy && <span className="text-gray-400"> · oleh {article.updatedBy}</span>}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cover image */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">

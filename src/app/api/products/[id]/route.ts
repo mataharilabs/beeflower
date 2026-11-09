@@ -33,7 +33,10 @@ export async function PUT(
   }
 
   try {
-    const product = await prisma.product.update({ where: { id }, data: body });
+    const product = await prisma.product.update({
+      where: { id },
+      data: { ...body, updatedBy: session.user.name ?? session.user.email ?? "Admin" },
+    });
     revalidatePath("/");
     revalidatePath("/toko", "page");
     revalidatePath(`/toko/${product.slug}`, "page");
@@ -68,7 +71,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Aksi tidak valid" }, { status: 400 });
   }
 
-  const product = await prisma.product.update({ where: { id }, data: dataMap[action] });
+  const product = await prisma.product.update({
+    where: { id },
+    data: { ...dataMap[action], updatedBy: session.user.name ?? session.user.email ?? "Admin" },
+  });
   revalidatePath("/");
   revalidatePath("/toko", "page");
   revalidatePath(`/toko/${product.slug}`, "page");

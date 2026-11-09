@@ -149,13 +149,14 @@ export default async function ProductsPage({
               <th className="text-left px-4 py-3 font-medium">Harga</th>
               <th className="text-left px-4 py-3 font-medium">Stok</th>
               {tab !== "trash" && <th className="text-left px-4 py-3 font-medium">Status</th>}
+              <th className="text-left px-4 py-3 font-medium">Dibuat / Diupdate</th>
               <th className="text-left px-4 py-3 font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {products.length === 0 && (
               <tr>
-                <td colSpan={tab !== "trash" ? 8 : 7} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={tab !== "trash" ? 9 : 8} className="px-4 py-10 text-center text-gray-400">
                   {trimmedSearch
                     ? `Tidak ada produk untuk "${trimmedSearch}"`
                     : tab === "archive" ? "Tidak ada produk di Archive"
@@ -209,6 +210,16 @@ export default async function ProductsPage({
                     )}
                   </td>
                 )}
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  <p title={new Date(product.createdAt).toLocaleString("id-ID")}>
+                    {new Date(product.createdAt).toLocaleDateString("id-ID")}
+                    {product.createdBy && <span className="text-gray-400"> · {product.createdBy}</span>}
+                  </p>
+                  <p className="text-gray-400" title={new Date(product.updatedAt).toLocaleString("id-ID")}>
+                    upd {new Date(product.updatedAt).toLocaleDateString("id-ID")}
+                    {product.updatedBy && <span> · {product.updatedBy}</span>}
+                  </p>
+                </td>
                 <td className="px-4 py-3">
                   <ProductActions
                     id={product.id}

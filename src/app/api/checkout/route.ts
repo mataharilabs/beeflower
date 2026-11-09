@@ -259,6 +259,7 @@ export async function POST(req: NextRequest) {
         shippingCouponId,
         shippingCouponCode: appliedShippingCouponCode,
         total,
+        createdBy: session?.user?.name ?? data.customerName,
         items: { create: adjustedOrderItems },
       },
     });

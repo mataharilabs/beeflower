@@ -82,6 +82,9 @@ export default async function BlogArticlePage({
           </h1>
           <p className="text-sm text-brand-beige">
             {formatDate(article.publishedAt ?? article.createdAt)}
+            {article.createdBy && (
+              <span> · Ditulis oleh <span className="font-medium text-brand-brown">{article.createdBy}</span></span>
+            )}
           </p>
           {article.excerpt && (
             <p className="mt-4 text-brand-beige border-l-4 border-brand-gold pl-4">

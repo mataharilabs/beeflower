@@ -58,6 +58,7 @@ export async function PATCH(
       ...(body.isPaused !== undefined && { isPaused: body.isPaused }),
       ...(body.isStopped !== undefined && { isStopped: body.isStopped }),
       ...(body.isPublic !== undefined && { isPublic: body.isPublic }),
+      updatedBy: session.user.name ?? session.user.email ?? "Admin",
     },
   });
 

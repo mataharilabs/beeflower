@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { title, slug, excerpt, content, coverImage, status, categoryId, metaTitle, metaDescription } = body;
+  const { title, slug, excerpt, content, coverImage, status, categoryId, metaTitle, metaDescription, publishedAt } = body;
 
   if (!title?.trim()) {
     return NextResponse.json({ error: "Judul wajib diisi" }, { status: 400 });
@@ -44,7 +44,13 @@ export async function POST(req: NextRequest) {
       categoryId: categoryId || null,
       metaTitle: metaTitle?.trim() || null,
       metaDescription: metaDescription?.trim() || null,
-      publishedAt: status === "PUBLISHED" ? new Date() : null,
+      publishedAt: publishedAt
+        ? new Date(publishedAt)
+        : status === "PUBLISHED"
+          ? new Date()
+          : null,
+      createdBy: session.user.name ?? session.user.email ?? "Admin",
+      updatedBy: session.user.name ?? session.user.email ?? "Admin",
     },
   });
 

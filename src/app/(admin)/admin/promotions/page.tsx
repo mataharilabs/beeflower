@@ -144,13 +144,14 @@ export default async function PromotionsPage({
               <th className="text-left px-4 py-3 font-medium">Periode</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
               <th className="text-left px-4 py-3 font-medium">Aktif</th>
+              <th className="text-left px-4 py-3 font-medium">Dibuat / Diupdate</th>
               <th className="text-left px-4 py-3 font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {promotions.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-12 text-center text-gray-400">
                   Belum ada promosi. <Link href="/admin/promotions/new" className="text-brand-gold hover:underline">Buat yang pertama</Link>
                 </td>
               </tr>
@@ -190,6 +191,16 @@ export default async function PromotionsPage({
                   </td>
                   <td className="px-4 py-3">
                     <PromotionToggle id={p.id} isActive={p.isActive} />
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    <p title={new Date(p.createdAt).toLocaleString("id-ID")}>
+                      {new Date(p.createdAt).toLocaleDateString("id-ID")}
+                      {p.createdBy && <span className="text-gray-400"> · {p.createdBy}</span>}
+                    </p>
+                    <p className="text-gray-400" title={new Date(p.updatedAt).toLocaleString("id-ID")}>
+                      upd {new Date(p.updatedAt).toLocaleDateString("id-ID")}
+                      {p.updatedBy && <span> · {p.updatedBy}</span>}
+                    </p>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

@@ -118,14 +118,15 @@ export default async function AdminArtikelPage({
               <th className="text-left px-4 py-3 font-medium">Artikel</th>
               <th className="text-left px-4 py-3 font-medium">Kategori</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="text-left px-4 py-3 font-medium">Tanggal</th>
+              <th className="text-left px-4 py-3 font-medium">Dibuat</th>
+              <th className="text-left px-4 py-3 font-medium">Diupdate</th>
               <th className="text-left px-4 py-3 font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {articles.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
                   {trimmedSearch ? "Tidak ada artikel yang sesuai" : "Belum ada artikel"}
                 </td>
               </tr>
@@ -158,7 +159,12 @@ export default async function AdminArtikelPage({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-500">
-                    {new Date(article.createdAt).toLocaleDateString("id-ID")}
+                    <p>{new Date(article.createdAt).toLocaleDateString("id-ID")}</p>
+                    {article.createdBy && <p className="text-gray-400">oleh {article.createdBy}</p>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    <p>{new Date(article.updatedAt).toLocaleDateString("id-ID")}</p>
+                    {article.updatedBy && <p className="text-gray-400">oleh {article.updatedBy}</p>}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

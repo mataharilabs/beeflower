@@ -31,7 +31,10 @@ export async function PUT(
     return NextResponse.json({ error: "Tanggal akhir harus setelah tanggal mulai" }, { status: 400 });
   }
 
-  const promotion = await prisma.promotion.update({ where: { id }, data: body });
+  const promotion = await prisma.promotion.update({
+    where: { id },
+    data: { ...body, updatedBy: session.user.name ?? session.user.email ?? "Admin" },
+  });
   revalidatePath("/admin/promotions");
   return NextResponse.json(promotion);
 }
@@ -46,7 +49,10 @@ export async function PATCH(
   }
   const { id } = await params;
   const { isActive } = await req.json();
-  const promotion = await prisma.promotion.update({ where: { id }, data: { isActive } });
+  const promotion = await prisma.promotion.update({
+    where: { id },
+    data: { isActive, updatedBy: session.user.name ?? session.user.email ?? "Admin" },
+  });
   revalidatePath("/admin/promotions");
   return NextResponse.json(promotion);
 }

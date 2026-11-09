@@ -56,7 +56,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const product = await prisma.product.create({ data: body });
+    const actor = session.user.name ?? session.user.email ?? "Admin";
+    const product = await prisma.product.create({
+      data: { ...body, createdBy: actor, updatedBy: actor },
+    });
     revalidatePath("/");
     revalidatePath("/toko", "page");
     return NextResponse.json(product, { status: 201 });

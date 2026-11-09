@@ -41,6 +41,7 @@ export async function PATCH(
     data: {
       status: body.status,
       ...(body.status === "PAID" ? { paidAt: new Date() } : {}),
+      updatedBy: session.user.name ?? session.user.email ?? "Admin",
     },
   });
 

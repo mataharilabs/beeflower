@@ -13,7 +13,7 @@ export async function PUT(
 
   const { id } = await params;
   const body = await req.json();
-  const { title, slug, excerpt, content, coverImage, status, categoryId, metaTitle, metaDescription } = body;
+  const { title, slug, excerpt, content, coverImage, status, categoryId, metaTitle, metaDescription, publishedAt } = body;
 
   if (!title?.trim()) {
     return NextResponse.json({ error: "Judul wajib diisi" }, { status: 400 });
@@ -44,7 +44,12 @@ export async function PUT(
       categoryId: categoryId || null,
       metaTitle: metaTitle?.trim() || null,
       metaDescription: metaDescription?.trim() || null,
-      publishedAt: isPublishing ? new Date() : existing.publishedAt,
+      publishedAt: publishedAt
+        ? new Date(publishedAt)
+        : isPublishing
+          ? new Date()
+          : existing.publishedAt,
+      updatedBy: session.user.name ?? session.user.email ?? "Admin",
     },
   });
 
@@ -71,6 +76,9 @@ export async function DELETE(
   }
 
   // Move to trash
-  await prisma.article.update({ where: { id }, data: { status: "TRASH" } });
+  await prisma.article.update({
+    where: { id },
+    data: { status: "TRASH", updatedBy: session.user.name ?? session.user.email ?? "Admin" },
+  });
   return NextResponse.json({ trashed: true });
 }

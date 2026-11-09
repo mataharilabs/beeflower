@@ -217,8 +217,15 @@ export default async function OrderDetailPage({
 
         {/* Timestamps */}
         <div className="text-xs text-gray-400 text-right space-y-1">
-          <p>Dibuat: {new Date(order.createdAt).toLocaleString("id-ID")}</p>
+          <p>
+            Dibuat: {new Date(order.createdAt).toLocaleString("id-ID")}
+            {order.createdBy && <span> · oleh {order.createdBy}</span>}
+          </p>
           {order.paidAt && <p>Dibayar: {new Date(order.paidAt).toLocaleString("id-ID")}</p>}
+          <p>
+            Diupdate terakhir: {new Date(order.updatedAt).toLocaleString("id-ID")}
+            {order.updatedBy && <span> · oleh {order.updatedBy}</span>}
+          </p>
         </div>
       </div>
     </div>
