@@ -205,10 +205,17 @@ function CTABannerBlock({ props }: { props: CTABannerProps }) {
 }
 
 async function ProductGridBlock({ props }: { props: ProductGridProps }) {
+  const byTag = props.sourceType === "tag";
   const products = await prisma.product.findMany({
     where: {
       isActive: true,
-      ...(props.categorySlug ? { category: { slug: props.categorySlug } } : {}),
+      ...(byTag
+        ? props.tag?.trim()
+          ? { tags: { has: props.tag.trim() } }
+          : {}
+        : props.categorySlug
+          ? { category: { slug: props.categorySlug } }
+          : {}),
     },
     take: props.count || 4,
     include: { category: true },

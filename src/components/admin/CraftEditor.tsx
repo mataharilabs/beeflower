@@ -559,7 +559,27 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
         <>
           {field("subHeadline", "Sub Judul (kecil, emas)")}
           {field("headline", "Judul Section")}
-          {field("categorySlug", "Slug Kategori (kosongkan = semua)")}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Sumber Produk</label>
+            <div className="flex border border-gray-200 rounded overflow-hidden">
+              {([["category", "Kategori"], ["tag", "Tag"]] as const).map(([value, label]) => (
+                <button key={value} onClick={() => onUpdate({ sourceType: value })}
+                  className={`flex-1 py-1.5 text-xs font-medium transition-colors ${(p.sourceType ?? "category") === value ? "bg-brand-gold text-white" : "text-gray-600 hover:bg-gray-50"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {(p.sourceType ?? "category") === "category"
+            ? field("categorySlug", "Slug Kategori (kosongkan = semua)")
+            : (
+              <div>
+                {field("tag", "Tag Produk")}
+                <p className="text-[11px] text-gray-400 -mt-1">
+                  Isi persis sama dengan tag yang ditulis di produk (huruf besar/kecil berpengaruh).
+                </p>
+              </div>
+            )}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Jumlah Produk</label>
             <input type="number" min={1} max={12} value={p.count ?? 4} onChange={(e) => onUpdate({ count: parseInt(e.target.value) })}

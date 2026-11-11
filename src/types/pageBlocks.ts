@@ -75,7 +75,9 @@ export interface CTABannerProps extends BackgroundProps {
 export interface ProductGridProps extends BackgroundProps {
   subHeadline?: string;
   headline: string;
+  sourceType?: "category" | "tag";
   categorySlug: string;
+  tag?: string;
   count: number;
   subHeadlineColor?: string;
   headlineColor?: string;
