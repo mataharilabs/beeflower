@@ -125,7 +125,7 @@ export interface ImageGridItem {
 }
 
 export interface ImageGridProps extends BackgroundProps {
-  columns: 1 | 2 | 3;
+  columns: 1 | 2 | 3 | 4;
   items: ImageGridItem[];
 }
 

@@ -734,7 +734,7 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Jumlah Kolom</label>
             <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-              {([1, 2, 3] as const).map((n) => (
+              {([1, 2, 3, 4] as const).map((n) => (
                 <button
                   key={n}
                   onClick={() => onUpdate({ columns: n })}

@@ -362,7 +362,9 @@ function ImageGridBlock({ props }: { props: ImageGridProps }) {
       ? "grid-cols-1"
       : props.columns === 2
         ? `${mobileCols} sm:grid-cols-2`
-        : `${mobileCols} sm:grid-cols-2 md:grid-cols-3`;
+        : props.columns === 4
+          ? `${mobileCols} sm:grid-cols-2 md:grid-cols-4`
+          : `${mobileCols} sm:grid-cols-2 md:grid-cols-3`;
   const hasAnyText = filled.some((item) => item.subHeadline || item.headline || item.buttonText);
   return (
     <section className="relative py-12 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
