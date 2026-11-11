@@ -87,9 +87,9 @@ export async function Footer() {
   return (
     <footer className="bg-brand-brown text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Brand */}
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+          {/* Brand — full width di mobile/tablet, 1 kolom di desktop */}
+          <div className="col-span-2 lg:col-span-1">
             <div className="mb-4">
               {settings?.logoLightUrl ? (
                 <Image
@@ -221,8 +221,8 @@ export async function Footer() {
             </ul>
           </div>
 
-          {/* Official Store + Contact */}
-          <div className="space-y-6">
+          {/* Official Store + Contact — berdampingan 2 kolom di mobile, menumpuk di desktop */}
+          <div className="col-span-2 lg:col-span-1 grid grid-cols-2 gap-8 lg:block lg:space-y-6">
             <div>
               <h4 className="font-semibold text-sm tracking-widest uppercase mb-4 text-brand-gold">
                 Official Store
