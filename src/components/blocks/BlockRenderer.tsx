@@ -323,22 +323,27 @@ function FeatureIconsBlock({ props }: { props: FeatureIconsProps }) {
             )}
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Mobile selalu 3 kolom; desktop mengikuti setting Jumlah Kolom (default 3) */}
+        <div className={`grid grid-cols-3 gap-2 md:gap-6 ${
+          props.columns === 1 ? "md:grid-cols-1" :
+          props.columns === 2 ? "md:grid-cols-2" :
+          props.columns === 4 ? "md:grid-cols-4" : "md:grid-cols-3"
+        }`}>
           {(props.items ?? []).map((item, i) => (
-            <div key={i} className="text-center p-6 bg-brand-cream rounded-xl">
-              <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <div key={i} className="text-center p-2.5 md:p-6 bg-brand-cream rounded-xl">
+              <div className="w-10 h-10 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 flex items-center justify-center">
                 {item.imageUrl ? (
                   <img src={item.imageUrl} alt={item.title} className="w-full h-full object-contain" />
                 ) : item.iconName && FEATURE_ICON_MAP[item.iconName] ? (
-                  (() => { const Icon = FEATURE_ICON_MAP[item.iconName!]; return <Icon className="w-10 h-10 text-brand-gold" />; })()
+                  (() => { const Icon = FEATURE_ICON_MAP[item.iconName!]; return <Icon className="w-7 h-7 md:w-10 md:h-10 text-brand-gold" />; })()
                 ) : (
-                  <div className="w-12 h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
-                    <span className="text-brand-gold text-xl">✦</span>
+                  <div className="w-9 h-9 md:w-12 md:h-12 bg-brand-gold/20 rounded-full flex items-center justify-center">
+                    <span className="text-brand-gold text-base md:text-xl">✦</span>
                   </div>
                 )}
               </div>
-              <h3 className="font-bold text-gray-900 mb-2" style={props.itemTitleColor ? { color: props.itemTitleColor } : {}}>{item.title}</h3>
-              <p className="text-gray-600 text-sm" style={props.itemDescColor ? { color: props.itemDescColor } : {}}>{item.description}</p>
+              <h3 className="font-bold text-gray-900 mb-1 md:mb-2 text-xs md:text-base leading-tight" style={props.itemTitleColor ? { color: props.itemTitleColor } : {}}>{item.title}</h3>
+              <p className="text-gray-600 text-[11px] md:text-sm leading-snug" style={props.itemDescColor ? { color: props.itemDescColor } : {}}>{item.description}</p>
             </div>
           ))}
         </div>

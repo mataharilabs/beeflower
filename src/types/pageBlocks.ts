@@ -104,6 +104,7 @@ export interface FeatureIconItem {
 export interface FeatureIconsProps extends BackgroundProps {
   subHeadline?: string;
   headline: string;
+  columns?: 1 | 2 | 3 | 4;
   items: FeatureIconItem[];
   subHeadlineColor?: string;
   headlineColor?: string;

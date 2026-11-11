@@ -635,6 +635,21 @@ function BlockPropsEditor({ block, onUpdate }: { block: Block; onUpdate: (props:
         <>
           {field("subHeadline", "Sub Judul (kecil, emas)")}
           {field("headline", "Judul Section")}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Jumlah Kolom (Desktop)</label>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+              {([1, 2, 3, 4] as const).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => onUpdate({ columns: n })}
+                  className={`flex-1 py-1.5 text-xs font-medium transition-colors ${(p.columns ?? 3) === n ? "bg-brand-gold text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">Di mobile selalu tampil 3 kolom.</p>
+          </div>
           <TextColorSection props={p} onUpdate={onUpdate} fields={[
             { key: "subHeadlineColor", label: "Warna Sub Judul" },
             { key: "headlineColor", label: "Warna Judul Section" },
