@@ -353,9 +353,16 @@ function SpacerBlock({ props }: { props: SpacerProps }) {
 
 function ImageGridBlock({ props }: { props: ImageGridProps }) {
   const hasBg = props.bgType !== undefined;
-  const colClass = props.columns === 1 ? "grid-cols-1" : props.columns === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3";
   const filled = (props.items ?? []).filter((item) => item.url);
   if (filled.length === 0) return null;
+  // Mobile: 2 kolom jika gambar lebih dari 1; desktop tetap sesuai setting Jumlah Kolom
+  const mobileCols = filled.length > 1 ? "grid-cols-2" : "grid-cols-1";
+  const colClass =
+    props.columns === 1
+      ? "grid-cols-1"
+      : props.columns === 2
+        ? `${mobileCols} sm:grid-cols-2`
+        : `${mobileCols} sm:grid-cols-2 md:grid-cols-3`;
   const hasAnyText = filled.some((item) => item.subHeadline || item.headline || item.buttonText);
   return (
     <section className="relative py-12 px-4" style={hasBg ? getBlockBgStyle(props) : {}}>
