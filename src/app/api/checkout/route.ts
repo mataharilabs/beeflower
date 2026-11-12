@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateOrderNumber } from "@/lib/utils";
-import { orderConfirmationEmail, welcomeEmail } from "@/lib/emails";
+import { orderConfirmationEmail, welcomeEmail, newOrderAdminEmail } from "@/lib/emails";
 import { isCouponUsable, calculateCouponDiscount } from "@/lib/coupon";
 import { getProductDiscount, getOrderDiscountPromos, getFreeShippingPromos } from "@/lib/promotions";
 import { Resend } from "resend";
@@ -347,7 +347,7 @@ export async function POST(req: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const brandSettings = await prisma.siteSettings.findUnique({
       where: { id: "singleton" },
-      select: { logoUrl: true, logoWidth: true },
+      select: { logoUrl: true, logoWidth: true, adminNotifEmail: true },
     }).catch(() => null);
     const logoUrl = brandSettings?.logoUrl ?? null;
     const logoWidth = brandSettings?.logoWidth ?? null;
@@ -405,6 +405,26 @@ export async function POST(req: NextRequest) {
         to: data.customerEmail,
         subject: welcome.subject,
         html: welcome.html,
+      }).catch(console.error);
+    }
+
+    // Notifikasi pesanan baru ke admin (alamat dari settings, fallback env var)
+    const adminEmail = brandSettings?.adminNotifEmail || process.env.ADMIN_EMAIL;
+    if (adminEmail) {
+      const adminNotif = newOrderAdminEmail({
+        orderNumber: order.orderNumber,
+        orderId: order.id,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+        paymentMethod: data.paymentMethod,
+        items: adjustedOrderItems,
+        total,
+      });
+      await resend.emails.send({
+        from: adminNotif.from,
+        to: adminEmail,
+        subject: adminNotif.subject,
+        html: adminNotif.html,
       }).catch(console.error);
     }
   }

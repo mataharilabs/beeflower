@@ -177,6 +177,60 @@ export function paymentReceivedEmail(data: {
   };
 }
 
+// --- New Order Notification (to admin) ---
+
+export function newOrderAdminEmail(data: {
+  orderNumber: string;
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  paymentMethod: string;
+  items: { productName: string; quantity: number; price: number }[];
+  total: number;
+}) {
+  const paymentLabel: Record<string, string> = {
+    XENDIT: "Xendit Online",
+    MIDTRANS: "Midtrans Online",
+    MANUAL_TRANSFER: "Transfer Bank Manual",
+    QRIS: "QRIS",
+  };
+
+  const itemRows = data.items.map((item) => `
+    <tr>
+      <td style="padding:8px 0;border-bottom:1px solid #f0e8df;color:${BRAND_BROWN}">${item.productName} <span style="color:#999">×${item.quantity}</span></td>
+      <td style="padding:8px 0;border-bottom:1px solid #f0e8df;color:${BRAND_BROWN};text-align:right">${formatRupiah(item.price * item.quantity)}</td>
+    </tr>`).join("");
+
+  const adminUrl = `${APP_URL}/admin/orders/${data.orderId}`;
+
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 4px;color:${BRAND_BROWN};font-size:20px">Pesanan Baru Masuk!</h2>
+    <p style="margin:0 0 24px;color:#666;font-size:14px">Ada pesanan baru di website Bee & Flower Brand:</p>
+    <div style="background:${BRAND_CREAM};padding:16px 20px;border-radius:6px;margin-bottom:20px">
+      <p style="margin:0 0 8px;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px">Nomor Pesanan</p>
+      <p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:${BRAND_BROWN}">#${data.orderNumber}</p>
+      <p style="margin:0 0 4px;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px">Customer</p>
+      <p style="margin:0 0 16px;color:${BRAND_BROWN};font-weight:bold">${data.customerName} · ${data.customerPhone}</p>
+      <p style="margin:0 0 4px;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px">Metode Pembayaran</p>
+      <p style="margin:0;color:${BRAND_BROWN};font-weight:bold">${paymentLabel[data.paymentMethod] ?? data.paymentMethod}</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:8px">
+      ${itemRows}
+      <tr>
+        <td style="padding:10px 0;font-weight:bold;color:${BRAND_BROWN}">Total</td>
+        <td style="padding:10px 0;font-weight:bold;color:${BRAND_BROWN};text-align:right;font-size:16px">${formatRupiah(data.total)}</td>
+      </tr>
+    </table>
+    <a href="${adminUrl}" style="display:inline-block;margin-top:12px;padding:12px 24px;background:${BRAND_GOLD};color:#fff;text-decoration:none;border-radius:4px;font-weight:bold">Lihat Detail Pesanan</a>
+  `);
+
+  return {
+    subject: `Pesanan Baru #${data.orderNumber} - ${data.customerName}`,
+    html,
+    from: FROM,
+  };
+}
+
 // --- Payment Verified / Rejected (to customer) ---
 
 export function paymentVerifiedEmail(data: {
