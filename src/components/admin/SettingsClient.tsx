@@ -17,6 +17,7 @@ interface SiteSettings {
   ogImage: string | null;
   whatsapp: string | null;
   email: string | null;
+  adminNotifEmail: string | null;
   address: string | null;
   businessHours: string | null;
   googleMapsEmbed: string | null;
@@ -466,6 +467,7 @@ export function SettingsClient({ settings, paymentSettings, bankAccounts: initia
             {([
               { key: "whatsapp", label: "WhatsApp (format: 628xxx)" },
               { key: "email", label: "Email" },
+              { key: "adminNotifEmail", label: "Email Notifikasi Admin (terima pesan form kontak & notif bukti pembayaran)" },
               { key: "instagram", label: "Instagram (tanpa @)" },
               { key: "tiktok", label: "TikTok (tanpa @)" },
               { key: "shopee", label: "Shopee (username)" },

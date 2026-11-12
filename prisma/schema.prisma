@@ -442,6 +442,7 @@ model SiteSettings {
 
   whatsapp        String?
   email           String?
+  adminNotifEmail String?
   address         String? @db.Text
   businessHours   String? @db.Text
   googleMapsEmbed String? @db.Text

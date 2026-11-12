@@ -30,8 +30,13 @@ export async function POST(req: NextRequest) {
     }),
   ]);
 
-  // Notify admin via email
-  if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
+  // Notify admin via email (alamat dari settings, fallback env var)
+  const siteSettings = await prisma.siteSettings
+    .findUnique({ where: { id: "singleton" }, select: { adminNotifEmail: true } })
+    .catch(() => null);
+  const adminEmail = siteSettings?.adminNotifEmail || process.env.ADMIN_EMAIL;
+
+  if (process.env.RESEND_API_KEY && adminEmail) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const email = paymentReceivedEmail({
       orderNumber: order.orderNumber,
@@ -40,7 +45,7 @@ export async function POST(req: NextRequest) {
     });
     await resend.emails.send({
       from: email.from,
-      to: process.env.ADMIN_EMAIL,
+      to: adminEmail,
       subject: email.subject,
       html: email.html,
     }).catch(console.error);

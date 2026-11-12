@@ -17,12 +17,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Send email notification to admin
-    if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
+    // Send email notification to admin (alamat dari settings, fallback env var)
+    const siteSettings = await prisma.siteSettings
+      .findUnique({ where: { id: "singleton" }, select: { adminNotifEmail: true } })
+      .catch(() => null);
+    const adminEmail = siteSettings?.adminNotifEmail || process.env.ADMIN_EMAIL;
+
+    if (process.env.RESEND_API_KEY && adminEmail) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from: process.env.EMAIL_FROM ?? "noreply@beeflowerbrand.com",
-        to: process.env.ADMIN_EMAIL,
+        to: adminEmail,
         subject: `Pesan Baru dari ${data.name} - Bee & Flower`,
         html: `
           <h2>Pesan Baru dari Form Kontak</h2>
